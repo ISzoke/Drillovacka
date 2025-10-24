@@ -106,12 +106,20 @@ export const useRecorderStore = defineStore("recorder", () => {
           }
 
           // Set ASR language
+          // Set ASR (Speech-to-Text) language dynamically
           const langStore = useLanguageStore();
-          if(langStore.language === 'en') {
-            changeASRLanguage('en-US');
-          } else {
-            changeASRLanguage('cs-CZ');
-          } 
+
+          const langMap = {
+            en: 'en-US',
+            cs: 'cs-CZ',
+            sk: 'sk-SK'
+          };
+
+          // Vyber z mapy alebo použi češtinu ako fallback
+          const asrLang = langMap[langStore.language] || 'sk-SK';
+          changeASRLanguage(asrLang);
+          console.log(`ASR language set to: ${asrLang}`);
+
         };
 
         // Handle incoming WebSocket messages - answer evaluation results

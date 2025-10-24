@@ -18,6 +18,8 @@ import { dictionary } from '@/utils/dictionary';
 import csFlag from '@/assets/img/cs-flag.png';
 import enFlag from '@/assets/img/en-flag.png';
 
+import skFlag from '@/assets/img/sk-flag.png';
+
 // Stores
 const authStore = useAuthStore();
 const langStore = useLanguageStore();
@@ -30,21 +32,17 @@ const isAuthenticated = computed(() => authStore.isAuthenticated);
 // Mobile menu state
 const isMenuOpen = ref(false);
 
-// Change language of application
-const changeLanguage = () => {
-  langStore.toggleLanguage();
-
-  if (langStore.language === 'en') {
-    recorderStore.changeASRLanguage('en-US');
-  } else {
-    recorderStore.changeASRLanguage('cs-CZ');
-  }
-};
-
-// Redirect to landing page on logo click
-const handleLogoClick = () => {
-  if(langStore.language == 'en') router.push({ path: '/en' });
+// Zmena jazyka + ASR mapovanie
+const ASR_BY_LANG = { en: 'en-US', cs: 'cs-CZ', sk: 'sk-SK' };
+function changeLanguage(lang) {
+  langStore.setLanguage(lang);
+  recorderStore.changeASRLanguage(ASR_BY_LANG[lang] || 'cs-CZ');
 }
+
+// Redirect na /en len pri angličtine (ostatné nechávam na /)
+const handleLogoClick = () => {
+  if (langStore.language === 'en') router.push({ path: '/en' });
+};
 </script>
 
 <template>
@@ -81,10 +79,14 @@ const handleLogoClick = () => {
 
           <!-- Unauthenticated user menu -->
           <template v-if="!isAuthenticated">
-            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].login}}</RouterLink>
-            <button @click="changeLanguage">
-              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
-            </button>
+            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].login }}
+            </RouterLink>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+            </div>
           </template>
 
           <!-- Admin menu -->
@@ -96,11 +98,17 @@ const handleLogoClick = () => {
 
           <!-- Logged in user -->
           <template v-else>
-            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].profile}}</RouterLink>
-            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{dictionary[langStore.language].logout}}</button>
-            <button @click="changeLanguage">
-              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
+            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].profile }}
+            </RouterLink>
+            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].logout }}
             </button>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+            </div>
           </template>
 
         </div>
@@ -113,10 +121,14 @@ const handleLogoClick = () => {
 
           <!-- Unauthenticated user menu -->
           <template v-if="!isAuthenticated">
-            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{dictionary[langStore.language].login}}</RouterLink>
-            <button @click="changeLanguage">
-              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
-            </button>
+            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].login }}
+            </RouterLink>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+            </div>
           </template>
 
           <!-- Admin menu -->
@@ -128,11 +140,17 @@ const handleLogoClick = () => {
 
           <!-- Logged in user -->
           <template v-else>
-            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{dictionary[langStore.language].profile}}</RouterLink>
-            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">{{dictionary[langStore.language].logout}}</button>
-            <button @click="changeLanguage">
-              <img :src="langStore.language == 'cs' ? enFlag : csFlag" alt="Language Flag" class="w-8 h-8 ml-2" />
+            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].profile }}
+            </RouterLink>
+            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].logout }}
             </button>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+            </div>
           </template>
 
         </div>

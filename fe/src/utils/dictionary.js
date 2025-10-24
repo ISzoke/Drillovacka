@@ -112,6 +112,58 @@ export const dictionary = {
         clickMicText: "Click on the microphone and please answer the question",
         chooseOptionText: "Choose the option that applies to you",
         searchPlaceholderText: "Type the name of the exercise you are looking for",
+    },
+
+    sk: {
+        logo: "DRILLOVAČKA",
+        login: "Prihlásiť sa",
+        register: "Zaregistrovať sa",
+        registerText: "Ešte nemám účet – zaregistrovať sa",
+        loginText: "Už mám účet – prihlásiť sa",
+        adminText: "Som administrátor aplikácie",
+        adminLoginText: "Som administrátor aplikácie",
+        nickname: "Prezývka",
+        nicknamePlaceholder: "Tvoja prezývka",
+        accessCode: "Prístupový kód",
+        part1: "časť 1",
+        part2: "časť 2",
+        part3: "časť 3",
+        usernameError: "Prosím, zadaj prezývku.",
+        usernameForgot: "Zabudol si si vytvoriť prezývku",
+        passphraseError: "Prosím, zadaj všetky časti prístupového kódu.",
+        passphraseForgot: "Najprv si musíš vygenerovať prístupový kód",
+        loginSuccess: "Prihlásenie prebehlo úspešne",
+        registrationSuccess: "Registrácia prebehla úspešne",
+        invalidCredentials: "Neplatné prihlasovacie údaje",
+        somethingWentWrong: "Niečo sa pokazilo. Skús to prosím neskôr.",
+        logout: "Odhlásiť sa",
+        logoutSuccess: "Odhlásenie prebehlo úspešne",
+        inactivityLogout: "Bol si odhlásený z dôvodu neaktivity",
+        generatePassphrase: "Vygenerovať kód",
+        generatePassphrasePlaceholder: "Vygeneruj si svoj prístupový kód",
+        copied: "Skopírované",
+        hi: "Ahoj",
+        profile: "Profil",
+        chooseTopic: "Ktoré príklady chceš precvičovať?",
+        chooseOperation: "Vyber operácie, ktoré chceš precvičovať",
+        startPractice: "Poďme na to",
+        quit: "Ukončiť",
+        done: "Hotovo",
+        skip: "Preskočiť",
+        correctAnswer: "Správna odpoveď",
+        finish: "Hotovo!",
+        exampleCountText: "Vypočítal si",
+        backtoMainMenu: "Späť na hlavnú stránku",
+        noMistakes: "Bez chyby",
+        oneMistake: "Jedna chyba",
+        twoMistakes: "Dve chyby",
+        threeMistakes: "Tri chyby",
+        skipped: "Preskočené",
+        continue: "Pokračovať",
+        summarySurveyText: "Ako sa ti páčilo precvičovanie s touto appkou?",
+        clickMicText: "Klikni na mikrofón a odpovedz prosím na otázku",
+        chooseOptionText: "Vyber možnosť, ktorá pre teba platí",
+        searchPlaceholderText: "Napíš názov cvičenia, ktoré hľadáš"
     }
 };
 
@@ -119,11 +171,11 @@ export const dictionary = {
  * Translates a skill name from Czech to English depending on the selected language.
  * 
  * @param {string} czechName - name of the skill in Czech
- * @param {string} lang - language code ('cs' or 'en')
+ * @param {string} lang - language code ('cs' or 'en' or 'sk')
  * @returns {string} translated skill name
  */
 export const getSkillName = (czechName, lang) => {
-    const skillMap = {
+    const mapEn = {
         "Sčítání": "Addition",
         "Odčítání": "Subtraction",
         "Násobení": "Multiplication",
@@ -147,5 +199,31 @@ export const getSkillName = (czechName, lang) => {
         "Poměry": "Ratio"
     };
 
-    return lang === "cs" ? czechName : skillMap[czechName] || czechName;
+    const mapSk = {
+        "Sčítání": "Sčítanie",
+        "Odčítání": "Odčítanie",
+        "Násobení": "Násobenie",
+        "Dělení": "Delenie",
+        "Druhá mocnina": "Druhá mocnina",
+        "Druhá odmocnina": "Druhá odmocnina",
+        "Krácení": "Krátanie",
+        "Celá čísla": "Celé čísla",
+        "Desetinná čísla": "Desatinné čísla",
+        "Zlomky": "Zlomky",
+        "Pythagorova věta": "Pytagorova veta",
+        "Rovnice": "Rovnice",
+        "Do 20": "Do 20",
+        "Přes 20": "Nad 20",
+        "Do 100": "Do 100",
+        "Nad 100": "Nad 100",
+        "Do 50": "Do 50",
+        "Přes 10": "Nad 10",
+        "Do 10": "Do 10",
+        "Desetiny": "Desatiny",
+        "Poměry": "Pomer"
+    };
+
+    if (lang === "en") return mapEn[czechName] || czechName;
+    if (lang === "sk") return mapSk[czechName] || czechName;
+    return czechName; // cs
 };

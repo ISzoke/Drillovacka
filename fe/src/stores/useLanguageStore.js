@@ -8,23 +8,17 @@
  */
 
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 export const useLanguageStore = defineStore('language', () => {
-  
-  const language = ref('cs');
+  const language = ref(localStorage.getItem('lang') || 'sk');
+
+  watch(language, (val) => localStorage.setItem('lang', val));
 
   function setLanguage(lang) {
-    language.value = lang;
+    const supported = ['cs', 'en', 'sk'];
+    if (supported.includes(lang)) language.value = lang;
   }
 
-  function toggleLanguage() {
-    language.value = language.value === 'cs' ? 'en' : 'cs';
-  }
-
-  return {
-    language,
-    setLanguage,
-    toggleLanguage
-  };
+  return { language, setLanguage };
 });

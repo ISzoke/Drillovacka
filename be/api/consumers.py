@@ -76,11 +76,25 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                 
                 # Check if language was changed
                 if 'language' in new_metadata:
-                    self.language = new_metadata['language']
-                    print(f"Language changed to: {self.language}")
-                    self.speech_recognizer.stop_continuous_recognition()
+                    requested_lang = new_metadata['language']
+                    supported_langs = ['cs-CZ', 'en-US', 'sk-SK']
+
+                    if requested_lang not in supported_langs:
+                        print(f"Unsupported language '{requested_lang}', defaulting to sk-SK")
+                        requested_lang = 'sk-SK'
+
+                    # Nastav nový jazyk pre rozpoznávanie
+                    self.language = requested_lang
+                    print(f"ASR language changed to: {self.language}")
+
+                    try:
+                        self.speech_recognizer.stop_continuous_recognition()
+                    except Exception:
+                        pass  # ak ešte nebežal
+
+                    # Vytvor nový recognizer s novým jazykom
                     self.speech_recognizer, self.stream = self.create_speech_recognizer()
-                
+
             except json.JSONDecodeError:
                 print("Invalid metadata received.")
 
@@ -158,16 +172,23 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
                 # Words to skip example or terminate practice
                 skip_wordsCS = ["přeskočit", "další", "přeskoč", "dál"]
+                skip_wordsSK = ["preskočiť", "ďalej", "ďalší", "preskoč"]
                 skip_wordsEN = ["skip", "next", "continue"]
+
                 finish_wordsCS = ["konec", "ukončit", "stačí", "hotovo", "skončit", "dost"]
+                finish_wordsSK = ["koniec", "ukončiť", "stačí", "hotovo", "skončiť", "dost"]
                 finish_wordsEN = ["finish", "end", "stop", "done"]
 
-                if(self.language == "cs-CZ"):
+                if self.language == "cs-CZ":
                     skip_words = skip_wordsCS
                     finish_words = finish_wordsCS
+                elif self.language == "sk-SK":
+                    skip_words = skip_wordsSK
+                    finish_words = finish_wordsSK
                 else:
                     skip_words = skip_wordsEN
                     finish_words = finish_wordsEN
+
 
                 # Transcript containts 'skip' words - update record and skip example
                 if any(word in student_answer.lower() for word in skip_words):
