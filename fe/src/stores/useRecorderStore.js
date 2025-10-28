@@ -91,7 +91,7 @@ export const useRecorderStore = defineStore("recorder", () => {
   const startRecording = async (isSurvey) => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        let wsurl = isSurvey ? "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"; // POZOR NA DEPLOY
+        let wsurl = isSurvey ? "wss://superlectures.net/ws/survey/" : "wss://superlectures.net/ws/speech/"; // POZOR NA DEPLOY
         ws = new WebSocket(wsurl); //   "wss://drillovacka.applikuapp.com/ws/survey/" : "wss://drillovacka.applikuapp.com/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");

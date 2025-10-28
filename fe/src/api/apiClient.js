@@ -12,7 +12,7 @@ import qs from 'qs';
 
 // Axios instance for all API requests
 const apiClient = axios.create({
-  baseURL:   'http://localhost:8000/api/',// 'https://bp-production-37c0.up.railway.app/api/',    'https://drillovacka.applikuapp.com/api/'
+  baseURL:   'https://superlectures.net/api/',// 'https://bp-production-37c0.up.railway.app/api/',    'https://drillovacka.applikuapp.com/api/'
   headers: {
   },
 });
