@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password, check_password
 from django.http import JsonResponse
 from django.db import transaction
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step, GradeLevel
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -505,6 +505,7 @@ def create_skill(request):
     try:
         name = request.data.get('name')
         parent_skill_id = request.data.get('parent_skill')
+        grade_level_ids = request.data.get('grade_levels', [])
 
         if not name:
             return Response({"error": "Skill name is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -528,12 +529,17 @@ def create_skill(request):
             # If a deleted skill exists with the same name, restore it
             existing_skill.deleted = False
             existing_skill.save()
+            
+            # Update grade levels
+            if grade_level_ids:
+                existing_skill.grade_levels.set(grade_level_ids)
 
             return JsonResponse({
                 "id": existing_skill.id,
                 "name": existing_skill.name,
                 "parent_skill": existing_skill.parent_skill.id if existing_skill.parent_skill else None,
-                "skill_type": existing_skill.skill_type,  
+                "skill_type": existing_skill.skill_type,
+                "grade_levels": list(existing_skill.grade_levels.values_list('id', flat=True)),
             }, status=status.HTTP_200_OK)
 
         # If no deleted skill exists, create a new skill
@@ -545,12 +551,17 @@ def create_skill(request):
                     skill_type=skill_type, 
                     height=height
                 )
+                
+                # Add grade levels
+                if grade_level_ids:
+                    skill.grade_levels.set(grade_level_ids)
 
             return JsonResponse({
                 "id": skill.id,
                 "name": skill.name,
                 "parent_skill": skill.parent_skill.id if skill.parent_skill else None,
-                "skill_type": skill.skill_type, 
+                "skill_type": skill.skill_type,
+                "grade_levels": list(skill.grade_levels.values_list('id', flat=True)),
             }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -929,3 +940,60 @@ def save_survey_answer(request):
         json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
     
     return Response(status=status.HTTP_200_OK)
+
+# Get all grade levels (1-9)
+@api_view(['GET'])
+def get_grade_levels(request):
+    try:
+        grade_levels = GradeLevel.objects.all().order_by('grade')
+        data = [{"id": gl.id, "grade": gl.grade} for gl in grade_levels]
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Update grade levels for a skill
+@api_view(['PATCH'])
+def update_skill_grade_levels(request, skill_id):
+    try:
+        skill = get_object_or_404(Skill, id=skill_id)
+        grade_level_ids = request.data.get('grade_levels', [])
+        
+        # Update the grade levels
+        skill.grade_levels.set(grade_level_ids)
+        
+        return JsonResponse({
+            "id": skill.id,
+            "name": skill.name,
+            "grade_levels": list(skill.grade_levels.values_list('id', flat=True))
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Get skills by grade level
+@api_view(['GET'])
+def get_skills_by_grade(request, grade_id):
+    try:
+        grade = get_object_or_404(GradeLevel, id=grade_id)
+        
+        # Get all skills assigned to this grade level
+        # Only get top-level skills (those with skill_type set)
+        skills = Skill.objects.filter(
+            grade_levels=grade,
+            deleted=False,
+            skill_type__isnull=False  # Only parent skills
+        ).distinct().order_by('name')
+        
+        skills_data = [
+            {
+                "id": skill.id,
+                "name": skill.name,
+                "skill_type": skill.skill_type
+            }
+            for skill in skills
+        ]
+        
+        return JsonResponse(skills_data, safe=False, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

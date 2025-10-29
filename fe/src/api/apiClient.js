@@ -511,4 +511,38 @@ export const sendSurveyAnswer = async (questionType, questionText, answer, skill
   }
 };
 
+/**
+ * Fetches all available grade levels (1-9).
+ * 
+ * @returns {Promise<Array<Object>>} array of grade level objects with id and grade.
+ */
+export const getGradeLevels = async () => {
+  try {
+    const response = await apiClient.get('grade-levels/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching grade levels:', error);
+    return [];
+  }
+};
+
+/**
+ * Updates the grade levels assigned to a skill.
+ * 
+ * @param {number} skillId - id of the skill to update.
+ * @param {Array<number>} gradeLevelIds - array of grade level ids to assign.
+ * @returns {Promise<Object>} updated skill data.
+ */
+export const updateSkillGradeLevels = async (skillId, gradeLevelIds) => {
+  try {
+    const response = await apiClient.patch(`skills/${skillId}/grade-levels/`, {
+      grade_levels: gradeLevelIds
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating skill grade levels:', error);
+    throw error;
+  }
+};
+
 export default apiClient;

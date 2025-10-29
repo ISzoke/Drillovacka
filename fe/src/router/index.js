@@ -10,6 +10,7 @@ import TasksView from '@/views/TasksView.vue'
 import SkillCreatorView from '@/views/SkillCreatorView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import AdminView from '@/views/AdminView.vue'
+import GradeTopicsView from '@/views/GradeTopicsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,8 +19,14 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: { lang: 'cs' }
+      meta: { lang: 'sk' }
 
+    },
+    {
+      path: '/cs',
+      name: 'home-cs',
+      component: HomeView,
+      meta: { lang: 'cs' }
     },
     {
       path: '/en',
@@ -41,6 +48,12 @@ const router = createRouter({
       path: '/topic/:id',
       name: 'topic',
       component: TopicView,
+      props: true
+    },
+    {
+      path: '/grade/:gradeId/topics',
+      name: 'gradeTopics',
+      component: GradeTopicsView,
       props: true
     },
     {

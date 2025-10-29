@@ -28,8 +28,10 @@ onMounted(() => {
   // Set ASR language based on the selected language
   if(langStore.language === 'en') {
     recorderStore.changeASRLanguage('en-US');
-  } else {
+  } else if(langStore.language === 'cs') {
     recorderStore.changeASRLanguage('cs-CZ');
+  } else {
+    recorderStore.changeASRLanguage('sk-SK');
   }
 });
 </script>

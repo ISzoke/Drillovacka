@@ -36,12 +36,27 @@ const isMenuOpen = ref(false);
 const ASR_BY_LANG = { en: 'en-US', cs: 'cs-CZ', sk: 'sk-SK' };
 function changeLanguage(lang) {
   langStore.setLanguage(lang);
-  recorderStore.changeASRLanguage(ASR_BY_LANG[lang] || 'cs-CZ');
+  recorderStore.changeASRLanguage(ASR_BY_LANG[lang] || 'sk-SK');
+  
+  // Navigate to appropriate language route
+  if (lang === 'en') {
+    router.push({ path: '/en' });
+  } else if (lang === 'cs') {
+    router.push({ path: '/cs' });
+  } else {
+    router.push({ path: '/' });
+  }
 }
 
-// Redirect na /en len pri angličtine (ostatné nechávam na /)
+// Redirect to home page based on language
 const handleLogoClick = () => {
-  if (langStore.language === 'en') router.push({ path: '/en' });
+  if (langStore.language === 'en') {
+    router.push({ path: '/en' });
+  } else if (langStore.language === 'cs') {
+    router.push({ path: '/cs' });
+  } else {
+    router.push({ path: '/' });
+  }
 };
 </script>
 

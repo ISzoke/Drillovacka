@@ -47,7 +47,11 @@ urlpatterns = [
     path('login/student', views.login_student, name='login_student'),
     path('login/admin', views.login_admin, name='login_admin'),
 
-    path('survey-answer/', views.save_survey_answer, name='save-survey-answer'),   
+    path('survey-answer/', views.save_survey_answer, name='save-survey-answer'),
+    
+    path('grade-levels/', views.get_grade_levels, name='get-grade-levels'),
+    path('skills/<int:skill_id>/grade-levels/', views.update_skill_grade_levels, name='update-skill-grade-levels'),
+    path('skills/by-grade/<int:grade_id>/', views.get_skills_by_grade, name='get-skills-by-grade'),
  
 ]
 

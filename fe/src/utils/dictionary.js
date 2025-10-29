@@ -59,6 +59,18 @@ export const dictionary = {
         clickMicText: "Klikni na mikrofon a odpověz prosím na otázku",
         chooseOptionText: "Vyber možnost která pro tebe platí",
         searchPlaceholderText: "Napiš název cvičení, které hledáš",
+        gradeLevel: "Ročník",
+        gradeLevels: "Ročníky",
+        selectGrades: "Vyberte ročníky",
+        editGrades: "Upravit ročníky",
+        saveGrades: "Uložit ročníky",
+        gradesUpdated: "Ročníky byly úspěšně aktualizovány",
+        gradesUpdateError: "Chyba při aktualizaci ročníků",
+        operations: "Operace",
+        grades: "Ročníky",
+        grade: "ročník",
+        back: "Zpět",
+        noSkillsForGrade: "Pro tento ročník zatím nejsou přiřazeny žádné dovednosti.",
 
     },
 
@@ -112,6 +124,18 @@ export const dictionary = {
         clickMicText: "Click on the microphone and please answer the question",
         chooseOptionText: "Choose the option that applies to you",
         searchPlaceholderText: "Type the name of the exercise you are looking for",
+        gradeLevel: "Grade",
+        gradeLevels: "Grades",
+        selectGrades: "Select grades",
+        editGrades: "Edit grades",
+        saveGrades: "Save grades",
+        gradesUpdated: "Grades were successfully updated",
+        gradesUpdateError: "Error updating grades",
+        operations: "Operations",
+        grades: "Grades",
+        grade: "grade",
+        back: "Back",
+        noSkillsForGrade: "No skills assigned to this grade yet.",
     },
 
     sk: {
@@ -163,7 +187,19 @@ export const dictionary = {
         summarySurveyText: "Ako sa ti páčilo precvičovanie s touto appkou?",
         clickMicText: "Klikni na mikrofón a odpovedz prosím na otázku",
         chooseOptionText: "Vyber možnosť, ktorá pre teba platí",
-        searchPlaceholderText: "Napíš názov cvičenia, ktoré hľadáš"
+        searchPlaceholderText: "Napíš názov cvičenia, ktoré hľadáš",
+        gradeLevel: "Ročník",
+        gradeLevels: "Ročníky",
+        selectGrades: "Vyber ročníky",
+        editGrades: "Upraviť ročníky",
+        saveGrades: "Uložiť ročníky",
+        gradesUpdated: "Ročníky boli úspešne aktualizované",
+        gradesUpdateError: "Chyba pri aktualizácii ročníkov",
+        operations: "Operácie",
+        grades: "Ročníky",
+        grade: "ročník",
+        back: "Späť",
+        noSkillsForGrade: "Pre tento ročník zatiaľ nie sú priradené žiadne zručnosti.",
     }
 };
 

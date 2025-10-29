@@ -48,6 +48,16 @@ class Answer(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name='answers')
     answer = models.CharField(max_length=255)
 
+class GradeLevel(models.Model):
+    """Represents a grade level in elementary school (ZŠ 1-9)"""
+    grade = models.IntegerField(unique=True)
+    
+    class Meta:
+        ordering = ['grade']
+    
+    def __str__(self):
+        return f"{self.grade}. ročník"
+
 class Skill(models.Model):
     name = models.CharField(max_length=255)
     height = models.IntegerField(default=0) 
@@ -77,6 +87,12 @@ class Skill(models.Model):
         'self',  
         blank=True,  
         symmetrical=True,  
+    )
+    
+    grade_levels = models.ManyToManyField(
+        'GradeLevel',
+        blank=True,
+        related_name='skills'
     )
     
 class ExampleSkill(models.Model):
