@@ -22,13 +22,15 @@ const apiClient = axios.create({
  * 
  * @param {number} studentId - id of the student.
  * @param {number} exampleId - id of the example.
+ * @param {Array<number>} practicedSkills - IDs of skills being practiced in this session.
  * @returns {string} timestamp of record.
  */
-export const createRecord = async (studentId, exampleId) => {
+export const createRecord = async (studentId, exampleId, practicedSkills = []) => {
     try {
       const response = await apiClient.post('create-record/', {
         student_id: studentId,
         example_id: exampleId,
+        practiced_skills: practicedSkills,
       });
 
       return response.data; 
@@ -542,6 +544,47 @@ export const updateSkillGradeLevels = async (skillId, gradeLevelIds) => {
   } catch (error) {
     console.error('Error updating skill grade levels:', error);
     throw error;
+  }
+};
+
+/**
+ * Fetches skill analytics for a student (mastery, accuracy, etc.)
+ * @param {number|string} studentId
+ * @returns {Promise<Array>} Array of skill stats
+ */
+export const getStudentSkillStats = async (studentId) => {
+  try {
+    const response = await apiClient.get(`analytics/student/${studentId}/skills/`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching skill analytics.';
+  }
+};
+
+/**
+ * Fetches student skill analytics grouped by skill combinations (not individual skills)
+ * @param {number} studentId - ID of the student
+ * @returns {Promise<Array>} Array of skill combinations with stats
+ */
+export const getStudentSkillCombinations = async (studentId) => {
+  try {
+    const response = await apiClient.get(`analytics/student/${studentId}/skill-combinations/`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching skill combinations.';
+  }
+};
+
+/**
+ * Fetches list of all students with their overall stats
+ * @returns {Promise<Array>} Array of students with stats
+ */
+export const getAllStudentsStats = async () => {
+  try {
+    const response = await apiClient.get('analytics/students/');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching students list.';
   }
 };
 

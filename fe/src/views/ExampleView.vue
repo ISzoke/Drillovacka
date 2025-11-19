@@ -250,7 +250,7 @@ onMounted(() => {
     <div class="flex items-center justify-center">
       
       <!-- Example component -->
-      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary && !showSurvey" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
+      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary && !showSurvey" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" :topics="topics" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
       
       <!-- Correct or incorrect icon -->
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 

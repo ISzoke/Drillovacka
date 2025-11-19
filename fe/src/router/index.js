@@ -11,6 +11,9 @@ import SkillCreatorView from '@/views/SkillCreatorView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import AdminView from '@/views/AdminView.vue'
 import GradeTopicsView from '@/views/GradeTopicsView.vue'
+import SkillAnalyticsView from '@/views/SkillAnalyticsView.vue'
+import StudentProgressView from '@/views/StudentProgressView.vue'
+import StudentDashboardView from '@/views/StudentDashboardView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -79,6 +82,24 @@ const router = createRouter({
       name: 'skill-creator',
       component: SkillCreatorView,
       meta: { requiresAdmin: true }
+    },
+    {
+      path: '/analytics/skills',
+      name: 'skill-analytics',
+      component: SkillAnalyticsView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/my-progress',
+      name: 'my-progress',
+      component: StudentProgressView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: StudentDashboardView,
+      meta: { requiresAuth: true }
     },
   ]
 })

@@ -29,6 +29,10 @@ const props = defineProps({
   },
   answer: {
     type: String,
+  },
+  topics: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -97,7 +101,7 @@ const checkVariables = async (variables) => {
 
 // Record that user practiced example creation
 const initRecord = async () => {
-  const result = await createRecord(student_id, props.example.id);
+  const result = await createRecord(student_id, props.example.id, props.topics);
   record_date.value = result.date;
   if (speechRecorder.value) {
     speechRecorder.value.updateExampleData(student_id, props.example.id, props.example.input_type, record_date.value);

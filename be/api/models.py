@@ -111,6 +111,15 @@ class StudentExample(models.Model):
     attempts = models.IntegerField(default=0) 
     solved = models.BooleanField(default=False)
     skipped = models.BooleanField(default=False)
+    
+    # Skills that were selected for practice in this session
+    # This allows tracking mastery for specific skill combinations (e.g., "addition" + "up to 10")
+    # rather than counting progress separately for each parent skill
+    practiced_skills = models.ManyToManyField(
+        'Skill',
+        blank=True,
+        related_name='student_examples'
+    )
 
     class Meta:
         constraints = [

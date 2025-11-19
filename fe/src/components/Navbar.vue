@@ -108,11 +108,18 @@ const handleLogoClick = () => {
           <template v-else-if="authStore.role == 'admin'">
             <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Příklady</RouterLink>
             <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Dovednosti</RouterLink>
+            <RouterLink to="/analytics/skills" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Skill Analytics</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Odhlásit se</button>
           </template>
 
           <!-- Logged in user -->
           <template v-else>
+            <RouterLink to="/dashboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              <i class="fa-solid fa-chart-line mr-1"></i>Dashboard
+            </RouterLink>
+            <RouterLink to="/my-progress" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              <i class="fa-solid fa-list-check mr-1"></i>Môj pokrok
+            </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].profile }}
             </RouterLink>
@@ -150,15 +157,22 @@ const handleLogoClick = () => {
           <template v-else-if="authStore.role == 'admin'">
             <RouterLink to="/tasks" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Příklady</RouterLink>
             <RouterLink to="/skill-creator" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Dovednosti</RouterLink>
+            <RouterLink to="/analytics/skills" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Skill Analytics</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">Odhlásit se</button> 
           </template>
 
           <!-- Logged in user -->
           <template v-else>
-            <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+            <RouterLink to="/dashboard" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
+              <i class="fa-solid fa-chart-line mr-2"></i>Dashboard
+            </RouterLink>
+            <RouterLink to="/my-progress" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
+              <i class="fa-solid fa-list-check mr-2"></i>Môj pokrok
+            </RouterLink>
+            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
               {{ dictionary[langStore.language].profile }}
             </RouterLink>
-            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">
               {{ dictionary[langStore.language].logout }}
             </button>
             <div class="flex items-center gap-2">
