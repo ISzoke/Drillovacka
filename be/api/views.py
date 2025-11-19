@@ -18,7 +18,10 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password, check_password
 from django.http import JsonResponse
 from django.db import transaction
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step
+from django.db.models import Count, Sum, Avg, Max, Q, F
+from django.utils import timezone
+import math
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step, GradeLevel
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -285,6 +288,7 @@ def get_examples(request):
 def create_example_record(request):
     student = request.data.get('student_id')
     example = request.data.get('example_id')
+    practiced_skills = request.data.get('practiced_skills', [])
     
     if not student:
         return Response({"error": "Student ID is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -293,7 +297,8 @@ def create_example_record(request):
     
     init_data = {
         'student': student,
-        'example': example
+        'example': example,
+        'practiced_skills': practiced_skills
     }
 
     record_init_serializer = RecordInitSerializer(data=init_data)
@@ -505,6 +510,7 @@ def create_skill(request):
     try:
         name = request.data.get('name')
         parent_skill_id = request.data.get('parent_skill')
+        grade_level_ids = request.data.get('grade_levels', [])
 
         if not name:
             return Response({"error": "Skill name is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -528,12 +534,17 @@ def create_skill(request):
             # If a deleted skill exists with the same name, restore it
             existing_skill.deleted = False
             existing_skill.save()
+            
+            # Update grade levels
+            if grade_level_ids:
+                existing_skill.grade_levels.set(grade_level_ids)
 
             return JsonResponse({
                 "id": existing_skill.id,
                 "name": existing_skill.name,
                 "parent_skill": existing_skill.parent_skill.id if existing_skill.parent_skill else None,
-                "skill_type": existing_skill.skill_type,  
+                "skill_type": existing_skill.skill_type,
+                "grade_levels": list(existing_skill.grade_levels.values_list('id', flat=True)),
             }, status=status.HTTP_200_OK)
 
         # If no deleted skill exists, create a new skill
@@ -545,12 +556,17 @@ def create_skill(request):
                     skill_type=skill_type, 
                     height=height
                 )
+                
+                # Add grade levels
+                if grade_level_ids:
+                    skill.grade_levels.set(grade_level_ids)
 
             return JsonResponse({
                 "id": skill.id,
                 "name": skill.name,
                 "parent_skill": skill.parent_skill.id if skill.parent_skill else None,
-                "skill_type": skill.skill_type, 
+                "skill_type": skill.skill_type,
+                "grade_levels": list(skill.grade_levels.values_list('id', flat=True)),
             }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -929,3 +945,468 @@ def save_survey_answer(request):
         json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
     
     return Response(status=status.HTTP_200_OK)
+
+# Get all grade levels (1-9)
+@api_view(['GET'])
+def get_grade_levels(request):
+    try:
+        grade_levels = GradeLevel.objects.all().order_by('grade')
+        data = [{"id": gl.id, "grade": gl.grade} for gl in grade_levels]
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Update grade levels for a skill
+@api_view(['PATCH'])
+def update_skill_grade_levels(request, skill_id):
+    try:
+        skill = get_object_or_404(Skill, id=skill_id)
+        grade_level_ids = request.data.get('grade_levels', [])
+        
+        # Update the grade levels
+        skill.grade_levels.set(grade_level_ids)
+        
+        return JsonResponse({
+            "id": skill.id,
+            "name": skill.name,
+            "grade_levels": list(skill.grade_levels.values_list('id', flat=True))
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Get skills by grade level
+@api_view(['GET'])
+def get_skills_by_grade(request, grade_id):
+    try:
+        grade = get_object_or_404(GradeLevel, id=grade_id)
+        
+        # Get all skills assigned to this grade level
+        # Only get top-level skills (those with skill_type set)
+        skills = Skill.objects.filter(
+            grade_levels=grade,
+            deleted=False,
+            skill_type__isnull=False  # Only parent skills
+        ).distinct().order_by('name')
+        
+        skills_data = [
+            {
+                "id": skill.id,
+                "name": skill.name,
+                "skill_type": skill.skill_type
+            }
+            for skill in skills
+        ]
+        
+        return JsonResponse(skills_data, safe=False, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ================================
+# Analytics & Skill Tracking
+# ================================
+
+# Per-student stats aggregated by skill (no new tables; computed on demand)
+@api_view(['GET'])
+def get_student_skill_stats(request, student_id):
+    """
+    Returns analytics for skills that the student has practiced.
+    
+    Key change: Mastery is now calculated ONLY for the specific skill combinations
+    that the student selected during practice sessions (practiced_skills),
+    rather than separately for each parent skill in the hierarchy.
+    
+    For example, if a student practices "addition up to 10" (selecting both 
+    "addition" and "up to 10" skills), the mastery will be tracked for that
+    specific combination, not separately for "addition", "arithmetic", "up to 10", etc.
+    """
+    try:
+        # Optional: filter by subtree root skill
+        root_skill_id = request.GET.get('root_skill_id')
+
+        # Get all unique skill IDs that were explicitly selected for practice
+        # (from the practiced_skills ManyToMany relationship)
+        practiced_skill_ids = StudentExample.objects.filter(
+            student_id=student_id
+        ).values_list('practiced_skills__id', flat=True).distinct()
+
+        # Remove None values (in case some StudentExamples have no practiced_skills)
+        practiced_skill_ids = [sid for sid in practiced_skill_ids if sid is not None]
+
+        if not practiced_skill_ids:
+            # Fallback to old behavior if no practiced_skills are set
+            # (for backward compatibility with old data)
+            practiced_skill_ids = ExampleSkill.objects.filter(
+                example__studentexample__student_id=student_id
+            ).values_list('skill_id', flat=True).distinct()
+
+        results = []
+        for skill_id in practiced_skill_ids:
+            # Get all StudentExample records where this skill was in practiced_skills
+            records = StudentExample.objects.filter(
+                student_id=student_id,
+                practiced_skills__id=skill_id
+            ).distinct()
+            
+            if not records.exists():
+                continue
+            
+            skill = Skill.objects.get(id=skill_id)
+            examples_practiced = records.count()
+            solved_count = records.filter(solved=True).count()
+            skip_count = records.filter(skipped=True).count()
+            total_attempts = records.aggregate(Sum('attempts'))['attempts__sum'] or 0
+            avg_duration = records.aggregate(Avg('duration'))['duration__avg'] or 0
+            last_practiced = records.aggregate(Max('date'))['date__max']
+            
+            results.append({
+                'skill_id': skill_id,
+                'skill_name': skill.name,
+                'examples_practiced': examples_practiced,
+                'solved_count': solved_count,
+                'skip_count': skip_count,
+                'total_attempts': total_attempts,
+                'avg_duration': avg_duration,
+                'last_practiced': last_practiced,
+            })
+
+        # If filtering by a subtree, keep only skills under that subtree
+        if root_skill_id:
+            try:
+                root = Skill.objects.get(id=int(root_skill_id))
+            except Exception:
+                return Response({"error": "Invalid root_skill_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Collect all descendants (including root)
+            descendant_ids = set()
+            stack = [root]
+            while stack:
+                node = stack.pop()
+                if node.id not in descendant_ids:
+                    descendant_ids.add(node.id)
+                    stack.extend(list(node.subskills.filter(deleted=False)))
+
+            results = [r for r in results if r['skill_id'] in descendant_ids]
+
+        # Build response with derived metrics
+        now = timezone.now()
+        tau_seconds = int(request.GET.get('tau_seconds', '86400'))  # ~1 day default
+
+        data = []
+        for row in results:
+            practiced = row['examples_practiced'] or 0
+            skipped = row['skip_count'] or 0
+            denom = max(practiced - skipped, 1)
+            accuracy = (row['solved_count'] or 0) / denom
+            avg_attempts = (row['total_attempts'] or 0) / practiced if practiced else 0
+
+            # Bayesian mastery with Beta prior (2,2)
+            successes = row['solved_count'] or 0
+            failures = max(denom - successes, 0)
+            alpha = 2 + successes
+            beta = 2 + failures
+            mastery_mean = alpha / (alpha + beta)
+
+            # Wilson-like lower bound approximation for prioritization
+            n = successes + failures
+            p = successes / n if n > 0 else 0.0
+            z = 1.96
+            denom_w = 1 + z*z/n if n > 0 else 1
+            center = p + z*z/(2*n) if n > 0 else 0
+            margin = z*math.sqrt((p*(1-p) + z*z/(4*n))/n) if n > 0 else 0
+            wilson_lower = max(0.0, (center - margin)/denom_w) if n > 0 else 0.0
+
+            # Freshness factor (larger when not practiced recently)
+            last = row['last_practiced']
+            if last:
+                dt = (now - last).total_seconds()
+                freshness = 1 - math.exp(-dt / max(tau_seconds, 1))
+            else:
+                freshness = 1.0
+
+            # Next practice weight: focus on weak + stale skills
+            next_weight = (1 - wilson_lower) * freshness
+
+            data.append({
+                'skill_id': row['skill_id'],
+                'skill_name': row['skill_name'],
+                'examples_practiced': practiced,
+                'solved_count': row['solved_count'] or 0,
+                'skip_count': skipped,
+                'total_attempts': row['total_attempts'] or 0,
+                'avg_attempts_per_example': round(avg_attempts, 3),
+                'avg_duration_ms': row['avg_duration'] or 0,
+                'last_practiced': row['last_practiced'],
+                'accuracy': round(accuracy, 3),
+                'mastery_mean': round(mastery_mean, 3),
+                'wilson_lower': round(wilson_lower, 3),
+                'next_weight': round(next_weight, 3),
+                'observations': n,
+            })
+
+        # Sort by lowest accuracy first by default
+        order = request.GET.get('order', 'accuracy_asc')
+        if order == 'accuracy_desc':
+            data.sort(key=lambda x: x['accuracy'], reverse=True)
+        elif order == 'recent':
+            data.sort(key=lambda x: (x['last_practiced'] is None, x['last_practiced']), reverse=True)
+        else:
+            data.sort(key=lambda x: x['accuracy'])
+
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Get student stats grouped by skill COMBINATIONS (not individual skills)
+# This shows what the student actually practiced together (e.g., "Sčítání + Celé čísla + Do 100")
+@api_view(['GET'])
+def get_student_skill_combinations(request, student_id):
+    """
+    Returns analytics grouped by practiced skill combinations.
+    
+    Instead of showing individual skills separately, this groups records by
+    the exact combination of skills that were practiced together.
+    
+    Example: If student practiced "Sčítání + Celé čísla + Do 100" together,
+    it will show as one row, not three separate rows.
+    """
+    try:
+        from collections import defaultdict
+        
+        # Get all StudentExample records for this student
+        records = StudentExample.objects.filter(
+            student_id=student_id
+        ).prefetch_related('practiced_skills')
+        
+        if not records.exists():
+            return JsonResponse([], safe=False, status=status.HTTP_200_OK)
+        
+        # Group records by skill combination (tuple of skill IDs)
+        combinations = defaultdict(list)
+        
+        for record in records:
+            # Get sorted tuple of skill IDs (for consistent grouping)
+            skill_ids = tuple(sorted(record.practiced_skills.values_list('id', flat=True)))
+            
+            # Skip records with no practiced_skills (old data)
+            if not skill_ids:
+                continue
+                
+            combinations[skill_ids].append(record)
+        
+        # Calculate stats for each combination
+        now = timezone.now()
+        tau_seconds = int(request.GET.get('tau_seconds', '86400'))
+        
+        data = []
+        for skill_ids, combo_records in combinations.items():
+            # Get skill names
+            skills = Skill.objects.filter(id__in=skill_ids).values('id', 'name')
+            skill_map = {s['id']: s['name'] for s in skills}
+            skill_names = [skill_map[sid] for sid in skill_ids]
+            
+            # Calculate metrics
+            examples_practiced = len(combo_records)
+            solved_count = sum(1 for r in combo_records if r.solved)
+            skip_count = sum(1 for r in combo_records if r.skipped)
+            total_attempts = sum(r.attempts for r in combo_records)
+            avg_duration = sum(r.duration for r in combo_records) / len(combo_records) if combo_records else 0
+            last_practiced = max(r.date for r in combo_records)
+            
+            # Accuracy & mastery
+            denom = max(examples_practiced - skip_count, 1)
+            accuracy = solved_count / denom
+            avg_attempts = total_attempts / examples_practiced if examples_practiced else 0
+            
+            # Bayesian mastery
+            successes = solved_count
+            failures = max(denom - successes, 0)
+            alpha = 2 + successes
+            beta = 2 + failures
+            mastery_mean = alpha / (alpha + beta)
+            
+            # Wilson lower bound
+            n = successes + failures
+            p = successes / n if n > 0 else 0.0
+            z = 1.96
+            denom_w = 1 + z*z/n if n > 0 else 1
+            center = p + z*z/(2*n) if n > 0 else 0
+            margin = z*math.sqrt((p*(1-p) + z*z/(4*n))/n) if n > 0 else 0
+            wilson_lower = max(0.0, (center - margin)/denom_w) if n > 0 else 0.0
+            
+            # Freshness
+            dt = (now - last_practiced).total_seconds()
+            freshness = 1 - math.exp(-dt / max(tau_seconds, 1))
+            
+            # Next practice weight
+            next_weight = (1 - wilson_lower) * freshness
+            
+            data.append({
+                'skill_ids': list(skill_ids),
+                'skill_names': skill_names,
+                'combination_display': ' + '.join(skill_names),
+                'examples_practiced': examples_practiced,
+                'solved_count': solved_count,
+                'skip_count': skip_count,
+                'total_attempts': total_attempts,
+                'avg_attempts_per_example': round(avg_attempts, 3),
+                'avg_duration_ms': round(avg_duration, 3),
+                'last_practiced': last_practiced,
+                'accuracy': round(accuracy, 3),
+                'mastery_mean': round(mastery_mean, 3),
+                'wilson_lower': round(wilson_lower, 3),
+                'next_weight': round(next_weight, 3),
+                'observations': n,
+            })
+        
+        # Sort by next_weight (descending) - most important to practice first
+        data.sort(key=lambda x: x['next_weight'], reverse=True)
+        
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Global example quality stats; flags potentially problematic examples
+@api_view(['GET'])
+def get_group_example_stats(request):
+    try:
+        min_records = int(request.GET.get('min_records', '10'))
+        flag_threshold = float(request.GET.get('flag_threshold', '0.5'))  # accuracy below threshold => flag
+        limit = int(request.GET.get('limit', '100'))
+
+        qs = StudentExample.objects.values(
+            'example_id',
+            'example__example',
+            'example__input_type',
+        ).annotate(
+            records=Count('id'),
+            solved_count=Count('id', filter=Q(solved=True)),
+            skip_count=Count('id', filter=Q(skipped=True)),
+            total_attempts=Sum('attempts'),
+            avg_duration=Avg('duration'),
+            last_practiced=Max('date'),
+        )
+
+        data = []
+        for row in qs:
+            practiced = row['records'] or 0
+            skipped = row['skip_count'] or 0
+            denom = max(practiced - skipped, 1)
+            accuracy = (row['solved_count'] or 0) / denom
+
+            # Get skills for the example (names & ids)
+            skills = list(ExampleSkill.objects.filter(example_id=row['example_id'])
+                          .values('skill_id', 'skill__name'))
+
+            item = {
+                'example_id': row['example_id'],
+                'example': row['example__example'],
+                'input_type': row['example__input_type'],
+                'records': practiced,
+                'solved_count': row['solved_count'] or 0,
+                'skip_count': skipped,
+                'total_attempts': row['total_attempts'] or 0,
+                'avg_duration_ms': row['avg_duration'] or 0,
+                'last_practiced': row['last_practiced'],
+                'accuracy': round(accuracy, 3),
+                'skills': skills,
+                'flagged': practiced >= min_records and accuracy < flag_threshold,
+            }
+            data.append(item)
+
+        # Order: most problematic first (lowest accuracy with enough data), then by records desc
+        data.sort(key=lambda x: (not (x['records'] >= min_records), x['accuracy'], -x['records']))
+        data = data[:limit]
+
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Global skill stats across all students
+@api_view(['GET'])
+def get_group_skill_stats(request):
+    try:
+        qs = StudentExample.objects.values(
+            'example__exampleskill__skill_id',
+            'example__exampleskill__skill__name',
+        ).annotate(
+            records=Count('id'),
+            solved_count=Count('id', filter=Q(solved=True)),
+            skip_count=Count('id', filter=Q(skipped=True)),
+            total_attempts=Sum('attempts'),
+            avg_duration=Avg('duration'),
+            last_practiced=Max('date'),
+        )
+
+        data = []
+        for row in qs:
+            practiced = row['records'] or 0
+            skipped = row['skip_count'] or 0
+            denom = max(practiced - skipped, 1)
+            accuracy = (row['solved_count'] or 0) / denom
+            avg_attempts = (row['total_attempts'] or 0) / practiced if practiced else 0
+
+            data.append({
+                'skill_id': row['example__exampleskill__skill_id'],
+                'skill_name': row['example__exampleskill__skill__name'],
+                'records': practiced,
+                'solved_count': row['solved_count'] or 0,
+                'skip_count': skipped,
+                'total_attempts': row['total_attempts'] or 0,
+                'avg_attempts_per_example': round(avg_attempts, 3),
+                'avg_duration_ms': row['avg_duration'] or 0,
+                'last_practiced': row['last_practiced'],
+                'accuracy': round(accuracy, 3),
+            })
+
+        # Sort by lowest accuracy first
+        data.sort(key=lambda x: x['accuracy'])
+
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Get list of all students with their overall stats
+@api_view(['GET'])
+def get_all_students_stats(request):
+    try:
+        students = Student.objects.all().order_by('username')
+        data = []
+        
+        for student in students:
+            records = StudentExample.objects.filter(student=student)
+            total_examples = records.count()
+            solved = records.filter(solved=True).count()
+            skipped = records.filter(skipped=True).count()
+            total_attempts = records.aggregate(Sum('attempts'))['attempts__sum'] or 0
+            avg_duration = records.aggregate(Avg('duration'))['duration__avg'] or 0
+            last_practiced = records.aggregate(Max('date'))['date__max']
+            
+            denom = max(total_examples - skipped, 1)
+            accuracy = solved / denom if denom > 0 else 0
+            
+            data.append({
+                'student_id': student.id,
+                'username': student.username,
+                'total_examples': total_examples,
+                'solved_count': solved,
+                'skip_count': skipped,
+                'total_attempts': total_attempts,
+                'avg_duration_ms': round(avg_duration, 1),
+                'last_practiced': last_practiced,
+                'accuracy': round(accuracy, 3),
+            })
+        
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

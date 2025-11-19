@@ -92,6 +92,7 @@ def build_skill_tree(skill, visited=None, skill_ids=None, related_skills=None, w
         "id": skill.id,
         "name": skill.name,
         "examples": examples_count,
+        "grade_levels": list(skill.grade_levels.values_list('grade', flat=True)),
         "subskills": [
             build_skill_tree(child, visited, skill_ids.copy(), related_skills)
             for child in children if related_skills and child in related_skills

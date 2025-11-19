@@ -48,6 +48,16 @@ class Answer(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name='answers')
     answer = models.CharField(max_length=255)
 
+class GradeLevel(models.Model):
+    """Represents a grade level in elementary school (ZŠ 1-9)"""
+    grade = models.IntegerField(unique=True)
+    
+    class Meta:
+        ordering = ['grade']
+    
+    def __str__(self):
+        return f"{self.grade}. ročník"
+
 class Skill(models.Model):
     name = models.CharField(max_length=255)
     height = models.IntegerField(default=0) 
@@ -79,6 +89,12 @@ class Skill(models.Model):
         symmetrical=True,  
     )
     
+    grade_levels = models.ManyToManyField(
+        'GradeLevel',
+        blank=True,
+        related_name='skills'
+    )
+    
 class ExampleSkill(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE)
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
@@ -95,6 +111,15 @@ class StudentExample(models.Model):
     attempts = models.IntegerField(default=0) 
     solved = models.BooleanField(default=False)
     skipped = models.BooleanField(default=False)
+    
+    # Skills that were selected for practice in this session
+    # This allows tracking mastery for specific skill combinations (e.g., "addition" + "up to 10")
+    # rather than counting progress separately for each parent skill
+    practiced_skills = models.ManyToManyField(
+        'Skill',
+        blank=True,
+        related_name='student_examples'
+    )
 
     class Meta:
         constraints = [

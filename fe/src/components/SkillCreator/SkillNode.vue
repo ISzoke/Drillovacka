@@ -8,8 +8,8 @@
 -->
 
 <script setup>
-import { ref, nextTick } from 'vue';
-import { createSkill } from '@/api/apiClient'; 
+import { ref, nextTick, onMounted } from 'vue';
+import { createSkill, getGradeLevels, updateSkillGradeLevels } from '@/api/apiClient'; 
 import { useToastStore } from '@/stores/useToastStore';
 
 const props = defineProps({
@@ -29,6 +29,15 @@ const isAdding = ref(false);
 // Tracks if adding a child skill
 const isAddingChild = ref({});
 
+// Tracks if editing grade levels for a skill
+const isEditingGrades = ref({});
+
+// Available grade levels
+const gradeLevels = ref([]);
+
+// Selected grade levels for each skill
+const selectedGrades = ref({});
+
 const skills = ref(props.skills);
 
 // Refs to input elements for focusing
@@ -39,9 +48,67 @@ const toastStore = useToastStore();
 
 const emit = defineEmits(['deleteSkill']);
 
+onMounted(async () => {
+  // Fetch available grade levels
+  gradeLevels.value = await getGradeLevels();
+  
+  // Initialize selected grades for existing skills
+  initializeSkillGrades(skills.value);
+});
+
+// Recursively initialize grade levels for skills
+const initializeSkillGrades = (skillList) => {
+  skillList.forEach(skill => {
+    selectedGrades.value[skill.id] = skill.grade_levels || [];
+    if (skill.children && skill.children.length) {
+      initializeSkillGrades(skill.children);
+    }
+  });
+};
+
 // Toggle skill node exapanded/collapsed
 const toggleExpand = (id) => {
   expanded.value[id] = !expanded.value[id];
+};
+
+// Toggle grade editing mode
+const toggleGradeEdit = (skillId) => {
+  isEditingGrades.value[skillId] = !isEditingGrades.value[skillId];
+};
+
+// Toggle grade selection
+const toggleGrade = (skillId, gradeId) => {
+  if (!selectedGrades.value[skillId]) {
+    selectedGrades.value[skillId] = [];
+  }
+  
+  const index = selectedGrades.value[skillId].indexOf(gradeId);
+  if (index > -1) {
+    selectedGrades.value[skillId].splice(index, 1);
+  } else {
+    selectedGrades.value[skillId].push(gradeId);
+  }
+};
+
+// Save grade levels for a skill
+const saveGradeLevels = async (skillId) => {
+  try {
+    await updateSkillGradeLevels(skillId, selectedGrades.value[skillId] || []);
+    isEditingGrades.value[skillId] = false;
+    
+    toastStore.addToast({
+      message: 'Ročníky byly úspěšně aktualizovány',
+      type: 'success',
+      visible: true,
+    });
+  } catch (error) {
+    console.error('Error updating grade levels:', error);
+    toastStore.addToast({
+      message: 'Chyba při aktualizaci ročníků',
+      type: 'error',
+      visible: true,
+    });
+  }
 };
 
 // Start adding at sibling skill level
@@ -77,6 +144,7 @@ const addSkill = async (parentSkill, isChild = false) => {
     });
 
     newSkill.children = [];
+    selectedGrades.value[newSkill.id] = [];
 
     // Add to appropriate location
     if (isChild && parentSkill) {
@@ -124,29 +192,70 @@ const removeChildSkill = (name, id) => {
       <div class="flex items-center justify-start bg-gray-100 p-2 rounded-lg shadow-sm">
 
          <!-- Skill node -->
-        <div @click="toggleExpand(skill.id)" class="flex items-center gap-3 cursor-pointer hover:text-blue-500">
+        <div @click="toggleExpand(skill.id)" class="flex items-center gap-3 cursor-pointer hover:text-blue-500 flex-grow">
           <span v-if="skill.children && skill.children.length" class="text-sm">
             <i v-if="expanded[skill.id]" class="fas fa-chevron-down text-gray-600"></i>
             <i v-else class="fas fa-chevron-right text-gray-600"></i>
           </span>
           <span class="font-medium text-gray-800">{{ skill.name }}</span>
+          
+          <!-- Display grade levels -->
+          <span v-if="selectedGrades[skill.id] && selectedGrades[skill.id].length > 0" class="text-xs text-gray-600 ml-2">
+            ({{ gradeLevels.filter(g => selectedGrades[skill.id].includes(g.id)).map(g => g.grade + '.').join(', ') }})
+          </span>
         </div>
 
         
-        <div class="flex">
+        <div class="flex gap-1">
+
+          <!-- Edit grade levels -->
+          <button v-if="!isAddingChild[skill.id]"
+            @click.stop="toggleGradeEdit(skill.id)"
+            class="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500 text-white font-bold text-xs hover:bg-purple-600 shadow-md transition"
+            title="Upravit ročníky">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </button>
 
           <!-- Show child creator -->
           <button v-if="skill.children && skill.children.length === 0 && !isAddingChild[skill.id]"
             @click="startAddingChild(skill.id)"
-            class="flex items-center justify-center w-6 h-6 ml-2 rounded-full bg-blue-500 text-white font-bold text-sm hover:bg-blue-600 shadow-md transition">
+            class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white font-bold text-sm hover:bg-blue-600 shadow-md transition">
             <i class="fa-solid fa-plus"></i>
           </button>
 
           <!-- Delete skill -->
           <button v-if="skill.children && skill.children.length === 0 && !isAddingChild[skill.id]"
             @click="removeSkill(skill.name, skill.id)"
-            class="flex items-center justify-center w-6 h-6 ml-2 rounded-full bg-red-500 text-white font-bold text-sm hover:bg-red-600 shadow-md transition">
+            class="flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white font-bold text-sm hover:bg-red-600 shadow-md transition">
             <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Grade level editor -->
+      <div v-if="isEditingGrades[skill.id]" class="ml-6 mt-2 p-3 bg-white border border-gray-300 rounded-lg shadow">
+        <h4 class="text-sm font-semibold text-gray-700 mb-2">Vyberte ročníky:</h4>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <label v-for="grade in gradeLevels" :key="grade.id" class="flex items-center">
+            <input 
+              type="checkbox" 
+              :checked="selectedGrades[skill.id]?.includes(grade.id)"
+              @change="toggleGrade(skill.id, grade.id)"
+              class="mr-1"
+            />
+            <span class="text-sm">{{ grade.grade }}.</span>
+          </label>
+        </div>
+        <div class="flex gap-2">
+          <button 
+            @click="saveGradeLevels(skill.id)"
+            class="px-3 py-1 text-white bg-green-500 rounded-lg hover:bg-green-600 transition text-sm">
+            <i class="fa-solid fa-check mr-1"></i>Uložit
+          </button>
+          <button 
+            @click="isEditingGrades[skill.id] = false"
+            class="px-3 py-1 text-white bg-gray-500 rounded-lg hover:bg-gray-600 transition text-sm">
+            <i class="fa-solid fa-xmark mr-1"></i>Zrušit
           </button>
         </div>
       </div>

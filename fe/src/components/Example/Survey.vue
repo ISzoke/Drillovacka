@@ -46,55 +46,63 @@ const questions = ref([
   { 
     text: { 
       cs: "Jak rychle jsi našel cvičení, které jsi chtěl procvičit?", 
-      en: "How quickly did you find the exercise you wanted to practice?" 
+      en: "How quickly did you find the exercise you wanted to practice?",
+      sk: "Ako rýchlo si našiel cvičenie, ktoré si chcel precvičovať?"
     }, 
     type: "scale", 
     boundaries: { 
       cs: "Označ: 1 = velmi dlouho, 5 = hned jsem to našel", 
-      en: "Mark: 1 = took a long time, 5 = found it immediately" 
+      en: "Mark: 1 = took a long time, 5 = found it immediately",
+      sk: "Označ: 1 = veľmi dlho, 5 = hneď som to našiel"
     } 
   },
   { 
     text: { 
       cs: "Na jakém zařízení aplikaci používáš?", 
-      en: "On which device do you use the app?" 
+      en: "On which device do you use the app?",
+      sk: "Na akom zariadení aplikáciu používaš?"
     }, 
     type: "choice", 
-    a: { cs: "Telefon", en: "Phone" }, 
-    b: { cs: "Tablet", en: "Tablet" }, 
-    c: { cs: "Počítač", en: "Computer" } 
+    a: { cs: "Telefon", en: "Phone", sk: "Telefón" }, 
+    b: { cs: "Tablet", en: "Tablet", sk: "Tablet" }, 
+    c: { cs: "Počítač", en: "Computer", sk: "Počítač" } 
   },
   { 
     text: { 
       cs: "Bylo něco, co tě při počítání rušilo nebo ti vadilo?", 
-      en: "Was there anything that distracted or bothered you while solving problems?" 
+      en: "Was there anything that distracted or bothered you while solving problems?",
+      sk: "Bolo niečo, čo ťa pri počítaní rušilo alebo ti vadilo?"
     }, 
     type: "voice" 
   },
   { 
     text: { 
       cs: "Vyhovovalo ti více zadávat výsledky hlasem, nebo klávesnicí?", 
-      en: "Did you prefer entering results by voice or keyboard?" 
+      en: "Did you prefer entering results by voice or keyboard?",
+      sk: "Vyhovovalo ti viac zadávať výsledky hlasom alebo klávesnicou?"
     }, 
     type: "choice", 
-    a: { cs: "Klávesnicí", en: "Keyboard" }, 
-    b: { cs: "Hlasem", en: "Voice" } 
+    a: { cs: "Klávesnicí", en: "Keyboard", sk: "Klávesnicou" }, 
+    b: { cs: "Hlasem", en: "Voice", sk: "Hlasom" } 
   },
   { 
     text: { 
       cs: "Stalo se ti, že aplikace řekla, že máš chybu, i když jsi měl/a správný výsledek? Pokud ano, jak často?", 
-      en: "Did the app ever say you were wrong even though you gave the correct answer? If so, how often?" 
+      en: "Did the app ever say you were wrong even though you gave the correct answer? If so, how often?",
+      sk: "Stalo sa ti, že aplikácia povedala, že máš chybu, aj keď si mal/a správny výsledok? Ak áno, ako často?"
     }, 
     type: "scale", 
     boundaries: { 
       cs: "Označ: 1 = nikdy, 5 = velmi často", 
-      en: "Mark: 1 = never, 5 = very often" 
+      en: "Mark: 1 = never, 5 = very often",
+      sk: "Označ: 1 = nikdy, 5 = veľmi často"
     } 
   },
   { 
     text: { 
       cs: "Kdybys mohl/a něco v aplikaci změnit, co by to bylo?", 
-      en: "If you could change anything in the app, what would it be?" 
+      en: "If you could change anything in the app, what would it be?",
+      sk: "Keby si mohol/mohla niečo v aplikácii zmeniť, čo by to bylo?"
     }, 
     type: "voice" 
   },
