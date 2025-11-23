@@ -10,24 +10,34 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { getSessionId } from '@/utils/sessionManager';
-import { updateSessionLanguage } from '@/api/apiClient';
-import { useAuthStore } from './useAuthStore';
+import { updateSessionLanguage, updateStudentLanguage } from '@/api/apiClient';
 
 export const useLanguageStore = defineStore('language', () => {
   const language = ref(localStorage.getItem('lang') || 'sk');
 
-  watch(language, async (val) => {
-    localStorage.setItem('lang', val);
+  watch(language, async (newVal, oldVal) => {
+    localStorage.setItem('lang', newVal);
     
-    // Update session language for anonymous users
-    const authStore = useAuthStore();
-    if (!authStore.isAuthenticated) {
-      try {
+    // Don't make API call if value hasn't actually changed
+    if (newVal === oldVal) {
+      return;
+    }
+    
+    try {
+      // Get auth info from localStorage to avoid circular dependency
+      const studentId = JSON.parse(localStorage.getItem('id') || 'null');
+      const isAuthenticated = localStorage.getItem('role') !== null;
+      
+      if (isAuthenticated && studentId) {
+        // Update language for authenticated student
+        await updateStudentLanguage(studentId, newVal);
+      } else {
+        // Update language for anonymous session
         const sessionId = getSessionId();
-        await updateSessionLanguage(sessionId, val);
-      } catch (error) {
-        console.error('Failed to update session language:', error);
+        await updateSessionLanguage(sessionId, newVal);
       }
+    } catch (error) {
+      console.error('Failed to update language:', error);
     }
   });
 

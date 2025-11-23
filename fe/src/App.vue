@@ -27,8 +27,10 @@ const router = useRouter();
 
 // Initialize anonymous session on app load
 const initializeSession = async () => {
-  // Only for non-authenticated users
-  if (!authStore.isAuthenticated) {
+  // Only for non-authenticated users - check both store and localStorage
+  const hasAuth = authStore.isAuthenticated || localStorage.getItem('role') !== null;
+  
+  if (!hasAuth) {
     try {
       const sessionId = getSessionId();
       const sessionData = await initSession(sessionId);

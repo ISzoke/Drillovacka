@@ -101,8 +101,15 @@ class ExampleSkill(models.Model):
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
 
 class Student(models.Model):
-    username = models.CharField(max_length=255,unique=True)
+    LANGUAGE_CHOICES = [
+        ('cs', 'Czech'),
+        ('sk', 'Slovak'),
+        ('en', 'English'),
+    ]
+    
+    username = models.CharField(max_length=255, unique=True)
     passphrase = models.CharField(max_length=255)
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='sk')
 
 class AnonymousSession(models.Model):
     LANGUAGE_CHOICES = [

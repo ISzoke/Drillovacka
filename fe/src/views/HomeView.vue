@@ -22,9 +22,6 @@ const langStore = useLanguageStore();
 const recorderStore = useRecorderStore();
 
 onMounted(() => {
-  const lang = route.meta.lang;
-  langStore.setLanguage(lang);
-  
   // Set ASR language based on the selected language
   if(langStore.language === 'en') {
     recorderStore.changeASRLanguage('en-US');

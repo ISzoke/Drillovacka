@@ -640,4 +640,22 @@ export const updateSessionLanguage = async (sessionId, language) => {
   }
 };
 
+/**
+ * Update language preference for authenticated student
+ * @param {number} studentId - Student ID
+ * @param {string} language - Language code (cs/sk/en)
+ * @returns {Promise<Object>} Updated student data
+ */
+export const updateStudentLanguage = async (studentId, language) => {
+  try {
+    const response = await apiClient.post('student/update-language/', {
+      student_id: studentId,
+      language: language
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error updating language.';
+  }
+};
+
 export default apiClient;

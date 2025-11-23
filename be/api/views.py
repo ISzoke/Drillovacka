@@ -851,7 +851,12 @@ def login_student(request):
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_400_BAD_REQUEST)
 
     if check_password(passphrase, student.passphrase):
-        return Response({'message': 'Login successful!','id': student.id, 'role': 'student'}, status=status.HTTP_200_OK)
+        return Response({
+            'message': 'Login successful!',
+            'id': student.id,
+            'role': 'student',
+            'language': student.language
+        }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
     
@@ -930,6 +935,34 @@ def update_session_language(request):
         }, status=status.HTTP_200_OK)
     except AnonymousSession.DoesNotExist:
         return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+# Update language preference for authenticated student
+@api_view(['POST'])
+def update_student_language(request):
+    student_id = request.data.get('student_id')
+    language = request.data.get('language')
+    
+    print(f"[DEBUG] update_student_language called with student_id={student_id}, language={language}")
+    
+    if not student_id or not language:
+        return Response({'error': 'Missing student_id or language'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if language not in ['cs', 'sk', 'en']:
+        return Response({'error': 'Invalid language code'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        student = Student.objects.get(id=student_id)
+        print(f"[DEBUG] Found student: {student.username}, current language: {student.language}")
+        student.language = language
+        student.save()
+        print(f"[DEBUG] Updated student {student.username} language to: {student.language}")
+        return Response({
+            'message': 'Language updated successfully',
+            'language': student.language
+        }, status=status.HTTP_200_OK)
+    except Student.DoesNotExist:
+        print(f"[DEBUG] Student with id={student_id} not found")
+        return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
 
 # Check if the keyboard entered answer is correct
 @api_view(['POST'])
