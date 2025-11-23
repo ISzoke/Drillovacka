@@ -21,14 +21,39 @@ from django.db import transaction
 from django.db.models import Count, Sum, Avg, Max, Q, F
 from django.utils import timezone
 import math
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step, GradeLevel
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step, GradeLevel, AnonymousSession
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
 import json
 import random
 from datetime import datetime
+import uuid
 import os
+
+# Helper function to get student or anonymous session from request
+def get_user_identity(request):
+    """
+    Returns (student_obj, anonymous_session_obj) tuple.
+    One will be None, the other will have a value.
+    """
+    student_id = request.data.get('student_id')
+    session_id = request.data.get('session_id')
+    
+    if student_id:
+        try:
+            student = Student.objects.get(id=student_id)
+            return (student, None)
+        except Student.DoesNotExist:
+            return (None, None)
+    elif session_id:
+        try:
+            session = AnonymousSession.objects.get(session_id=session_id)
+            return (None, session)
+        except AnonymousSession.DoesNotExist:
+            return (None, None)
+    
+    return (None, None)
 
 # Add all skill_ids to the related_skills field of each skill
 def create_skill_relations(skill_ids):
@@ -286,18 +311,19 @@ def get_examples(request):
 # Create a new record that user practiced the example
 @api_view(['POST'])
 def create_example_record(request):
-    student = request.data.get('student_id')
-    example = request.data.get('example_id')
+    student, anonymous_session = get_user_identity(request)
+    example_id = request.data.get('example_id')
     practiced_skills = request.data.get('practiced_skills', [])
     
-    if not student:
-        return Response({"error": "Student ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-    if not example:
+    if not student and not anonymous_session:
+        return Response({"error": "Student ID or Session ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not example_id:
         return Response({"error": "Example ID is required"}, status=status.HTTP_400_BAD_REQUEST)
     
     init_data = {
-        'student': student,
-        'example': example,
+        'student': student.id if student else None,
+        'anonymous_session': anonymous_session.id if anonymous_session else None,
+        'example': example_id,
         'practiced_skills': practiced_skills
     }
 
@@ -317,17 +343,21 @@ def create_example_record(request):
 @api_view(['POST'])
 def update_example_record(request):
     # Data to identify the record
-    student = request.data.get('student_id')
-    example = request.data.get('example_id')
+    student, anonymous_session = get_user_identity(request)
+    example_id = request.data.get('example_id')
     date = request.data.get('date')
 
     # Duration how long it took user to enter the answer
     duration = request.data.get('time')
   
-    if not student or not example or not duration:
+    if (not student and not anonymous_session) or not example_id or not duration:
         return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
     
-    student_example = get_object_or_404(StudentExample, student_id=student, example_id=example, date=date)
+    # Find record by student or anonymous_session
+    if student:
+        student_example = get_object_or_404(StudentExample, student=student, example_id=example_id, date=date)
+    else:
+        student_example = get_object_or_404(StudentExample, anonymous_session=anonymous_session, example_id=example_id, date=date)
     
     try:
         with transaction.atomic():
@@ -349,14 +379,17 @@ def update_example_record(request):
 @api_view(['POST'])
 def delete_example_record(request):
     # Data to identify the record
-    student = request.data.get('student_id')
-    example = request.data.get('example_id')
+    student, anonymous_session = get_user_identity(request)
+    example_id = request.data.get('example_id')
     date = request.data.get('date')
 
-    if not student or not example or not date:
+    if (not student and not anonymous_session) or not example_id or not date:
         return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
     
-    student_example = get_object_or_404(StudentExample, student_id=student, example_id=example, date=date)
+    if student:
+        student_example = get_object_or_404(StudentExample, student=student, example_id=example_id, date=date)
+    else:
+        student_example = get_object_or_404(StudentExample, anonymous_session=anonymous_session, example_id=example_id, date=date)
 
     try:
         with transaction.atomic():
@@ -371,14 +404,17 @@ def delete_example_record(request):
 @api_view(['POST'])
 def skip_example(request):
     # Data to identify the record
-    student = request.data.get('student_id')
-    example = request.data.get('example_id')
+    student, anonymous_session = get_user_identity(request)
+    example_id = request.data.get('example_id')
     date = request.data.get('date')
 
-    if not student or not example or not date:
+    if (not student and not anonymous_session) or not example_id or not date:
         return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
     
-    student_example = get_object_or_404(StudentExample, student_id=student, example_id=example, date=date)
+    if student:
+        student_example = get_object_or_404(StudentExample, student=student, example_id=example_id, date=date)
+    else:
+        student_example = get_object_or_404(StudentExample, anonymous_session=anonymous_session, example_id=example_id, date=date)
 
     try:
         with transaction.atomic():
@@ -838,11 +874,69 @@ def login_admin(request):
     else:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
 
+# Initialize or get anonymous session
+@api_view(['POST'])
+def init_session(request):
+    session_id = request.data.get('session_id')
+    
+    # If no session_id provided, generate new one
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session = AnonymousSession.objects.create(session_id=session_id)
+        return Response({
+            'session_id': session_id,
+            'language': session.language,
+            'created': True
+        }, status=status.HTTP_201_CREATED)
+    
+    # Try to get existing session
+    try:
+        session = AnonymousSession.objects.get(session_id=session_id)
+        # Update last_active timestamp
+        session.save()
+        return Response({
+            'session_id': session.session_id,
+            'language': session.language,
+            'created': False
+        }, status=status.HTTP_200_OK)
+    except AnonymousSession.DoesNotExist:
+        # Session doesn't exist, create new one
+        session = AnonymousSession.objects.create(session_id=session_id)
+        return Response({
+            'session_id': session.session_id,
+            'language': session.language,
+            'created': True
+        }, status=status.HTTP_201_CREATED)
+
+# Update language preference for anonymous session
+@api_view(['POST'])
+def update_session_language(request):
+    session_id = request.data.get('session_id')
+    language = request.data.get('language')
+    
+    if not session_id or not language:
+        return Response({'error': 'Missing session_id or language'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if language not in ['cs', 'sk', 'en']:
+        return Response({'error': 'Invalid language code'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        session = AnonymousSession.objects.get(session_id=session_id)
+        session.language = language
+        session.save()
+        return Response({
+            'message': 'Language updated successfully',
+            'language': session.language
+        }, status=status.HTTP_200_OK)
+    except AnonymousSession.DoesNotExist:
+        return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
+
 # Check if the keyboard entered answer is correct
 @api_view(['POST'])
 def check_answer(request):
 
     student_id = request.data.get('student_id')
+    session_id = request.data.get('session_id')
     example_id = request.data.get('example_id')
 
     # Data for record creation
@@ -852,21 +946,22 @@ def check_answer(request):
     student_answer = request.data.get('student_answer')
     answer_type = request.data.get('answer_type')
 
-    if not student_id or not example_id or not date or not duration or not answer_type:
+    if (not student_id and not session_id) or not example_id or not date or not duration or not answer_type:
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
     
     # Choose the answer checker based on the answer type
+    # Note: verifyAnswer internally calls updateRecord with student_id/session_id
     match answer_type:
         case "inline" | "word":
-            isCorrect, continue_with_next = InlineAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer)
+            isCorrect, continue_with_next = InlineAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=session_id)
             pass
 
         case "fraction":
-            isCorrect, continue_with_next = FractionAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer)
+            isCorrect, continue_with_next = FractionAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=session_id)
             pass
 
         case "variable":
-            isCorrect, continue_with_next = VariableAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer)
+            isCorrect, continue_with_next = VariableAnswerChecker.verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=session_id)
             pass
 
         case _:

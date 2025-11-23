@@ -32,9 +32,14 @@ class AnswerChecker:
             return bool(re.match(r'^[0-9,.-]+$', answer))
 
     @staticmethod
-    def updateRecord(student_id, example_id, date, duration, correct):
+    def updateRecord(student_id, example_id, date, duration, correct, session_id=None):
         # Updates the students attempt record for a example and returns if new example can be displayed
-        record = get_object_or_404(StudentExample, student_id=student_id, example_id=example_id, date=date)
+        if student_id:
+            record = get_object_or_404(StudentExample, student__id=student_id, example_id=example_id, date=date)
+        elif session_id:
+            record = get_object_or_404(StudentExample, anonymous_session__session_id=session_id, example_id=example_id, date=date)
+        else:
+            raise ValueError("Either student_id or session_id must be provided")
 
         try:
             with transaction.atomic():
@@ -86,13 +91,13 @@ class InlineAnswerChecker(AnswerChecker):
     pass
 
     @staticmethod
-    def verifyAnswer(student_id, example_id, date, duration, student_answer):   
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):   
 
         correct_answer = Answer.objects.get(example_id=example_id).answer
         
         # Validate both answers
         if not InlineAnswerChecker.is_valid_answer(correct_answer) or not InlineAnswerChecker.is_valid_answer(student_answer) or not student_answer:
-            continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next)
         
         # Normalize decimal format
@@ -102,11 +107,11 @@ class InlineAnswerChecker(AnswerChecker):
         # Compare and update record
         if AnswerChecker.compareAnswers(student_answer, correct_answer):
             # Correct answer
-            continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+            continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
             return (True, continue_with_next)
         else:
             # Incorrect answer
-            continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next)
 
 # Checks fraction-based answers
@@ -114,7 +119,7 @@ class FractionAnswerChecker(AnswerChecker):
     pass
 
     @staticmethod
-    def verifyAnswer(student_id, example_id, date, duration, student_answer):   
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):   
 
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
@@ -132,7 +137,7 @@ class FractionAnswerChecker(AnswerChecker):
             student_numerator = float(student_answer[0].replace(',', '.'))
             student_denominator = float(student_answer[1].replace(',', '.'))
         else:
-            continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next)
         
         student_answer = student_numerator / student_denominator
@@ -141,11 +146,11 @@ class FractionAnswerChecker(AnswerChecker):
         # Compare and update record
         if AnswerChecker.compareAnswers(correct_answer, student_answer):
             # Correct answer
-            continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+            continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
             return (True, continue_with_next)
         else:
             # Incorrect answer
-            continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next)
 
 # Checks variable-based answers
@@ -153,7 +158,7 @@ class VariableAnswerChecker(AnswerChecker):
     pass
 
     @staticmethod
-    def verifyAnswer(student_id, example_id, date, duration, student_answer):   
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):   
 
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
@@ -173,7 +178,7 @@ class VariableAnswerChecker(AnswerChecker):
         for value in student_answer:
 
             if not value or not VariableAnswerChecker.is_valid_answer(value):
-                continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+                continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
                 return (False, continue_with_next)
 
             student_values.append(float(value.replace(',', '.')))
@@ -183,11 +188,11 @@ class VariableAnswerChecker(AnswerChecker):
 
             if not AnswerChecker.compareAnswers(correct_values[i], student_values[i]):
                 # One of the values does not match - incorrect answer
-                continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+                continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
                 return (False, continue_with_next)
 
         # All values match - correct answer
-        continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+        continue_with_next = FractionAnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
         return (True, continue_with_next)
 
 # Checks spoken inline numeric answers            
@@ -195,7 +200,7 @@ class InlineSpeechAnswerChecker(AnswerChecker):
     pass
 
     @staticmethod
-    def verifyAnswer(student_id, example_id, date, duration, student_answer):   
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):   
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
         try:
@@ -223,7 +228,7 @@ class InlineSpeechAnswerChecker(AnswerChecker):
         if not is_correct and extracted_numbers:
             correct_number = extracted_numbers[-1] 
 
-        continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct)
+        continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct, session_id=session_id)
 
         return (is_correct, continue_with_next, correct_number)
 
@@ -231,7 +236,7 @@ class InlineSpeechAnswerChecker(AnswerChecker):
 class FractionSpeechAnswerChecker(AnswerChecker):
     
     @staticmethod
-    def verifyAnswer(student_id, example_id, date, duration, student_answer):   
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):   
         correct_answer = Answer.objects.get(example_id=example_id).answer
         print(student_answer)
         match = re.match(r"\\frac\{(\d+)\}\{(\d+)\}", correct_answer)
@@ -263,17 +268,17 @@ class FractionSpeechAnswerChecker(AnswerChecker):
             if (AnswerChecker.compareAnswers(correct_numerator, student_numerator) and 
                 AnswerChecker.compareAnswers(correct_denominator, student_denominator)):
                 # Correct answer
-                continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+                continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
                 return (True, continue_with_next, {"numerator": student_numerator, "denominator": student_denominator})
         # Incorrect answer
-        continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+        continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
         return (False, continue_with_next, {"numerator": student_fractions[-1][0], "denominator": student_fractions[-1][1]})
 
 # Checks spoken variable-based answers
 class VariableSpeechAnswerChecker(AnswerChecker):
     
     @staticmethod   
-    def verifyAnswer(student_id, example_id, date, duration, student_answer):
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):
 
         correct_answer = Answer.objects.get(example_id=example_id).answer
         correct_variables = correct_answer.split(';')
@@ -301,18 +306,18 @@ class VariableSpeechAnswerChecker(AnswerChecker):
         # Compare sorted lists of values
         if sorted(correct_values) == sorted(student_values): 
             # All values match - correct answer
-            continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+            continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
             return (True, continue_with_next, student_values)
         else:
             # One of the values does not match - incorrect answer
-            continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            continue_with_next = VariableSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next, student_values)
 
 # Checks spoken answer using LLM (Gemini)
 class LLMAnswerChecker(AnswerChecker):
     
     @staticmethod
-    def verifyAnswer(student_id, example_id, date, duration, student_answer, input_type):
+    def verifyAnswer(student_id, example_id, date, duration, student_answer, input_type, session_id=None):
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
         # Choose prompt based on the input type
@@ -335,9 +340,9 @@ class LLMAnswerChecker(AnswerChecker):
             
         if(is_correct):
             # Correct answer
-            continue_with_next = LLMAnswerChecker.updateRecord(student_id, example_id, date, duration, True)
+            continue_with_next = LLMAnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
             return (True, continue_with_next, "")
         else:
             # Incorrect answer
-            continue_with_next = LLMAnswerChecker.updateRecord(student_id, example_id, date, duration, False)
+            continue_with_next = LLMAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next, "")

@@ -57,7 +57,7 @@ const recorderStore = useRecorderStore();
 const langStore = useLanguageStore();
 
 // Record that user practiced example data
-const student_id = authStore.id || 1;
+const student_id = authStore.id || 0;
 const record_date = ref('');
 
 
