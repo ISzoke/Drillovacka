@@ -92,7 +92,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     except Exception:
                         pass  # ak ešte nebežal
 
-                    # Vytvor nový recognizer s novým jazykom
+                    # Vytvor nový recognizer s novým jazykom (automatically starts via create_speech_recognizer)
                     self.speech_recognizer, self.stream = self.create_speech_recognizer()
 
             except json.JSONDecodeError:
@@ -100,8 +100,10 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         # Audio data was received via websocket
         elif bytes_data:
+            #print(f"[DEBUG] Received {len(bytes_data)} bytes of audio data")
             # Send raw PCM data directly to Azure
             self.stream.write(bytes_data)
+            #print(f"[DEBUG] Written {len(bytes_data)} bytes to Azure stream")
             
             # Accumulate audio data to dump
             self.speech_data.extend(bytes_data)
@@ -125,178 +127,263 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         )
 
         def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
-            if evt.result.text and self.speech_data:
-                
-                student_id = self.metadata.get('student_id', 'unknown')
-                example_id = self.metadata.get('example_id', 'unknown')
-
-                # Sent audio will be dumped in WAV
-                if DUMP_AUDIO:  
-                   
-                    wav_data = self.convert_pcm_to_wav(self.speech_data)
-                    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
-                    audio_filename = f"{student_id}_{example_id}_{timestamp}.wav"
-                    json_filename = f"{student_id}_{example_id}_{timestamp}.json"
-
-                    audio_filepath = os.path.join(AUDIO_DIR, audio_filename)
-                    json_filepath = os.path.join(AUDIO_DIR, json_filename)
-
-                    with open(audio_filepath, "wb") as f:
-                        f.write(wav_data)
-        
-                from .models import Example, Answer
-
-                # Get example text and correct answer
+            print(f"[DEBUG] recognized_cb fired: result={evt.result.text}, reason={evt.result.reason}")
+            
+            # Log all possible outcomes
+            if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
+                print(f"[DEBUG] SUCCESS: Azure recognized: '{evt.result.text}'")
+            elif evt.result.reason == speechsdk.ResultReason.NoMatch:
+                print(f"[DEBUG] NO_MATCH: Azure did not understand anything")
+                print(f"[DEBUG] NoMatch details: {evt.result.no_match_details if hasattr(evt.result, 'no_match_details') else 'N/A'}")
+                # Send fail response to frontend
+                response_data = {
+                    "isCorrect": False,
+                    "continue_with_next": False,
+                    "student_answer": "Azure: No match - could not understand audio"
+                }
                 try:
-                    example = Example.objects.get(id=example_id)
-                    answer = Answer.objects.filter(example=example).first() 
-                    correct_answer = answer.answer if answer else "No correct answer found"
-                except Example.DoesNotExist:
-                    example_text = "Example not found"
-                    correct_answer = "No correct answer found"
-                else:
-                    example_text = example.example
-
-                # Reset accumulated audio data
-                self.speech_data = bytearray()
-                
-                from .utils import calculate_duration
-                from .answerChecker import InlineSpeechAnswerChecker, FractionSpeechAnswerChecker, VariableSpeechAnswerChecker, LLMAnswerChecker
-
-                # Get data for current example
-                input_type = self.metadata.get('input_type')
-                record_date = self.metadata.get('record_date')
-                duration = calculate_duration(record_date)
-                student_answer = evt.result.text
-
-                # Words to skip example or terminate practice
-                skip_wordsCS = ["přeskočit", "další", "přeskoč", "dál"]
-                skip_wordsSK = ["preskočiť", "ďalej", "ďalší", "preskoč"]
-                skip_wordsEN = ["skip", "next", "continue"]
-
-                finish_wordsCS = ["konec", "ukončit", "stačí", "hotovo", "skončit", "dost"]
-                finish_wordsSK = ["koniec", "ukončiť", "stačí", "hotovo", "skončiť", "dost"]
-                finish_wordsEN = ["finish", "end", "stop", "done"]
-
-                if self.language == "cs-CZ":
-                    skip_words = skip_wordsCS
-                    finish_words = finish_wordsCS
-                elif self.language == "sk-SK":
-                    skip_words = skip_wordsSK
-                    finish_words = finish_wordsSK
-                else:
-                    skip_words = skip_wordsEN
-                    finish_words = finish_wordsEN
-
-
-                # Transcript containts 'skip' words - update record and skip example
-                if any(word in student_answer.lower() for word in skip_words):
-                    factory = RequestFactory()
-                    request = factory.post('skip-example/', {
-                        'student_id': student_id,
-                        'example_id': example_id,
-                        'date': record_date
-                    })
-                    skip_example(request)
-                    response_data = {'skipped': True}
-                    evaluation_data = {
-                        "student_id": student_id,
-                        "example_id": example_id,
-                        "transcription": evt.result.text,
-                        "example_text": example_text,
-                        "correct_answer": correct_answer,
-                        "evaluation": "skipped"
-                    }
-
-                # Transcript containts 'terminate' words - delete record and terminate practice
-                elif any(word in student_answer.lower() for word in finish_words):
-                    factory = RequestFactory()
-                    request = factory.post('delete-record/', {
-                        'student_id': student_id,
-                        'example_id': example_id,
-                        'date': record_date
-                    })
-                    delete_example_record(request)
-                    response_data = {'finished': True}
-                    evaluation_data = {
-                        "student_id": student_id,
-                        "example_id": example_id,
-                        "transcription": evt.result.text,
-                        "example_text": example_text,
-                        "correct_answer": correct_answer,
-                        "evaluation": "terminated"
-                    }
-
-                # Transcript does not contain 'skip' or 'terminate' words - evaluate answer 
-                else:
-                    # Basic answer formats evaluated by script
-                    if input_type == 'INLINE' or input_type == 'WORD':
-                        isCorrect, continue_with_next, student_answer = InlineSpeechAnswerChecker.verifyAnswer(
-                            student_id, example_id, record_date, duration, student_answer
-                        )
-                    # Fraction answer evaluated by LLM
-                    elif input_type == 'FRAC':
-                        
-                        try:
-                            isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
-                                student_id, example_id, record_date, duration, student_answer, 'fraction'
-                            )
-
-                        # LLM rate limit reached - use FractionSpeechAnswerChecker
-                        except GeminiRateLimitError:
-                            print("FRAC gemini limit reached - will use FractionSpeechAnswerChecker")
-                            isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
-                                student_id, example_id, record_date, duration, student_answer
-                            )                               
-
-                    # Variable answer evaluated by LLM  
-                    elif input_type == 'VAR':
-
-                        try:
-                            isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
-                                student_id, example_id, record_date, duration, student_answer, 'variable'
-                            )
-
-                        # LLM rate limit reached - use VariableSpeechAnswerChecker
-                        except GeminiRateLimitError:
-                            print("VAR gemini limit reached - will use VariableSpeechAnswerChecker")
-                            isCorrect, continue_with_next, student_answer = VariableSpeechAnswerChecker.verifyAnswer(
-                            student_id, example_id, record_date, duration, student_answer
-                        )
+                    asyncio.run_coroutine_threadsafe(
+                        self.send(json.dumps(response_data)),
+                        self.loop
+                    )
+                except Exception as e:
+                    print(f"[DEBUG] Error sending NO_MATCH response: {e}")
+                return  # Don't process empty result
+            elif evt.result.reason == speechsdk.ResultReason.Canceled:
+                print(f"[DEBUG] CANCELED: Speech recognition was canceled")
+                if hasattr(evt.result, 'cancellation_details') and evt.result.cancellation_details:
+                    print(f"[DEBUG] Cancellation reason: {evt.result.cancellation_details.reason}")
+                    print(f"[DEBUG] Error details: {evt.result.cancellation_details.error_details}")
+                # Send fail response to frontend
+                response_data = {
+                    "isCorrect": False,
+                    "continue_with_next": False,
+                    "student_answer": "Azure: Canceled - error during recognition"
+                }
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        self.send(json.dumps(response_data)),
+                        self.loop
+                    )
+                except Exception as e:
+                    print(f"[DEBUG] Error sending CANCELED response: {e}")
+                return
+            
+            #print(f"[DEBUG] evt.result.text={bool(evt.result.text)}, self.speech_data size={len(self.speech_data)}")
+            if evt.result.text and self.speech_data:
+                try:
+                    #print(f"[DEBUG] Starting evaluation for text='{evt.result.text}'")
                     
-                    # Return evaluation result back to client
-                    response_data = {
-                        "isCorrect": isCorrect,
-                        "continue_with_next": continue_with_next,
-                        "student_answer": student_answer
-                    }
+                    student_id = self.metadata.get('student_id', 'unknown')
+                    session_id = self.metadata.get('session_id', None)
+                    example_id = self.metadata.get('example_id', 'unknown')
+                    #print(f"[DEBUG] student_id={student_id}, session_id={session_id}, example_id={example_id}")
 
-                    # Advanced evaluation data to be dumped in JSON
-                    evaluation_data = {
-                        "student_id": student_id,
-                        "example_id": example_id,
-                        "transcription": evt.result.text,
-                        "example_text": example_text,
-                        "correct_answer": correct_answer,
-                        "evaluation": isCorrect
-                    }
+                    # Sent audio will be dumped in WAV
+                    if DUMP_AUDIO:  
+                        wav_data = self.convert_pcm_to_wav(self.speech_data)
+                        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-                # Save evaluation data to JSON file
-                if DUMP_AUDIO:
-                    with open(json_filepath, "w", encoding="utf-8") as json_file:
-                        json.dump(evaluation_data, json_file, indent=4, ensure_ascii=False)
+                        audio_filename = f"{student_id}_{example_id}_{timestamp}.wav"
+                        json_filename = f"{student_id}_{example_id}_{timestamp}.json"
 
-                    print(f"Evaluation saved: {json_filepath}")
+                        audio_filepath = os.path.join(AUDIO_DIR, audio_filename)
+                        json_filepath = os.path.join(AUDIO_DIR, json_filename)
 
-                asyncio.run_coroutine_threadsafe(
-                    self.send(json.dumps(response_data)),
-                    self.loop
-                )
+                        with open(audio_filepath, "wb") as f:
+                            f.write(wav_data)
+        
+                    from .models import Example, Answer
+
+                    # Get example text and correct answer
+                    try:
+                        example = Example.objects.get(id=example_id)
+                        answer = Answer.objects.filter(example=example).first() 
+                        correct_answer = answer.answer if answer else "No correct answer found"
+                    except Example.DoesNotExist:
+                        example_text = "Example not found"
+                        correct_answer = "No correct answer found"
+                    else:
+                        example_text = example.example
+
+                    # Reset accumulated audio data
+                    self.speech_data = bytearray()
+                    
+                    from .utils import calculate_duration
+                    from .answerChecker import InlineSpeechAnswerChecker, FractionSpeechAnswerChecker, VariableSpeechAnswerChecker, LLMAnswerChecker
+
+                    # Get data for current example
+                    input_type = self.metadata.get('input_type')
+                    record_date = self.metadata.get('record_date')
+                    duration = calculate_duration(record_date)
+                    student_answer = evt.result.text
+
+                    # Words to skip example or terminate practice
+                    skip_wordsCS = ["přeskočit", "další", "přeskoč", "dál"]
+                    skip_wordsSK = ["preskočiť", "ďalej", "ďalší", "preskoč"]
+                    skip_wordsEN = ["skip", "next", "continue"]
+
+                    finish_wordsCS = ["konec", "ukončit", "stačí", "hotovo", "skončit", "dost"]
+                    finish_wordsSK = ["koniec", "ukončiť", "stačí", "hotovo", "skončiť", "dost"]
+                    finish_wordsEN = ["finish", "end", "stop", "done"]
+
+                    if self.language == "cs-CZ":
+                        skip_words = skip_wordsCS
+                        finish_words = finish_wordsCS
+                    elif self.language == "sk-SK":
+                        skip_words = skip_wordsSK
+                        finish_words = finish_wordsSK
+                    else:
+                        skip_words = skip_wordsEN
+                        finish_words = finish_wordsEN
+
+
+                    # Transcript containts 'skip' words - update record and skip example
+                    if any(word in student_answer.lower() for word in skip_words):
+                        factory = RequestFactory()
+                        request = factory.post('skip-example/', {
+                            'student_id': student_id,
+                            'example_id': example_id,
+                            'date': record_date
+                        })
+                        skip_example(request)
+                        response_data = {'skipped': True}
+                        evaluation_data = {
+                            "student_id": student_id,
+                            "example_id": example_id,
+                            "transcription": evt.result.text,
+                            "example_text": example_text,
+                            "correct_answer": correct_answer,
+                            "evaluation": "skipped"
+                        }
+
+                    # Transcript containts 'terminate' words - delete record and terminate practice
+                    elif any(word in student_answer.lower() for word in finish_words):
+                        factory = RequestFactory()
+                        request = factory.post('delete-record/', {
+                            'student_id': student_id,
+                            'example_id': example_id,
+                            'date': record_date
+                        })
+                        delete_example_record(request)
+                        response_data = {'finished': True}
+                        evaluation_data = {
+                            "student_id": student_id,
+                            "example_id": example_id,
+                            "transcription": evt.result.text,
+                            "example_text": example_text,
+                            "correct_answer": correct_answer,
+                            "evaluation": "terminated"
+                        }
+
+                    # Transcript does not contain 'skip' or 'terminate' words - evaluate answer 
+                    else:
+                        # Check if answer contains only numbers/symbols for INLINE/WORD types
+                        if input_type == 'INLINE' or input_type == 'WORD':
+                            import re
+                            # Check if text contains letters (except for specific cases)
+                            has_letters = bool(re.search(r'[a-zA-ZáäčďéíľľňóôŕšťúůýžÁÄČĎÉÍĽŇÓÔŕŘŠŤÚŮÝŽ]', student_answer))
+                            
+                            if has_letters:
+                                print(f"[DEBUG] INLINE/WORD answer contains letters: '{student_answer}'")
+                                # Try to extract numbers from the text
+                                numbers = re.findall(r'\d+(?:[.,]\d+)?', student_answer)
+                                if numbers:
+                                    # Use the first number found
+                                    extracted_number = numbers[0].replace(',', '.')
+                                    print(f"[DEBUG] Extracted number from text: '{extracted_number}'")
+                                    student_answer = extracted_number
+                                    # Continue with evaluation using extracted number
+                                else:
+                                    # No number found - ignore
+                                    print(f"[DEBUG] No number found in text - IGNORING")
+                                    return
+                            
+                            # Evaluate the answer (either direct number or extracted)
+                            isCorrect, continue_with_next, student_answer = InlineSpeechAnswerChecker.verifyAnswer(
+                                student_id, example_id, record_date, duration, student_answer, session_id=session_id
+                            )
+                            response_data = {
+                                "isCorrect": isCorrect,
+                                "continue_with_next": continue_with_next,
+                                "student_answer": student_answer
+                            }
+                            evaluation_data = {
+                                "student_id": student_id,
+                                "example_id": example_id,
+                                "transcription": evt.result.text,
+                                "example_text": example_text,
+                                "correct_answer": correct_answer,
+                                "evaluation": isCorrect
+                            }
+                        # Fraction answer evaluated by LLM
+                        elif input_type == 'FRAC':
+                            
+                            try:
+                                isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
+                                    student_id, example_id, record_date, duration, student_answer, 'fraction'
+                                )
+
+                            # LLM rate limit reached - use FractionSpeechAnswerChecker
+                            except GeminiRateLimitError:
+                                print("FRAC gemini limit reached - will use FractionSpeechAnswerChecker")
+                                isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
+                                    student_id, example_id, record_date, duration, student_answer
+                                )                               
+
+                        # Variable answer evaluated by LLM  
+                        elif input_type == 'VAR':
+
+                            try:
+                                isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
+                                    student_id, example_id, record_date, duration, student_answer, 'variable'
+                                )
+
+                            # LLM rate limit reached - use VariableSpeechAnswerChecker
+                            except GeminiRateLimitError:
+                                print("VAR gemini limit reached - will use VariableSpeechAnswerChecker")
+                                isCorrect, continue_with_next, student_answer = VariableSpeechAnswerChecker.verifyAnswer(
+                                student_id, example_id, record_date, duration, student_answer
+                            )
+                        
+                        # Return evaluation result back to client
+                        response_data = {
+                            "isCorrect": isCorrect,
+                            "continue_with_next": continue_with_next,
+                            "student_answer": student_answer
+                        }
+
+                        # Advanced evaluation data to be dumped in JSON
+                        evaluation_data = {
+                            "student_id": student_id,
+                            "example_id": example_id,
+                            "transcription": evt.result.text,
+                            "example_text": example_text,
+                            "correct_answer": correct_answer,
+                            "evaluation": isCorrect
+                        }
+
+                    # Save evaluation data to JSON file
+                    if DUMP_AUDIO:
+                        with open(json_filepath, "w", encoding="utf-8") as json_file:
+                            json.dump(evaluation_data, json_file, indent=4, ensure_ascii=False)
+
+                        print(f"Evaluation saved: {json_filepath}")
+
+                    asyncio.run_coroutine_threadsafe(
+                        self.send(json.dumps(response_data)),
+                        self.loop
+                    )
+                    #print(f"[DEBUG] Response sent to client: {response_data}")
+                except Exception as e:
+                    #print(f"[DEBUG] Exception in recognized_cb evaluation: {e}")
+                    import traceback
+                    traceback.print_exc()
                 
         def recognizing_cb(evt: speechsdk.SpeechRecognitionEventArgs):
             try:
                 if evt.result.text:
+                    #print(f"[DEBUG] recognizing_cb (interim): {evt.result.text}")
                     future = asyncio.run_coroutine_threadsafe(
                         self.message_queue.put(f"[interim] {evt.result.text}"),
                         self.loop
@@ -307,10 +394,14 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         speech_recognizer.recognized.connect(recognized_cb)
         speech_recognizer.recognizing.connect(recognizing_cb)
+        speech_recognizer.session_started.connect(lambda evt: print(f"[DEBUG] Session started"))
+        speech_recognizer.session_stopped.connect(lambda evt: print(f"[DEBUG] Session stopped"))
 
         # Starts recognition in a separate thread to avoid blocking
         def start_recognition():
+            #print(f"[DEBUG] Starting continuous recognition with language={self.language}")
             speech_recognizer.start_continuous_recognition()
+            #print(f"[DEBUG] Continuous recognition started successfully")
 
         self.executor.submit(start_recognition)
         

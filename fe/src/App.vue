@@ -16,12 +16,34 @@ import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
 import { useLanguageStore } from './stores/useLanguageStore';
+import { getSessionId } from '@/utils/sessionManager';
+import { initSession } from '@/api/apiClient';
 
 
 // Initialize stores and router instances
 const authStore = useAuthStore();
 const langStore = useLanguageStore();
 const router = useRouter();
+
+// Initialize anonymous session on app load
+const initializeSession = async () => {
+  // Only for non-authenticated users - check both store and localStorage
+  const hasAuth = authStore.isAuthenticated || localStorage.getItem('role') !== null;
+  
+  if (!hasAuth) {
+    try {
+      const sessionId = getSessionId();
+      const sessionData = await initSession(sessionId);
+      
+      // Set language from session if different from current
+      if (sessionData.language && sessionData.language !== langStore.language) {
+        langStore.setLanguage(sessionData.language);
+      }
+    } catch (error) {
+      console.error('Failed to initialize session:', error);
+    }
+  }
+};
 
 // Reset inactivity timer on user activity
 const resetInactivity = () => {
@@ -32,6 +54,7 @@ const resetInactivity = () => {
 
 // Event listeners on component mount to track user activity
 onMounted(() => {
+  initializeSession();
   window.addEventListener('mousemove', resetInactivity);
   window.addEventListener('keydown', resetInactivity);
 });

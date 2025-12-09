@@ -9,6 +9,7 @@
 
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.db.models import Q
 
 
 class Task(models.Model):
@@ -100,11 +101,34 @@ class ExampleSkill(models.Model):
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
 
 class Student(models.Model):
-    username = models.CharField(max_length=255,unique=True)
+    LANGUAGE_CHOICES = [
+        ('cs', 'Czech'),
+        ('sk', 'Slovak'),
+        ('en', 'English'),
+    ]
+    
+    username = models.CharField(max_length=255, unique=True)
     passphrase = models.CharField(max_length=255)
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='sk')
+
+class AnonymousSession(models.Model):
+    LANGUAGE_CHOICES = [
+        ('cs', 'Czech'),
+        ('sk', 'Slovak'),
+        ('en', 'English'),
+    ]
+    
+    session_id = models.CharField(max_length=255, unique=True, db_index=True)
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='cs')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_active = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Anonymous {self.session_id[:8]}... ({self.language})"
 
 class StudentExample(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.CASCADE)
+    anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.CASCADE)
     example = models.ForeignKey(Example, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     duration = models.IntegerField(default=0)
@@ -123,7 +147,11 @@ class StudentExample(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['student', 'example', 'date'], name='unique_student_example_date')
+            models.UniqueConstraint(fields=['student', 'example', 'date'], name='unique_student_example_date'),
+            models.CheckConstraint(
+                check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
+                name='student_or_session_required'
+            )
         ]
 
 class Admin(models.Model):

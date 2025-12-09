@@ -9,6 +9,7 @@
 
 import axios from 'axios';
 import qs from 'qs'; 
+import { getSessionId } from '@/utils/sessionManager';
 
 // Axios instance for all API requests
 const apiClient = axios.create({
@@ -18,17 +19,31 @@ const apiClient = axios.create({
 });
 
 /**
+ * Helper: Get user identifier (student_id or session_id)
+ * @param {number|null} studentId - Student ID if logged in, null otherwise
+ * @returns {Object} { student_id: number|null, session_id: string|null }
+ */
+function getUserIdentifier(studentId) {
+  if (studentId && studentId !== 0) {
+    return { student_id: studentId, session_id: null };
+  } else {
+    return { student_id: null, session_id: getSessionId() };
+  }
+}
+
+/**
  * Creates a new record indicating that a student has practiced a example.
  * 
- * @param {number} studentId - id of the student.
+ * @param {number} studentId - id of the student (0 for anonymous).
  * @param {number} exampleId - id of the example.
  * @param {Array<number>} practicedSkills - IDs of skills being practiced in this session.
  * @returns {string} timestamp of record.
  */
 export const createRecord = async (studentId, exampleId, practicedSkills = []) => {
     try {
+      const userIdentifier = getUserIdentifier(studentId);
       const response = await apiClient.post('create-record/', {
-        student_id: studentId,
+        ...userIdentifier,
         example_id: exampleId,
         practiced_skills: practicedSkills,
       });
@@ -43,14 +58,15 @@ export const createRecord = async (studentId, exampleId, practicedSkills = []) =
 /**
  * Deletes a record that student practiced example.
  * 
- * @param {number} studentId - id of the student.
+ * @param {number} studentId - id of the student (0 for anonymous).
  * @param {number} exampleId - id of the example.
  * @param {string} date - timestamp of record creation.
  */
 export const deleteRecord = async (studentId, exampleId, date) => {
   try {
+    const userIdentifier = getUserIdentifier(studentId);
     await apiClient.post('delete-record/', {
-      student_id: studentId,
+      ...userIdentifier,
       example_id: exampleId,
       date
     });
@@ -62,14 +78,15 @@ export const deleteRecord = async (studentId, exampleId, date) => {
 /**
  * Marks an example as skipped in record.
  * 
- * @param {number} studentId - id of the student.
+ * @param {number} studentId - id of the student (0 for anonymous).
  * @param {number} exampleId - id of the example.
  * @param {string} date - timestamp of record creation.
  */
 export const skipExample = async (studentId, exampleId, date) => {
   try {
+    const userIdentifier = getUserIdentifier(studentId);
     await apiClient.post('skip-example/', {
-      student_id: studentId,
+      ...userIdentifier,
       example_id: exampleId,
       date,
     });
@@ -418,9 +435,9 @@ export const loginAdmin = async (username, password) => {
 };
 
 /**
- * Checks whether the users answer to an example is correct and returns evaluation data.
+ * Checks user answer.
  * 
- * @param {number} student_id - id of the user.
+ * @param {number} student_id - id of the user (0 for anonymous).
  * @param {number} example_id - id of the example.
  * @param {string} date - timestamp of record.
  * @param {number} duration - elapsed time user practiced example.
@@ -430,8 +447,9 @@ export const loginAdmin = async (username, password) => {
  */
 export const checkAnswer = async (student_id, example_id, date, duration, student_answer, answer_type) => {
   try {
+    const userIdentifier = getUserIdentifier(student_id);
     const response = await apiClient.post('check-answer/', {
-      student_id,
+      ...userIdentifier,
       example_id,
       date,
       duration,
@@ -585,6 +603,58 @@ export const getAllStudentsStats = async () => {
     return response.data;
   } catch (error) {
     throw error.response?.data?.error || 'Error fetching students list.';
+  }
+};
+
+/**
+ * Initialize or get anonymous session
+ * @param {string} sessionId - Optional existing session ID
+ * @returns {Promise<Object>} Session data with session_id, language, created
+ */
+export const initSession = async (sessionId = null) => {
+  try {
+    const response = await apiClient.post('session/init/', {
+      session_id: sessionId
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error initializing session.';
+  }
+};
+
+/**
+ * Update language preference for anonymous session
+ * @param {string} sessionId - Session ID
+ * @param {string} language - Language code (cs/sk/en)
+ * @returns {Promise<Object>} Updated session data
+ */
+export const updateSessionLanguage = async (sessionId, language) => {
+  try {
+    const response = await apiClient.post('session/update-language/', {
+      session_id: sessionId,
+      language: language
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error updating language.';
+  }
+};
+
+/**
+ * Update language preference for authenticated student
+ * @param {number} studentId - Student ID
+ * @param {string} language - Language code (cs/sk/en)
+ * @returns {Promise<Object>} Updated student data
+ */
+export const updateStudentLanguage = async (studentId, language) => {
+  try {
+    const response = await apiClient.post('student/update-language/', {
+      student_id: studentId,
+      language: language
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error updating language.';
   }
 };
 

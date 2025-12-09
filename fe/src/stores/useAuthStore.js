@@ -54,6 +54,12 @@ export const useAuthStore = defineStore('auth', {
           this.startInactivityTimer(router);
 
           const langStore = useLanguageStore();
+          
+          // Set language from student profile if available
+          if (result.data.language) {
+            langStore.setLanguage(result.data.language);
+          }
+          
           const toastStore = useToastStore();
 
           toastStore.addToast({

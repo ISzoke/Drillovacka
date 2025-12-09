@@ -30,7 +30,7 @@ class RecordInitSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.StudentExample
-        fields = ['student', 'example', 'practiced_skills']
+        fields = ['student', 'anonymous_session', 'example', 'practiced_skills']
     
     def create(self, validated_data):
         # Extract practiced_skills before creating the instance
@@ -45,4 +45,3 @@ class RecordInitSerializer(serializers.ModelSerializer):
             student_example.practiced_skills.set(skills)
         
         return student_example
-
