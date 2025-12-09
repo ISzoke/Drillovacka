@@ -100,10 +100,10 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         # Audio data was received via websocket
         elif bytes_data:
-            print(f"[DEBUG] Received {len(bytes_data)} bytes of audio data")
+            #print(f"[DEBUG] Received {len(bytes_data)} bytes of audio data")
             # Send raw PCM data directly to Azure
             self.stream.write(bytes_data)
-            print(f"[DEBUG] Written {len(bytes_data)} bytes to Azure stream")
+            #print(f"[DEBUG] Written {len(bytes_data)} bytes to Azure stream")
             
             # Accumulate audio data to dump
             self.speech_data.extend(bytes_data)
@@ -127,16 +127,16 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         )
 
         def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
-            print(f"[DEBUG] recognized_cb fired: result={evt.result.text}, reason={evt.result.reason}")
-            print(f"[DEBUG] evt.result.text={bool(evt.result.text)}, self.speech_data size={len(self.speech_data)}")
+            #print(f"[DEBUG] recognized_cb fired: result={evt.result.text}, reason={evt.result.reason}")
+            #print(f"[DEBUG] evt.result.text={bool(evt.result.text)}, self.speech_data size={len(self.speech_data)}")
             if evt.result.text and self.speech_data:
                 try:
-                    print(f"[DEBUG] Starting evaluation for text='{evt.result.text}'")
+                    #print(f"[DEBUG] Starting evaluation for text='{evt.result.text}'")
                     
                     student_id = self.metadata.get('student_id', 'unknown')
                     session_id = self.metadata.get('session_id', None)
                     example_id = self.metadata.get('example_id', 'unknown')
-                    print(f"[DEBUG] student_id={student_id}, session_id={session_id}, example_id={example_id}")
+                    #print(f"[DEBUG] student_id={student_id}, session_id={session_id}, example_id={example_id}")
 
                     # Sent audio will be dumped in WAV
                     if DUMP_AUDIO:  
@@ -300,16 +300,16 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                         self.send(json.dumps(response_data)),
                         self.loop
                     )
-                    print(f"[DEBUG] Response sent to client: {response_data}")
+                    #print(f"[DEBUG] Response sent to client: {response_data}")
                 except Exception as e:
-                    print(f"[DEBUG] Exception in recognized_cb evaluation: {e}")
+                    #print(f"[DEBUG] Exception in recognized_cb evaluation: {e}")
                     import traceback
                     traceback.print_exc()
                 
         def recognizing_cb(evt: speechsdk.SpeechRecognitionEventArgs):
             try:
                 if evt.result.text:
-                    print(f"[DEBUG] recognizing_cb (interim): {evt.result.text}")
+                    #print(f"[DEBUG] recognizing_cb (interim): {evt.result.text}")
                     future = asyncio.run_coroutine_threadsafe(
                         self.message_queue.put(f"[interim] {evt.result.text}"),
                         self.loop
@@ -323,9 +323,9 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         # Starts recognition in a separate thread to avoid blocking
         def start_recognition():
-            print(f"[DEBUG] Starting continuous recognition with language={self.language}")
+            #print(f"[DEBUG] Starting continuous recognition with language={self.language}")
             speech_recognizer.start_continuous_recognition()
-            print(f"[DEBUG] Continuous recognition started successfully")
+            #print(f"[DEBUG] Continuous recognition started successfully")
 
         self.executor.submit(start_recognition)
         

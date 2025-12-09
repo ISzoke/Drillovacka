@@ -58,9 +58,6 @@ const processorCode = `
       this.bufferSize = 4096;
       this.buffer = new Float32Array(this.bufferSize);
       this.bufferIndex = 0;
-
-      // Threshold pre "hlasitosť" (RMS) - nastavíš podľa potreby
-      this.threshold = 0.01; // cca -34 dB, môžeš skúsiť 0.01 / 0.03 atď.
     }
     
     process(inputs, outputs, parameters) {
@@ -71,30 +68,18 @@ const processorCode = `
       for (let i = 0; i < input.length; i++) {
         this.buffer[this.bufferIndex++] = input[i];
         
-        // When buffer is full, process and maybe send it to main thread
+        // When buffer is full, process and send it
         if (this.bufferIndex >= this.bufferSize) {
-
-          // 1) Spočítaj RMS "hlasitosti"
-          let sum = 0;
+          // Convert to Int16 and send everything (no threshold filtering)
+          const int16Buffer = new Int16Array(this.bufferSize);
           for (let j = 0; j < this.bufferSize; j++) {
-            const s = this.buffer[j];
-            sum += s * s;
+            const s = Math.max(-1, Math.min(1, this.buffer[j]));
+            int16Buffer[j] = s < 0 ? s * 0x8000 : s * 0x7FFF;
           }
-          const rms = Math.sqrt(sum / this.bufferSize);
+          
+          this.port.postMessage(int16Buffer.buffer, [int16Buffer.buffer]);
 
-          // 2) Odosielaj iba ak je nad thresholdom
-          if (rms >= this.threshold) {
-            // Convert to Int16 before sending
-            const int16Buffer = new Int16Array(this.bufferSize);
-            for (let j = 0; j < this.bufferSize; j++) {
-              const s = Math.max(-1, Math.min(1, this.buffer[j]));
-              int16Buffer[j] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-            }
-            
-            this.port.postMessage(int16Buffer.buffer, [int16Buffer.buffer]);
-          }
-
-          // 3) Reset buffer
+          // Reset buffer
           this.buffer = new Float32Array(this.bufferSize);
           this.bufferIndex = 0;
         }
