@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { dictionary } from '@/utils/dictionary';
+import { getSessionId } from '@/utils/sessionManager';
 
 const props = defineProps({
   example: {
@@ -58,6 +59,8 @@ const langStore = useLanguageStore();
 
 // Record that user practiced example data
 const student_id = authStore.id || 0;
+const session_id = student_id === 0 ? getSessionId() : null;
+console.log('[DEBUG Example.vue] student_id:', student_id, 'session_id:', session_id);
 const record_date = ref('');
 
 
@@ -104,7 +107,7 @@ const initRecord = async () => {
   const result = await createRecord(student_id, props.example.id, props.topics);
   record_date.value = result.date;
   if (speechRecorder.value) {
-    speechRecorder.value.updateExampleData(student_id, props.example.id, props.example.input_type, record_date.value);
+    speechRecorder.value.updateExampleData(student_id, props.example.id, props.example.input_type, record_date.value, session_id);
   }
 }
 

@@ -134,7 +134,6 @@ const startVisualization = () => {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
-  const activeColor = recorderStore.isRecording ? '#457b9d' : props.barColor;
   
   // Drawing loop
   const draw = () => {
@@ -154,6 +153,17 @@ const startVisualization = () => {
     ctx.fillStyle = props.backgroundColor;
     ctx.fillRect(0, 0, width, height);
     
+    // Draw threshold line
+    const thresholdY = height / 2;
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, thresholdY);
+    ctx.lineTo(width, thresholdY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
     // Calculate layout
     const numberOfBars = props.barCount;
     const totalBarWidth = numberOfBars * (props.barWidth + props.barGap);
@@ -162,6 +172,9 @@ const startVisualization = () => {
     
     // Determine how to sample the frequency data
     const step = Math.floor(dataArray.value.length / numberOfBars);
+    
+    // Choose color based on threshold
+    const activeColor = recorderStore.isAboveThreshold ? '#457b9d' : '#94a3b8';
     
     // Draw each bar
     for (let i = 0; i < numberOfBars; i++) {

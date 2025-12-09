@@ -21,6 +21,7 @@ export const useRecorderStore = defineStore("recorder", () => {
 
   // Metadata for the audio answer evaluation
   const student_id = ref(null);
+  const session_id = ref(null);
   const example_id = ref(null);
   const input_type = ref(null); 
   const record_date = ref(null);
@@ -50,25 +51,39 @@ export const useRecorderStore = defineStore("recorder", () => {
   };
 
   // AudioWorklet processor code as a string
-  const processorCode = `
-    class PCMProcessor extends AudioWorkletProcessor {
-      constructor() {
-        super();
-        this.bufferSize = 4096;
-        this.buffer = new Float32Array(this.bufferSize);
-        this.bufferIndex = 0;
-      }
+const processorCode = `
+  class PCMProcessor extends AudioWorkletProcessor {
+    constructor() {
+      super();
+      this.bufferSize = 4096;
+      this.buffer = new Float32Array(this.bufferSize);
+      this.bufferIndex = 0;
+
+      // Threshold pre "hlasitosť" (RMS) - nastavíš podľa potreby
+      this.threshold = 0.01; // cca -34 dB, môžeš skúsiť 0.01 / 0.03 atď.
+    }
+    
+    process(inputs, outputs, parameters) {
+      const input = inputs[0][0];
+      if (!input) return true;
       
-      process(inputs, outputs, parameters) {
-        const input = inputs[0][0];
-        if (!input) return true;
+      // Fill buffer with incoming audio data
+      for (let i = 0; i < input.length; i++) {
+        this.buffer[this.bufferIndex++] = input[i];
         
-        // Fill buffer with incoming audio data
-        for (let i = 0; i < input.length; i++) {
-          this.buffer[this.bufferIndex++] = input[i];
-          
-          // When buffer is full, send it to main thread and reset
-          if (this.bufferIndex >= this.bufferSize) {
+        // When buffer is full, process and maybe send it to main thread
+        if (this.bufferIndex >= this.bufferSize) {
+
+          // 1) Spočítaj RMS "hlasitosti"
+          let sum = 0;
+          for (let j = 0; j < this.bufferSize; j++) {
+            const s = this.buffer[j];
+            sum += s * s;
+          }
+          const rms = Math.sqrt(sum / this.bufferSize);
+
+          // 2) Odosielaj iba ak je nad thresholdom
+          if (rms >= this.threshold) {
             // Convert to Int16 before sending
             const int16Buffer = new Int16Array(this.bufferSize);
             for (let j = 0; j < this.bufferSize; j++) {
@@ -77,15 +92,18 @@ export const useRecorderStore = defineStore("recorder", () => {
             }
             
             this.port.postMessage(int16Buffer.buffer, [int16Buffer.buffer]);
-            this.buffer = new Float32Array(this.bufferSize);
-            this.bufferIndex = 0;
           }
+
+          // 3) Reset buffer
+          this.buffer = new Float32Array(this.bufferSize);
+          this.bufferIndex = 0;
         }
-        return true;
       }
+      return true;
     }
-    registerProcessor('pcm-processor', PCMProcessor);
-  `;
+  }
+  registerProcessor('pcm-processor', PCMProcessor);
+`;
 
   // Start the recording process and initiate WebSocket connection
   const startRecording = async (isSurvey) => {
@@ -167,21 +185,35 @@ export const useRecorderStore = defineStore("recorder", () => {
       const blob = new Blob([processorCode], { type: 'application/javascript' });
       const workletUrl = URL.createObjectURL(blob);
       await audioContext.audioWorklet.addModule(workletUrl);
+      console.log('[DEBUG] AudioWorklet module loaded successfully');
       
       workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+      console.log('[DEBUG] AudioWorkletNode created');
       
       // Handle processed audio data from the worklet
+      let chunkCount = 0;
       workletNode.port.onmessage = (event) => {
+        chunkCount++;
+        if (chunkCount % 20 === 0) {
+          console.log(`[DEBUG] Worklet sent ${chunkCount} chunks so far`);
+        }
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(event.data); // Send processed audio data to server
+          if (chunkCount % 20 === 0) {
+            console.log(`[DEBUG] Sent chunk ${chunkCount} to WebSocket`);
+          }
+        } else {
+          console.warn(`[DEBUG] WS not open (state=${ws?.readyState}), dropping chunk ${chunkCount}`);
         }
       };
       
       // Connect the audio processing pipeline
       source.connect(workletNode);
       workletNode.connect(audioContext.destination);
+      console.log('[DEBUG] Audio pipeline connected');
       
       isRecording.value = true;
+      console.log('[DEBUG] Recording started, isRecording=true');
 
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -216,18 +248,29 @@ export const useRecorderStore = defineStore("recorder", () => {
   // Send metadata about current example
   const sendExampleData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ 
+      const payload = { 
         student_id: student_id.value, 
+        session_id: session_id.value,
         example_id: example_id.value, 
         record_date: record_date.value, 
         input_type: input_type.value,
         format: "pcm"
-      }));
+      };
+      console.log('[DEBUG useRecorderStore] sendExampleData payload:', payload);
+      ws.send(JSON.stringify(payload));
     }
   };
   // Update metadata about practiced example and example record
-  const updateExampleData = (studentId, exampleId, inputType, recordDate) => {
+  const updateExampleData = (studentId, exampleId, inputType, recordDate, sessionId = null) => {
+    console.log('[DEBUG useRecorderStore] updateExampleData called with:', {
+      studentId,
+      sessionId,
+      exampleId,
+      inputType,
+      recordDate
+    });
     student_id.value = studentId;
+    session_id.value = sessionId;
     example_id.value = exampleId;
     input_type.value = inputType;
     record_date.value = recordDate;
