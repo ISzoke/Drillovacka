@@ -127,7 +127,48 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         )
 
         def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
-            #print(f"[DEBUG] recognized_cb fired: result={evt.result.text}, reason={evt.result.reason}")
+            print(f"[DEBUG] recognized_cb fired: result={evt.result.text}, reason={evt.result.reason}")
+            
+            # Log all possible outcomes
+            if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
+                print(f"[DEBUG] SUCCESS: Azure recognized: '{evt.result.text}'")
+            elif evt.result.reason == speechsdk.ResultReason.NoMatch:
+                print(f"[DEBUG] NO_MATCH: Azure did not understand anything")
+                print(f"[DEBUG] NoMatch details: {evt.result.no_match_details if hasattr(evt.result, 'no_match_details') else 'N/A'}")
+                # Send fail response to frontend
+                response_data = {
+                    "isCorrect": False,
+                    "continue_with_next": False,
+                    "student_answer": "Azure: No match - could not understand audio"
+                }
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        self.send(json.dumps(response_data)),
+                        self.loop
+                    )
+                except Exception as e:
+                    print(f"[DEBUG] Error sending NO_MATCH response: {e}")
+                return  # Don't process empty result
+            elif evt.result.reason == speechsdk.ResultReason.Canceled:
+                print(f"[DEBUG] CANCELED: Speech recognition was canceled")
+                if hasattr(evt.result, 'cancellation_details') and evt.result.cancellation_details:
+                    print(f"[DEBUG] Cancellation reason: {evt.result.cancellation_details.reason}")
+                    print(f"[DEBUG] Error details: {evt.result.cancellation_details.error_details}")
+                # Send fail response to frontend
+                response_data = {
+                    "isCorrect": False,
+                    "continue_with_next": False,
+                    "student_answer": "Azure: Canceled - error during recognition"
+                }
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        self.send(json.dumps(response_data)),
+                        self.loop
+                    )
+                except Exception as e:
+                    print(f"[DEBUG] Error sending CANCELED response: {e}")
+                return
+            
             #print(f"[DEBUG] evt.result.text={bool(evt.result.text)}, self.speech_data size={len(self.speech_data)}")
             if evt.result.text and self.speech_data:
                 try:
@@ -237,11 +278,44 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
                     # Transcript does not contain 'skip' or 'terminate' words - evaluate answer 
                     else:
-                        # Basic answer formats evaluated by script
+                        # Check if answer contains only numbers/symbols for INLINE/WORD types
                         if input_type == 'INLINE' or input_type == 'WORD':
+                            import re
+                            # Check if text contains letters (except for specific cases)
+                            has_letters = bool(re.search(r'[a-zA-ZáäčďéíľľňóôŕšťúůýžÁÄČĎÉÍĽŇÓÔŕŘŠŤÚŮÝŽ]', student_answer))
+                            
+                            if has_letters:
+                                print(f"[DEBUG] INLINE/WORD answer contains letters: '{student_answer}'")
+                                # Try to extract numbers from the text
+                                numbers = re.findall(r'\d+(?:[.,]\d+)?', student_answer)
+                                if numbers:
+                                    # Use the first number found
+                                    extracted_number = numbers[0].replace(',', '.')
+                                    print(f"[DEBUG] Extracted number from text: '{extracted_number}'")
+                                    student_answer = extracted_number
+                                    # Continue with evaluation using extracted number
+                                else:
+                                    # No number found - ignore
+                                    print(f"[DEBUG] No number found in text - IGNORING")
+                                    return
+                            
+                            # Evaluate the answer (either direct number or extracted)
                             isCorrect, continue_with_next, student_answer = InlineSpeechAnswerChecker.verifyAnswer(
                                 student_id, example_id, record_date, duration, student_answer, session_id=session_id
                             )
+                            response_data = {
+                                "isCorrect": isCorrect,
+                                "continue_with_next": continue_with_next,
+                                "student_answer": student_answer
+                            }
+                            evaluation_data = {
+                                "student_id": student_id,
+                                "example_id": example_id,
+                                "transcription": evt.result.text,
+                                "example_text": example_text,
+                                "correct_answer": correct_answer,
+                                "evaluation": isCorrect
+                            }
                         # Fraction answer evaluated by LLM
                         elif input_type == 'FRAC':
                             
@@ -320,6 +394,8 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         speech_recognizer.recognized.connect(recognized_cb)
         speech_recognizer.recognizing.connect(recognizing_cb)
+        speech_recognizer.session_started.connect(lambda evt: print(f"[DEBUG] Session started"))
+        speech_recognizer.session_stopped.connect(lambda evt: print(f"[DEBUG] Session stopped"))
 
         # Starts recognition in a separate thread to avoid blocking
         def start_recognition():
