@@ -99,14 +99,9 @@ const processorCode = `
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
 
-          // Send metadata
-          if (isSurvey) { 
-            // For survey answer
-            sendSurveyQuestionData();
-          } else{
-            // For example answer
-            sendExampleData();
-          }
+          // NOTE: Do NOT call sendExampleData/sendSurveyQuestionData here
+          // The data must be sent from updateExampleData() when metadata is ready
+          // Otherwise input_type, student_id, etc. will be None/undefined
 
           // Set ASR language
           // Set ASR (Speech-to-Text) language dynamically
@@ -259,7 +254,44 @@ const processorCode = `
     example_id.value = exampleId;
     input_type.value = inputType;
     record_date.value = recordDate;
-    sendExampleData();
+    
+    // Ensure WebSocket exists and send metadata when ready
+    if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+      console.log('[DEBUG useRecorderStore] WebSocket not ready, creating connection for metadata send');
+      let wsurl = "wss://superlectures.net/ws/speech/";
+      ws = new WebSocket(wsurl);
+      ws.onopen = () => {
+        console.log('[DEBUG useRecorderStore] WebSocket connected via updateExampleData');
+        sendExampleData();
+      };
+      // Set up message handler
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if(data.skipped == true){
+          if (emitFunction) {
+            emitFunction("skipped", {skipped: true});
+          }
+        } else if(data.finished == true){
+          if (emitFunction) {
+            emitFunction("finished");
+          }
+        } else {
+          isCorrect.value = data.isCorrect;
+          continueWithNext.value = data.continue_with_next;
+          student_answer.value = data.student_answer;
+          if (emitFunction) {
+            emitFunction("answerSent", {
+              isCorrect: data.isCorrect,
+              nextExample: data.continue_with_next,
+              studentAnswer: data.student_answer,
+            });
+          }
+        }
+      };
+    } else if (ws.readyState === WebSocket.OPEN) {
+      console.log('[DEBUG useRecorderStore] WebSocket already open, sending metadata now');
+      sendExampleData();
+    }
   };
 
   // Send metadata about survey question
