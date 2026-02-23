@@ -234,13 +234,20 @@ const processorCode = `
   const sendExampleData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       const payload = { 
-        student_id: student_id.value, 
-        session_id: session_id.value,
         example_id: example_id.value, 
         record_date: record_date.value, 
         input_type: input_type.value,
         format: "pcm"
       };
+      
+      // Send either student_id OR session_id, not both
+      // Only send student_id if it's a valid logged-in user (not 0 or null)
+      if (student_id.value && student_id.value !== 0) {
+        payload.student_id = student_id.value;
+      } else if (session_id.value) {
+        payload.session_id = session_id.value;
+      }
+      
       console.log('[DEBUG useRecorderStore] sendExampleData payload:', payload);
       ws.send(JSON.stringify(payload));
     }
@@ -259,7 +266,13 @@ const processorCode = `
     example_id.value = exampleId;
     input_type.value = inputType;
     record_date.value = recordDate;
-    sendExampleData();
+    
+    // Only send if WebSocket is already open, otherwise ws.onopen will send it
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      sendExampleData();
+    } else {
+      console.log('[DEBUG] Metadata updated but WebSocket not open yet, will send when connection opens');
+    }
   };
 
   // Send metadata about survey question
