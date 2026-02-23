@@ -174,6 +174,10 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                 try:
                     #print(f"[DEBUG] Starting evaluation for text='{evt.result.text}'")
                     
+                    # Initialize response data for all branches
+                    response_data = {}
+                    evaluation_data = {}
+                    
                     student_id = self.metadata.get('student_id', 'unknown')
                     session_id = self.metadata.get('session_id', None)
                     example_id = self.metadata.get('example_id', 'unknown')
@@ -241,11 +245,12 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     # Transcript containts 'skip' words - update record and skip example
                     if any(word in student_answer.lower() for word in skip_words):
                         factory = RequestFactory()
-                        request = factory.post('skip-example/', {
-                            'student_id': student_id,
-                            'example_id': example_id,
-                            'date': record_date
-                        })
+                        skip_data = {'example_id': example_id, 'date': record_date}
+                        if student_id != 'unknown':
+                            skip_data['student_id'] = student_id
+                        else:
+                            skip_data['session_id'] = session_id
+                        request = factory.post('skip-example/', skip_data)
                         skip_example(request)
                         response_data = {'skipped': True}
                         evaluation_data = {
@@ -260,11 +265,12 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     # Transcript containts 'terminate' words - delete record and terminate practice
                     elif any(word in student_answer.lower() for word in finish_words):
                         factory = RequestFactory()
-                        request = factory.post('delete-record/', {
-                            'student_id': student_id,
-                            'example_id': example_id,
-                            'date': record_date
-                        })
+                        delete_data = {'example_id': example_id, 'date': record_date}
+                        if student_id != 'unknown':
+                            delete_data['student_id'] = student_id
+                        else:
+                            delete_data['session_id'] = session_id
+                        request = factory.post('delete-record/', delete_data)
                         delete_example_record(request)
                         response_data = {'finished': True}
                         evaluation_data = {
@@ -329,7 +335,21 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                                 print("FRAC gemini limit reached - will use FractionSpeechAnswerChecker")
                                 isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
                                     student_id, example_id, record_date, duration, student_answer
-                                )                               
+                                )
+                            
+                            response_data = {
+                                "isCorrect": isCorrect,
+                                "continue_with_next": continue_with_next,
+                                "student_answer": student_answer
+                            }
+                            evaluation_data = {
+                                "student_id": student_id,
+                                "example_id": example_id,
+                                "transcription": evt.result.text,
+                                "example_text": example_text,
+                                "correct_answer": correct_answer,
+                                "evaluation": isCorrect
+                            }
 
                         # Variable answer evaluated by LLM  
                         elif input_type == 'VAR':
@@ -343,26 +363,40 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                             except GeminiRateLimitError:
                                 print("VAR gemini limit reached - will use VariableSpeechAnswerChecker")
                                 isCorrect, continue_with_next, student_answer = VariableSpeechAnswerChecker.verifyAnswer(
-                                student_id, example_id, record_date, duration, student_answer
-                            )
+                                    student_id, example_id, record_date, duration, student_answer
+                                )
+                            
+                            response_data = {
+                                "isCorrect": isCorrect,
+                                "continue_with_next": continue_with_next,
+                                "student_answer": student_answer
+                            }
+                            evaluation_data = {
+                                "student_id": student_id,
+                                "example_id": example_id,
+                                "transcription": evt.result.text,
+                                "example_text": example_text,
+                                "correct_answer": correct_answer,
+                                "evaluation": isCorrect
+                            }
                         
-                        # Return evaluation result back to client
-                        response_data = {
-                            "isCorrect": isCorrect,
-                            "continue_with_next": continue_with_next,
-                            "student_answer": student_answer
-                        }
-
-                        # Advanced evaluation data to be dumped in JSON
-                        evaluation_data = {
-                            "student_id": student_id,
-                            "example_id": example_id,
-                            "transcription": evt.result.text,
-                            "example_text": example_text,
-                            "correct_answer": correct_answer,
-                            "evaluation": isCorrect
-                        }
-
+                        else:
+                            # Unknown input type
+                            print(f"[ERROR] Unknown input_type: '{input_type}'", flush=True)
+                            response_data = {
+                                "isCorrect": False,
+                                "continue_with_next": False,
+                                "student_answer": f"Error: Unknown input type '{input_type}'"
+                            }
+                            evaluation_data = {
+                                "student_id": student_id,
+                                "example_id": example_id,
+                                "transcription": evt.result.text,
+                                "example_text": example_text,
+                                "correct_answer": correct_answer,
+                                "evaluation": "error_unknown_type"
+                            }
+                        
                     # Save evaluation data to JSON file
                     if DUMP_AUDIO:
                         with open(json_filepath, "w", encoding="utf-8") as json_file:

@@ -94,14 +94,19 @@ const processorCode = `
   const startRecording = async (isSurvey) => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        let wsurl = isSurvey ? "wss://superlectures.net/ws/survey/" : "wss://superlectures.net/ws/speech/"; // POZOR NA DEPLOY
+        let wsurl = isSurvey ? "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"; // POZOR NA DEPLOY
         ws = new WebSocket(wsurl); //   "wss://drillovacka.applikuapp.com/ws/survey/" : "wss://drillovacka.applikuapp.com/ws/speech/"
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
 
-          // NOTE: Do NOT call sendExampleData/sendSurveyQuestionData here
-          // The data must be sent from updateExampleData() when metadata is ready
-          // Otherwise input_type, student_id, etc. will be None/undefined
+          // Send metadata
+          if (isSurvey) { 
+            // For survey answer
+            sendSurveyQuestionData();
+          } else{
+            // For example answer
+            sendExampleData();
+          }
 
           // Set ASR language
           // Set ASR (Speech-to-Text) language dynamically
@@ -229,13 +234,20 @@ const processorCode = `
   const sendExampleData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       const payload = { 
-        student_id: student_id.value, 
-        session_id: session_id.value,
         example_id: example_id.value, 
         record_date: record_date.value, 
         input_type: input_type.value,
         format: "pcm"
       };
+      
+      // Send either student_id OR session_id, not both
+      // Only send student_id if it's a valid logged-in user (not 0 or null)
+      if (student_id.value && student_id.value !== 0) {
+        payload.student_id = student_id.value;
+      } else if (session_id.value) {
+        payload.session_id = session_id.value;
+      }
+      
       console.log('[DEBUG useRecorderStore] sendExampleData payload:', payload);
       ws.send(JSON.stringify(payload));
     }
@@ -255,42 +267,11 @@ const processorCode = `
     input_type.value = inputType;
     record_date.value = recordDate;
     
-    // Ensure WebSocket exists and send metadata when ready
-    if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
-      console.log('[DEBUG useRecorderStore] WebSocket not ready, creating connection for metadata send');
-      let wsurl = "wss://superlectures.net/ws/speech/";
-      ws = new WebSocket(wsurl);
-      ws.onopen = () => {
-        console.log('[DEBUG useRecorderStore] WebSocket connected via updateExampleData');
-        sendExampleData();
-      };
-      // Set up message handler
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if(data.skipped == true){
-          if (emitFunction) {
-            emitFunction("skipped", {skipped: true});
-          }
-        } else if(data.finished == true){
-          if (emitFunction) {
-            emitFunction("finished");
-          }
-        } else {
-          isCorrect.value = data.isCorrect;
-          continueWithNext.value = data.continue_with_next;
-          student_answer.value = data.student_answer;
-          if (emitFunction) {
-            emitFunction("answerSent", {
-              isCorrect: data.isCorrect,
-              nextExample: data.continue_with_next,
-              studentAnswer: data.student_answer,
-            });
-          }
-        }
-      };
-    } else if (ws.readyState === WebSocket.OPEN) {
-      console.log('[DEBUG useRecorderStore] WebSocket already open, sending metadata now');
+    // Only send if WebSocket is already open, otherwise ws.onopen will send it
+    if (ws && ws.readyState === WebSocket.OPEN) {
       sendExampleData();
+    } else {
+      console.log('[DEBUG] Metadata updated but WebSocket not open yet, will send when connection opens');
     }
   };
 
