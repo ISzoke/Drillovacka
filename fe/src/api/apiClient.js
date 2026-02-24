@@ -13,7 +13,7 @@ import { getSessionId } from '@/utils/sessionManager';
 
 // Axios instance for all API requests
 const apiClient = axios.create({
-  baseURL:   'https://superlectures.net/api/',// 'https://bp-production-37c0.up.railway.app/api/',    'https://drillovacka.applikuapp.com/api/'
+  baseURL:   'https://rightable-georgann-soppingly.ngrok-free.dev/api/',// 'https://bp-production-37c0.up.railway.app/api/',    'https://drillovacka.applikuapp.com/api/'
   headers: {
   },
 });

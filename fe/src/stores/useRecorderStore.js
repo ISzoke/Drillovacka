@@ -94,8 +94,14 @@ const processorCode = `
   const startRecording = async (isSurvey) => {
     try {
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        let wsurl = isSurvey ? "ws://localhost:8000/ws/survey/" : "ws://localhost:8000/ws/speech/"; // POZOR NA DEPLOY
-        ws = new WebSocket(wsurl); //   "wss://drillovacka.applikuapp.com/ws/survey/" : "wss://drillovacka.applikuapp.com/ws/speech/"
+        // Generate WebSocket URL dynamically based on current location
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const path = isSurvey ? 'ws/survey/' : 'ws/speech/';
+        const wsurl = `${protocol}//${host}/${path}`;
+        
+        console.log(`Connecting to WebSocket: ${wsurl}`);
+        ws = new WebSocket(wsurl);
         ws.onopen = () => {
           console.log("WebSocket connection opened.");
 
@@ -234,20 +240,13 @@ const processorCode = `
   const sendExampleData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       const payload = { 
+        student_id: student_id.value, 
+        session_id: session_id.value,
         example_id: example_id.value, 
         record_date: record_date.value, 
         input_type: input_type.value,
         format: "pcm"
       };
-      
-      // Send either student_id OR session_id, not both
-      // Only send student_id if it's a valid logged-in user (not 0 or null)
-      if (student_id.value && student_id.value !== 0) {
-        payload.student_id = student_id.value;
-      } else if (session_id.value) {
-        payload.session_id = session_id.value;
-      }
-      
       console.log('[DEBUG useRecorderStore] sendExampleData payload:', payload);
       ws.send(JSON.stringify(payload));
     }
@@ -266,13 +265,7 @@ const processorCode = `
     example_id.value = exampleId;
     input_type.value = inputType;
     record_date.value = recordDate;
-    
-    // Only send if WebSocket is already open, otherwise ws.onopen will send it
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      sendExampleData();
-    } else {
-      console.log('[DEBUG] Metadata updated but WebSocket not open yet, will send when connection opens');
-    }
+    sendExampleData();
   };
 
   // Send metadata about survey question

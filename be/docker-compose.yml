@@ -14,15 +14,26 @@ services:
       - MYSQLPASSWORD=secret
       - MYSQLDATABASE=drillovacka-demo
       - MYSQLPORT=3306
-      - ALLOWED_HOSTS=superlectures.net,www.superlectures.net,57.128.223.205,localhost,127.0.0.1
-      - CSRF_TRUSTED_ORIGINS=http://superlectures.net,http://www.superlectures.net,http://57.128.223.205
-      - DEBUG=1   # dočasne na ladenie
+      - ALLOWED_HOSTS=192.168.54.198,superlectures.net,www.superlectures.net,57.128.223.205,localhost,127.0.0.1
+      - CSRF_TRUSTED_ORIGINS=http://192.168.54.198,http://superlectures.net,http://www.superlectures.net,http://57.128.223.205
+      - DEBUG=1
     volumes:
       - .:/code
-    ports:
-      - "80:8000"
+    expose:
+      - "8000"
     depends_on:
       - db
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../fe/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - web
 
   db:
     image: mysql:8.0
