@@ -60,10 +60,13 @@ defineExpose({
       <i :class="recorderStore.isRecording ? 'fas fa-stop' : 'fas fa-microphone'" class="text-4xl"></i>
     </button>
 
-    <!-- Speech visualizer -->
-    <SpeechVisualizer class="mt-4 md:mt-0 md:ml-6 absolute md:relative z-0"
-      :barColor="recorderStore.isRecording ? '#457b9d' : '#f1faee'" :width="300" :height="100" :barWidth="10"
-      :barGap="8" :barCount="10" />
+    <!-- Speech visualizers -->
+    <div class="mt-4 md:mt-0 md:ml-6 absolute md:relative z-0 flex gap-4 items-center">
+      <!-- Horizontal visualizer (symmetric) -->
+      <SpeechVisualizer
+        :barColor="recorderStore.isRecording ? '#457b9d' : '#f1faee'" :width="300" :height="100" :barWidth="10"
+        :barGap="8" :barCount="10" />
+    </div>
 
     <!-- Agreement dialog that user agrees that his voice will be recorded -->
     <div v-if="showConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40">

@@ -16,6 +16,8 @@ from datetime import datetime
 from be.settings import AZURE_API_KEY, AZURE_REGION
 import django
 import os
+import io
+import wave
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "be.settings")
 django.setup()
 from .utils import get_skill_names_string
@@ -25,8 +27,10 @@ os.makedirs(SURVEY_DIR, exist_ok=True)
 
 class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Buffer for incoming audio data
+        # Buffer for incoming audio data (for transcription)
         self.speech_data = bytearray()
+        # Buffer for audio recording (for saving WAV file)
+        self.audio_buffer = bytearray()
 
         self.full_transcript = ""
 
@@ -34,6 +38,8 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         self.question_text = ""
         self.skills = []
         self.skill_names = ""
+        self.student_id = None
+        self.session_id = None
 
         self.loop = asyncio.get_event_loop()
         self.executor = asyncio.get_running_loop().run_in_executor
@@ -46,25 +52,45 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
 
-        # User terminated question answering - save the transcription 
-        self.stream.close()
-        self.speech_recognizer.stop_continuous_recognition()
-
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
-        json_filename = f"voice_{timestamp}.json"
-
-        json_filepath = os.path.join(SURVEY_DIR, json_filename)
+        # User terminated question answering - save the transcription and audio
+        # Wait a bit for pending transcriptions to come through
+        await asyncio.sleep(0.5)
         
-        survey_question_data = {
-            "question_text": self.question_text,
-            "answer": self.full_transcript,
-            "examples_type": self.skill_names,
-            "timestamp": timestamp
-        }
+        self.speech_recognizer.stop_continuous_recognition_async().get()
+        self.stream.close()
 
-        with open(json_filepath, "w", encoding="utf-8") as json_file:
-            json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
+        # Only save if there's actual content
+        if self.full_transcript.strip() or self.audio_buffer:
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            
+            student_id_str = str(self.student_id) if self.student_id else self.session_id if self.session_id else 'unknown'
+            
+            # Save JSON transcription
+            json_filename = f"feedback_voice_{timestamp}_{student_id_str}.json"
+            json_filepath = os.path.join(SURVEY_DIR, json_filename)
+            
+            survey_question_data = {
+                "question_text": self.question_text,
+                "answer": self.full_transcript.strip(),
+                "examples_type": self.skill_names,
+                "student_id": self.student_id,
+                "session_id": self.session_id,
+                "timestamp": timestamp
+            }
+
+            with open(json_filepath, "w", encoding="utf-8") as json_file:
+                json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
+            print(f"Survey JSON saved: {json_filepath}")
+            
+            # Save audio WAV file
+            if self.audio_buffer:
+                audio_filename = f"feedback_voice_{timestamp}_{student_id_str}.wav"
+                audio_filepath = os.path.join(SURVEY_DIR, audio_filename)
+                wav_data = self.convert_pcm_to_wav(self.audio_buffer)
+                
+                with open(audio_filepath, "wb") as audio_file:
+                    audio_file.write(wav_data)
+                print(f"Survey audio WAV saved: {audio_filepath}")
         
     async def receive(self, text_data=None, bytes_data=None):
 
@@ -73,9 +99,18 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
             try:
                 # Parse the metadata sent from the client
                 metadata = json.loads(text_data)
-                self.question_text = metadata.get("question_text")
-                self.skills = metadata.get("skills")
-                self.skill_names = await get_skill_names_string(self.skills)
+                if "question_text" in metadata:
+                    self.question_text = metadata.get("question_text")
+
+                if "skills" in metadata:
+                    self.skills = metadata.get("skills")
+                    self.skill_names = await get_skill_names_string(self.skills)
+
+                if "student_id" in metadata:
+                    self.student_id = metadata.get("student_id")
+
+                if "session_id" in metadata:
+                    self.session_id = metadata.get("session_id")
 
                 # Check if language was changed
                 if 'language' in metadata:
@@ -89,6 +124,8 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         # Audio data was received via websocket
         elif bytes_data:
             self.stream.write(bytes_data)
+            # Also collect audio for saving WAV file
+            self.audio_buffer.extend(bytes_data)
 
     def create_speech_recognizer(self):
 
@@ -119,3 +156,13 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         speech_recognizer.start_continuous_recognition_async()
         
         return speech_recognizer, stream
+    
+    def convert_pcm_to_wav(self, pcm_data):
+        """Converts raw PCM data to WAV format"""
+        with io.BytesIO() as wav_io:
+            with wave.open(wav_io, 'wb') as wav_file:
+                wav_file.setnchannels(1)        # Mono
+                wav_file.setsampwidth(2)        # 16-bit
+                wav_file.setframerate(16000)    # 16kHz
+                wav_file.writeframes(pcm_data)
+            return wav_io.getvalue()

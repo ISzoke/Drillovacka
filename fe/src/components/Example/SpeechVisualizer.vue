@@ -212,16 +212,12 @@ const stopVisualization = () => {
 </script>
 
 <template>
-
   <div class="my-4 flex justify-center">
-    
     <canvas 
       ref="canvasRef" 
       :width="width" 
       :height="height"
     ></canvas>
-
   </div>
-  
 </template>
 

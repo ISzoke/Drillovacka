@@ -110,6 +110,7 @@ class Student(models.Model):
     username = models.CharField(max_length=255, unique=True)
     passphrase = models.CharField(max_length=255)
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='sk')
+    audio_threshold = models.IntegerField(default=50)
 
 class AnonymousSession(models.Model):
     LANGUAGE_CHOICES = [
@@ -120,6 +121,7 @@ class AnonymousSession(models.Model):
     
     session_id = models.CharField(max_length=255, unique=True, db_index=True)
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='cs')
+    audio_threshold = models.IntegerField(default=50)
     created_at = models.DateTimeField(auto_now_add=True)
     last_active = models.DateTimeField(auto_now=True)
 
@@ -152,6 +154,55 @@ class StudentExample(models.Model):
                 check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
                 name='student_or_session_required'
             )
+        ]
+
+class ExampleAttempt(models.Model):
+    ACTION_CHOICES = [
+        ('evaluated', 'Evaluated'),
+        ('skipped', 'Skipped'),
+        ('terminated', 'Terminated'),
+        ('no_match', 'No Match'),
+        ('error', 'Error'),
+    ]
+
+    SOURCE_CHOICES = [
+        ('speech', 'Speech'),
+        ('text', 'Text'),
+    ]
+
+    student_example = models.ForeignKey(StudentExample, on_delete=models.CASCADE, related_name='attempt_logs')
+    student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL, related_name='example_attempts')
+    anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.SET_NULL, related_name='example_attempts')
+    example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name='attempt_logs')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    attempt_number = models.PositiveIntegerField(default=1)
+    duration = models.IntegerField(default=0)
+
+    source = models.CharField(max_length=16, choices=SOURCE_CHOICES, default='speech')
+    input_type = models.CharField(max_length=32, blank=True, default='')
+    language = models.CharField(max_length=10, blank=True, default='')
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES, default='evaluated')
+    is_correct = models.BooleanField(null=True, blank=True)
+
+    transcription = models.TextField(blank=True, default='')
+    parsed_answer = models.CharField(max_length=255, blank=True, default='')
+    example_text = models.CharField(max_length=255, blank=True, default='')
+    correct_answer = models.CharField(max_length=255, blank=True, default='')
+
+    audio_file_path = models.CharField(max_length=500, blank=True, default='')
+    audio_format = models.CharField(max_length=50, blank=True, default='')
+
+    practiced_skill_ids = models.JSONField(default=list, blank=True)
+    practiced_skill_names = models.JSONField(default=list, blank=True)
+    meta = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['student', 'created_at']),
+            models.Index(fields=['anonymous_session', 'created_at']),
+            models.Index(fields=['example', 'created_at']),
         ]
 
 class Admin(models.Model):

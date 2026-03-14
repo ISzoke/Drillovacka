@@ -23,6 +23,9 @@ urlpatterns = [
     path('example/<int:example_id>/delete/', views.delete_example, name='delete_example'),
 
     path('create-record/', views.create_example_record, name='create-example-record'),
+    path('my-data/', views.get_my_data, name='get-my-data'),
+    path('attempt-audio/<int:attempt_id>/', views.get_attempt_audio, name='get-attempt-audio'),
+    path('attempt-logs/', views.get_attempt_logs, name='get-attempt-logs'),
     path('update-record/', views.update_example_record, name='update-example-record'),
     path('delete-record/', views.delete_example_record, name='delete-example-record'),
     path('skip-example/', views.skip_example, name='skip-example'),
@@ -59,8 +62,10 @@ urlpatterns = [
 
     # Analytics & Skill Tracking
     path('analytics/students/', views.get_all_students_stats, name='all-students-stats'),
+    path('analytics/anonymous-sessions/', views.get_all_anonymous_sessions_stats, name='all-anonymous-sessions-stats'),
     path('analytics/student/<int:student_id>/skills/', views.get_student_skill_stats, name='student-skill-stats'),
     path('analytics/student/<int:student_id>/skill-combinations/', views.get_student_skill_combinations, name='student-skill-combinations'),
+    path('analytics/progress-overview/', views.get_progress_overview, name='progress-overview'),
     path('analytics/examples/', views.get_group_example_stats, name='group-example-stats'),
     path('analytics/skills/', views.get_group_skill_stats, name='group-skill-stats'),
  

@@ -45,3 +45,9 @@ class RecordInitSerializer(serializers.ModelSerializer):
             student_example.practiced_skills.set(skills)
         
         return student_example
+
+
+class ExampleAttemptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.ExampleAttempt
+        fields = '__all__'

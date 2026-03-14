@@ -20,7 +20,6 @@ const langStore = useLanguageStore();
 
 const gradeLevels = ref([]);
 const loading = ref(true);
-const expandedGrade = ref(null);
 
 onMounted(async () => {
   try {
@@ -31,15 +30,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-// Toggle expanded grade
-const toggleGrade = (gradeId) => {
-  if (expandedGrade.value === gradeId) {
-    expandedGrade.value = null;
-  } else {
-    expandedGrade.value = gradeId;
-  }
-};
 
 // Navigate to topic view for specific grade
 const selectGrade = (gradeId, gradeNumber) => {
@@ -54,26 +44,26 @@ const selectGrade = (gradeId, gradeNumber) => {
     <Spinner v-if="loading" class="pt-48" />
 
     <!-- Grade Levels Grid -->
-    <div v-else class="flex justify-center py-20">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl px-4">
+    <div v-else class="flex justify-center py-8 md:py-12 px-4">
+      <div class="w-full max-w-7xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
         
         <div 
           v-for="grade in gradeLevels" 
           :key="grade.id"
           @click="selectGrade(grade.id, grade.grade)"
-          class="cursor-pointer border border-gray-300 rounded-lg shadow-lg bg-white 
-                 transition transform hover:shadow-xl hover:scale-105
+          class="cursor-pointer border border-gray-300 rounded-xl shadow-lg bg-white 
+                 transition transform hover:shadow-xl hover:scale-[1.03]
                  hover:bg-secondary hover:border-secondary
-                 flex flex-col items-center justify-center p-8
+                 flex flex-col items-center justify-center min-h-[150px] md:min-h-[180px] p-5 md:p-7
                  duration-300 ease-in-out group"
         >
           <!-- Grade Number -->
-          <div class="text-6xl font-bold text-primary group-hover:text-white mb-2">
+          <div class="text-4xl md:text-6xl font-bold text-primary group-hover:text-white mb-2 leading-none">
             {{ grade.grade }}.
           </div>
           
           <!-- Grade Label -->
-          <div class="text-xl font-semibold text-gray-700 group-hover:text-white">
+          <div class="text-base md:text-xl font-semibold text-gray-700 group-hover:text-white text-center">
             {{ dictionary[langStore.language].grade }}
           </div>
         </div>

@@ -20,7 +20,6 @@ import correctSoundSrc from '@/assets/audio/correct.mp3';
 import wrongSoundSrc from '@/assets/audio/wrong.mp3';
 import Spinner from '@/components/Spinner.vue';
 import Summary from '@/components/Example/Summary.vue';
-import Survey from '@/components/Example/Survey.vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import {dictionary} from '@/utils/dictionary';
@@ -56,7 +55,6 @@ const threeMistakes = ref(0);
 
 // Bools to determine what will be displayed next
 const showSummary = ref(false);
-const showSurvey = ref(false);
 const showAnswer = ref(false);
 
 // Stores
@@ -160,11 +158,6 @@ const displayNext = async (data) => {
     examplesCounted.value++;
     sessionStorage.setItem("examplesCounted", examplesCounted.value.toString());
 
-    // Show survey question every 10th example
-    if(examplesCounted.value % 10 === 0 ){
-      showSurvey.value = true;
-    }
-    
     await nextTick();
 
     // All examples were practiced
@@ -243,14 +236,14 @@ onMounted(() => {
     </div>
 
     <!-- Progress bar --> 
-    <div v-if="examples.length > curr_index && !showSummary && !showSurvey" class="flex-col items-center justify-center">
+    <div v-if="examples.length > curr_index && !showSummary" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
     </div>
 
     <div class="flex items-center justify-center">
       
       <!-- Example component -->
-      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary && !showSurvey" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" :topics="topics" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
+      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" :topics="topics" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
       
       <!-- Correct or incorrect icon -->
       <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
@@ -258,9 +251,6 @@ onMounted(() => {
 
       <!-- Practice summary-->
       <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes" :topics="topics"></Summary>
-      
-      <!-- Survey question -->
-      <Survey v-if="showSurvey && !showSummary" @hideSurvey="showSurvey = false" :topics="topics"></Survey>
     
     </div>
 

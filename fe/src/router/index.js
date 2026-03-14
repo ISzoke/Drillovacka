@@ -14,6 +14,7 @@ import GradeTopicsView from '@/views/GradeTopicsView.vue'
 import SkillAnalyticsView from '@/views/SkillAnalyticsView.vue'
 import StudentProgressView from '@/views/StudentProgressView.vue'
 import StudentDashboardView from '@/views/StudentDashboardView.vue'
+import AdminMyDataView from '@/views/AdminMyDataView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -87,6 +88,12 @@ const router = createRouter({
       path: '/analytics/skills',
       name: 'skill-analytics',
       component: SkillAnalyticsView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/analytics/my-data',
+      name: 'admin-my-data',
+      component: AdminMyDataView,
       meta: { requiresAdmin: true }
     },
     {

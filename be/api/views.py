@@ -14,15 +14,16 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.hashers import make_password, check_password
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.db import transaction
 from django.db.models import Count, Sum, Avg, Max, Q, F
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, Admin, Step, GradeLevel, AnonymousSession
-from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, Admin, Step, GradeLevel, AnonymousSession
+from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
 import json
@@ -30,6 +31,7 @@ import random
 from datetime import datetime
 import uuid
 import os
+import json as pyjson
 
 # Helper function to get student or anonymous session from request
 def get_user_identity(request):
@@ -54,6 +56,79 @@ def get_user_identity(request):
             return (None, None)
     
     return (None, None)
+
+
+def _serialize_attempt_answer(value):
+    if value is None:
+        return ''
+    if isinstance(value, (dict, list)):
+        return pyjson.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
+def _resolve_student_example_record(student_id, session_id, example_id, date):
+    records = StudentExample.objects.prefetch_related('practiced_skills').filter(
+        example_id=example_id,
+        date=date,
+    )
+
+    if student_id:
+        records = records.filter(student_id=student_id)
+    elif session_id:
+        records = records.filter(anonymous_session__session_id=session_id)
+    else:
+        return None
+
+    return records.first()
+
+
+def _create_attempt_log_for_record(
+    student_example,
+    example_id,
+    duration,
+    input_type,
+    language,
+    action,
+    is_correct,
+    transcription,
+    parsed_answer,
+    example_text,
+    correct_answer,
+    source='text',
+    audio_file_path='',
+    audio_format='',
+    meta=None,
+):
+    skill_ids = list(student_example.practiced_skills.values_list('id', flat=True))
+    if not skill_ids:
+        skill_ids = list(
+            ExampleSkill.objects.filter(example_id=example_id).values_list('skill_id', flat=True).distinct()
+        )
+
+    skill_names = list(Skill.objects.filter(id__in=skill_ids).values_list('name', flat=True))
+
+    ExampleAttempt.objects.create(
+        student_example=student_example,
+        student=student_example.student,
+        anonymous_session=student_example.anonymous_session,
+        example_id=example_id,
+        attempt_number=max(student_example.attempts, 1),
+        duration=duration or 0,
+        source=source,
+        input_type=input_type or '',
+        language=language or '',
+        action=action,
+        is_correct=is_correct,
+        transcription=transcription or '',
+        parsed_answer=_serialize_attempt_answer(parsed_answer),
+        example_text=example_text or '',
+        correct_answer=correct_answer or '',
+        audio_file_path=audio_file_path or '',
+        audio_format=audio_format or '',
+        practiced_skill_ids=skill_ids,
+        practiced_skill_names=skill_names,
+        meta=meta or {},
+    )
 
 # Add all skill_ids to the related_skills field of each skill
 def create_skill_relations(skill_ids):
@@ -338,6 +413,312 @@ def create_example_record(request):
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     return Response(record_init_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def get_attempt_logs(request):
+    student_id = request.query_params.get('student_id')
+    session_id = request.query_params.get('session_id')
+    limit = request.query_params.get('limit', 200)
+
+    if not student_id and not session_id:
+        return Response({"error": "student_id or session_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        limit = max(1, min(int(limit), 1000))
+    except (TypeError, ValueError):
+        limit = 200
+
+    records = ExampleAttempt.objects.select_related(
+        'student', 'anonymous_session', 'example', 'student_example'
+    )
+
+    if student_id:
+        records = records.filter(student_id=student_id)
+    else:
+        records = records.filter(anonymous_session__session_id=session_id)
+
+    date_from = request.query_params.get('date_from')
+    if date_from:
+        records = records.filter(created_at__gte=date_from)
+
+    serializer = ExampleAttemptSerializer(records[:limit], many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_progress_overview(request):
+    student_id = request.query_params.get('student_id')
+    session_id = request.query_params.get('session_id')
+    date_from = request.query_params.get('date_from')
+    date_to = request.query_params.get('date_to')
+
+    if not student_id and not session_id:
+        return Response({"error": "student_id or session_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        recent_limit = max(1, min(int(request.query_params.get('recent_limit', 50)), 200))
+    except (TypeError, ValueError):
+        recent_limit = 50
+
+    attempts = ExampleAttempt.objects.select_related('example')
+    if student_id:
+        attempts = attempts.filter(student_id=student_id)
+    else:
+        attempts = attempts.filter(anonymous_session__session_id=session_id)
+
+    if date_from:
+        attempts = attempts.filter(created_at__gte=date_from)
+    if date_to:
+        attempts = attempts.filter(created_at__lte=date_to)
+
+    total_records = attempts.count()
+    evaluated = attempts.filter(action='evaluated')
+    evaluated_records = evaluated.count()
+    correct_count = evaluated.filter(is_correct=True).count()
+    incorrect_count = evaluated.filter(is_correct=False).count()
+    skipped_count = attempts.filter(action='skipped').count()
+    terminated_count = attempts.filter(action='terminated').count()
+
+    duration_total = attempts.aggregate(total=Sum('duration'))['total'] or 0
+    avg_duration = attempts.aggregate(avg=Avg('duration'))['avg'] or 0
+    last_activity = attempts.aggregate(last=Max('created_at'))['last']
+    distinct_examples = attempts.values('example_id').distinct().count()
+
+    skill_rows = attempts.filter(
+        example__exampleskill__skill__deleted=False
+    ).values(
+        'example__exampleskill__skill_id',
+        'example__exampleskill__skill__name',
+    ).annotate(
+        attempts_count=Count('id'),
+        evaluated_count=Count('id', filter=Q(action='evaluated')),
+        correct_count=Count('id', filter=Q(action='evaluated', is_correct=True)),
+        avg_duration=Avg('duration'),
+        last_activity=Max('created_at'),
+    ).order_by('example__exampleskill__skill__name')
+
+    by_skill = []
+    for row in skill_rows:
+        denom = row['evaluated_count'] or 0
+        accuracy = (row['correct_count'] / denom) if denom else 0
+        by_skill.append({
+            'skill_id': row['example__exampleskill__skill_id'],
+            'skill_name': row['example__exampleskill__skill__name'],
+            'attempts': row['attempts_count'],
+            'evaluated': row['evaluated_count'],
+            'correct': row['correct_count'],
+            'accuracy': round(accuracy, 3),
+            'avg_duration_ms': row['avg_duration'] or 0,
+            'last_activity': row['last_activity'],
+        })
+
+    by_input_type_rows = attempts.values('input_type').annotate(
+        attempts_count=Count('id'),
+        evaluated_count=Count('id', filter=Q(action='evaluated')),
+        correct_count=Count('id', filter=Q(action='evaluated', is_correct=True)),
+        avg_duration=Avg('duration'),
+    ).order_by('input_type')
+
+    by_input_type = []
+    for row in by_input_type_rows:
+        denom = row['evaluated_count'] or 0
+        accuracy = (row['correct_count'] / denom) if denom else 0
+        by_input_type.append({
+            'input_type': row['input_type'] or 'UNKNOWN',
+            'attempts': row['attempts_count'],
+            'evaluated': row['evaluated_count'],
+            'correct': row['correct_count'],
+            'accuracy': round(accuracy, 3),
+            'avg_duration_ms': row['avg_duration'] or 0,
+        })
+
+    daily_rows = attempts.annotate(day=TruncDate('created_at')).values('day').annotate(
+        attempts_count=Count('id'),
+        evaluated_count=Count('id', filter=Q(action='evaluated')),
+        correct_count=Count('id', filter=Q(action='evaluated', is_correct=True)),
+        avg_duration=Avg('duration'),
+    ).order_by('day')
+
+    daily = []
+    for row in daily_rows:
+        denom = row['evaluated_count'] or 0
+        accuracy = (row['correct_count'] / denom) if denom else 0
+        daily.append({
+            'date': row['day'],
+            'attempts': row['attempts_count'],
+            'evaluated': row['evaluated_count'],
+            'correct': row['correct_count'],
+            'accuracy': round(accuracy, 3),
+            'avg_duration_ms': row['avg_duration'] or 0,
+        })
+
+    recent_attempts = list(
+        attempts.values(
+            'id',
+            'created_at',
+            'example_id',
+            'example_text',
+            'correct_answer',
+            'transcription',
+            'parsed_answer',
+            'is_correct',
+            'action',
+            'duration',
+            'attempt_number',
+            'input_type',
+            'language',
+            'audio_file_path',
+            'practiced_skill_ids',
+            'practiced_skill_names',
+        ).order_by('-created_at')[:recent_limit]
+    )
+
+    response_payload = {
+        'summary': {
+            'total_records': total_records,
+            'evaluated_records': evaluated_records,
+            'correct_count': correct_count,
+            'incorrect_count': incorrect_count,
+            'skipped_count': skipped_count,
+            'terminated_count': terminated_count,
+            'accuracy': round((correct_count / evaluated_records), 3) if evaluated_records else 0,
+            'total_duration_ms': duration_total,
+            'avg_duration_ms': avg_duration,
+            'distinct_examples': distinct_examples,
+            'distinct_skills': len(by_skill),
+            'last_activity': last_activity,
+        },
+        'by_skill': by_skill,
+        'by_input_type': by_input_type,
+        'daily': daily,
+        'recent_attempts': recent_attempts,
+    }
+
+    return Response(response_payload, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_my_data(request):
+    """
+    Returns ALL data collected about the user during practice sessions.
+    Includes every attempt, transcription, correctness, duration, skills, audio file paths.
+    """
+    student_id = request.query_params.get('student_id')
+    session_id = request.query_params.get('session_id')
+
+    if not student_id and not session_id:
+        return Response({"error": "student_id or session_id required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    attempts = ExampleAttempt.objects.select_related(
+        'student', 'anonymous_session', 'example', 'student_example'
+    ).order_by('-created_at')
+
+    if student_id:
+        attempts = attempts.filter(student_id=student_id)
+    else:
+        attempts = attempts.filter(anonymous_session__session_id=session_id)
+
+    if not attempts.exists():
+        return Response({
+            "user_id": student_id or session_id,
+            "user_type": "student" if student_id else "anonymous",
+            "message": "No attempt data found",
+            "attempts": []
+        }, status=status.HTTP_200_OK)
+
+    attempts_data = []
+    for attempt in attempts:
+        attempt_dict = {
+            "attempt_id": attempt.id,
+            "timestamp": attempt.created_at.isoformat(),
+            "attempt_number": attempt.attempt_number,
+            "example_id": attempt.example_id,
+            "example_problem": attempt.example_text,
+            "input_type": attempt.input_type,
+            "language": attempt.language,
+            "action": attempt.action,
+            "duration_ms": attempt.duration,
+            "transcription": attempt.transcription,
+            "your_answer": attempt.parsed_answer,
+            "correct_answer": attempt.correct_answer,
+            "is_correct": attempt.is_correct,
+            "source": attempt.source,
+            "audio_file": attempt.audio_file_path,
+            "audio_url": f"/api/attempt-audio/{attempt.id}/" if (
+                attempt.audio_file_path
+                or (attempt.meta or {}).get('mega_audio_url')
+                or (attempt.meta or {}).get('mega_public_url')
+            ) else "",
+            "paired_json_url": (attempt.meta or {}).get('mega_json_url', ''),
+            "paired_cloud_audio_url": (attempt.meta or {}).get('mega_audio_url', '') or (attempt.meta or {}).get('mega_public_url', ''),
+            "audio_format": attempt.audio_format,
+            "practiced_skills": {
+                "ids": attempt.practiced_skill_ids,
+                "names": attempt.practiced_skill_names,
+            },
+            "metadata": attempt.meta,
+        }
+        attempts_data.append(attempt_dict)
+
+    total_count = len(attempts_data)
+    evaluated = [a for a in attempts_data if a["action"] == "evaluated"]
+    correct = [a for a in evaluated if a["is_correct"]]
+    incorrect = [a for a in evaluated if not a["is_correct"]]
+    skipped = [a for a in attempts_data if a["action"] == "skipped"]
+    terminated = [a for a in attempts_data if a["action"] == "terminated"]
+    errors = [a for a in attempts_data if a["action"] == "error"]
+
+    distinct_skills = set()
+    for a in attempts_data:
+        distinct_skills.update(a["practiced_skills"]["ids"])
+
+    total_duration = sum(a["duration_ms"] for a in attempts_data)
+    avg_duration = total_duration / total_count if total_count else 0
+
+    return Response({
+        "user_id": student_id or session_id,
+        "user_type": "student" if student_id else "anonymous_session",
+        "summary": {
+            "total_attempts": total_count,
+            "evaluated_count": len(evaluated),
+            "correct_count": len(correct),
+            "incorrect_count": len(incorrect),
+            "skipped_count": len(skipped),
+            "terminated_count": len(terminated),
+            "error_count": len(errors),
+            "accuracy": round(len(correct) / len(evaluated), 3) if evaluated else 0,
+            "total_duration_ms": total_duration,
+            "avg_duration_ms": avg_duration,
+            "distinct_skills_count": len(distinct_skills),
+        },
+        "all_attempts": attempts_data,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_attempt_audio(request, attempt_id):
+    attempt = get_object_or_404(ExampleAttempt, id=attempt_id)
+
+    cloud_url = (attempt.meta or {}).get('mega_audio_url', '') or (attempt.meta or {}).get('mega_public_url', '')
+
+    if not attempt.audio_file_path:
+        if cloud_url:
+            return redirect(cloud_url)
+        return Response({"error": "Audio file not available for this attempt"}, status=status.HTTP_404_NOT_FOUND)
+
+    candidate_paths = [attempt.audio_file_path]
+    candidate_paths.append(os.path.join(os.getcwd(), attempt.audio_file_path))
+
+    file_path = None
+    for path in candidate_paths:
+        if os.path.exists(path) and os.path.isfile(path):
+            file_path = path
+            break
+
+    if not file_path:
+        if cloud_url:
+            return redirect(cloud_url)
+        return Response({"error": "Audio file not found on server"}, status=status.HTTP_404_NOT_FOUND)
+
+    return FileResponse(open(file_path, 'rb'), content_type='audio/wav')
 
 # Updates record that user practiced the example
 @api_view(['POST'])
@@ -666,20 +1047,13 @@ def search_skills(request):
 @api_view(['GET'])
 def get_landing_page_skills(request):
 
-    # Get non-deleted skills
-    existing_skills = Skill.objects.filter(deleted=False)
-
-    # Filter skills that should not be displayed (height <= 3)
-    skills_with_height = existing_skills.filter(height__lte=3)
-
-    # Get leaf skills
-    leaf_skills = skills_with_height.filter(subskills__isnull=True)
-
-    # Get skills with height 3
-    skills_with_height_3 = existing_skills.filter(height=3)
-
-    # Displayed skills should be leaf skills or have height == 3    
-    skills = (leaf_skills | skills_with_height_3).distinct()
+    # Show only leaf skills (no children), assigned to at least one grade.
+    # This hides broad parent categories from menu navigation.
+    skills = Skill.objects.filter(
+        deleted=False,
+        subskills__isnull=True,
+        grade_levels__isnull=False,
+    ).distinct().order_by('name')
 
     serializer = SkillSerializer(skills, many=True)
 
@@ -978,6 +1352,7 @@ def check_answer(request):
 
     student_answer = request.data.get('student_answer')
     answer_type = request.data.get('answer_type')
+    language = request.data.get('language', '')
 
     if (not student_id and not session_id) or not example_id or not date or not duration or not answer_type:
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
@@ -999,6 +1374,48 @@ def check_answer(request):
 
         case _:
             return Response({'error': 'Invalid answer type'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Persist detailed attempt log for keyboard-entered answers
+    try:
+        student_record = _resolve_student_example_record(student_id, session_id, example_id, date)
+
+        if student_record:
+            example_obj = Example.objects.filter(id=example_id).first()
+            answer_obj = Answer.objects.filter(example_id=example_id).first()
+
+            input_type_map = {
+                'inline': 'INLINE',
+                'word': 'WORD',
+                'fraction': 'FRAC',
+                'variable': 'VAR',
+            }
+            input_type = input_type_map.get(answer_type, answer_type.upper())
+
+            try:
+                duration_value = int(float(duration))
+            except (TypeError, ValueError):
+                duration_value = 0
+
+            _create_attempt_log_for_record(
+                student_example=student_record,
+                example_id=example_id,
+                duration=duration_value,
+                input_type=input_type,
+                language=language,
+                action='evaluated',
+                is_correct=isCorrect,
+                transcription='',
+                parsed_answer=student_answer,
+                example_text=example_obj.example if example_obj else '',
+                correct_answer=answer_obj.answer if answer_obj else '',
+                source='text',
+                meta={
+                    'continue_with_next': continue_with_next,
+                    'answer_type': answer_type,
+                },
+            )
+    except Exception as log_error:
+        print(f"[ERROR] Failed to log text attempt: {log_error}")
     
     # Return if answer was corrrect and if new example should be shown
     return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next}, status=status.HTTP_200_OK)    
@@ -1050,6 +1467,8 @@ def save_survey_answer(request):
     question_text = request.data.get('question_text')
     answer = request.data.get('answer')
     skills = request.data.get('skills')
+    student_id = request.data.get('student_id')
+    session_id = request.data.get('session_id')
 
     # Skills which were practiced when question was asked
     skill_names = get_skill_names_string_sync(skills)
@@ -1058,13 +1477,17 @@ def save_survey_answer(request):
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
     
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    json_filename = f"{question_type}_{timestamp}.json"
+    
+    student_id_str = str(student_id) if student_id else session_id if session_id else 'unknown'
+    json_filename = f"feedback_text_{timestamp}_{student_id_str}.json"
     json_filepath = os.path.join(SURVEY_DIR, json_filename)
         
     survey_question_data = {
         "question_text": question_text,
         "answer": answer,
         "examples_type": skill_names,
+        "student_id": student_id,
+        "session_id": session_id,
         "timestamp": timestamp
     }
 
@@ -1109,12 +1532,11 @@ def get_skills_by_grade(request, grade_id):
     try:
         grade = get_object_or_404(GradeLevel, id=grade_id)
         
-        # Get all skills assigned to this grade level
-        # Only get top-level skills (those with skill_type set)
+        # Show only leaf skills for the grade to avoid broad parent categories.
         skills = Skill.objects.filter(
             grade_levels=grade,
             deleted=False,
-            skill_type__isnull=False  # Only parent skills
+            subskills__isnull=True,
         ).distinct().order_by('name')
         
         skills_data = [
@@ -1535,6 +1957,47 @@ def get_all_students_stats(request):
                 'accuracy': round(accuracy, 3),
             })
         
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_all_anonymous_sessions_stats(request):
+    try:
+        qs = ExampleAttempt.objects.filter(
+            anonymous_session__isnull=False
+        ).values(
+            'anonymous_session__session_id',
+        ).annotate(
+            total_attempts=Count('id'),
+            evaluated_count=Count('id', filter=Q(action='evaluated')),
+            correct_count=Count('id', filter=Q(action='evaluated', is_correct=True)),
+            avg_duration=Avg('duration'),
+            last_activity=Max('created_at'),
+            distinct_examples=Count('example_id', distinct=True),
+        ).order_by('-last_activity')
+
+        data = []
+        for row in qs:
+            evaluated_count = row['evaluated_count'] or 0
+            accuracy = (row['correct_count'] / evaluated_count) if evaluated_count else 0
+
+            session_id = row['anonymous_session__session_id']
+            masked = f"anonym{session_id[:6]}" if session_id else 'anonymunknown'
+
+            data.append({
+                'session_id': session_id,
+                'display_name': masked,
+                'total_attempts': row['total_attempts'] or 0,
+                'evaluated_count': evaluated_count,
+                'correct_count': row['correct_count'] or 0,
+                'accuracy': round(accuracy, 3),
+                'avg_duration_ms': row['avg_duration'] or 0,
+                'last_activity': row['last_activity'],
+                'distinct_examples': row['distinct_examples'] or 0,
+            })
+
         return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

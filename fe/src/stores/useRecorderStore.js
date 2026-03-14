@@ -34,6 +34,9 @@ export const useRecorderStore = defineStore("recorder", () => {
   // User allowed his voice to be recorded
   const allowedRecording = ref(false);
 
+  // Audio threshold for filtering (0-100, where 50 = center)
+  const audioThreshold = ref(50);
+
   // Survey metadata
   const question_text = ref(null);
   const skillsList = ref(null);
@@ -148,6 +151,13 @@ const processorCode = `
             if (emitFunction) {
               emitFunction("finished");
             }
+
+          // Speech was recognized but intentionally ignored (non-numeric noise)
+          } else if (data.filtered === true) {
+            isCorrect.value = null;
+            continueWithNext.value = false;
+            student_answer.value = null;
+            // Do not emit answerSent; this should not be treated as a wrong answer.
           
           // User answered the question by voice
           } else {
@@ -275,15 +285,20 @@ const processorCode = `
         question_text: question_text.value, 
         question_type: 'open-question',
         skills: JSON.parse(JSON.stringify(skillsList.value)), 
+        student_id: student_id.value,
+        session_id: session_id.value,
         format: "pcm"
       }));
       }
   };
 
   // Update metadata about survey question
-  const updateSurveyQuestionData = (questionText, skills) => {
+  const updateSurveyQuestionData = (questionText, skills, studentId = null, sessionId = null) => {
     question_text.value = questionText;
     skillsList.value = skills;
+    student_id.value = studentId;
+    session_id.value = sessionId;
+    console.log('[DEBUG useRecorderStore] updateSurveyQuestionData - student_id:', student_id.value, 'session_id:', session_id.value);
     sendSurveyQuestionData();
   };
 
@@ -297,6 +312,12 @@ const processorCode = `
   // Allow recording
   const allowRecording = () => {
     allowedRecording.value = true;
+  };
+
+  // Set audio threshold for filtering
+  const setAudioThreshold = (value) => {
+    audioThreshold.value = Math.max(0, Math.min(100, value));
+    console.log(`[DEBUG] Audio threshold set to: ${audioThreshold.value}%`);
   };
 
   // Close Websocket connection
@@ -330,5 +351,7 @@ const processorCode = `
     student_answer,
     setEmitFunction,
     changeASRLanguage,
+    audioThreshold,
+    setAudioThreshold,
   };
 });

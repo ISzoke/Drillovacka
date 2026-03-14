@@ -65,6 +65,7 @@ msgpack==1.1.0
 multidict==6.1.0
 multiprocess==0.70.16
 mysqlclient==2.2.6
+mega.py==1.0.8
 networkx==3.4.2
 numpy==2.1.2
 oauthlib==3.2.2

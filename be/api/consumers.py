@@ -10,6 +10,7 @@
 """
 
 import asyncio
+import threading
 import azure.cognitiveservices.speech as speechsdk
 from channels.generic.websocket import AsyncWebsocketConsumer
 from be.settings import AZURE_API_KEY, AZURE_REGION
@@ -20,6 +21,8 @@ import json
 import django
 import io
 import wave
+import uuid
+import re
 from django.test import RequestFactory
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "be.settings")
@@ -27,9 +30,12 @@ django.setup()
 
 from .views import skip_example, delete_example_record
 from .answerChecker import GeminiRateLimitError
+from .attempt_cloud_sync import retry_pending_attempt_uploads, sync_attempt_to_mega
 
 AUDIO_DIR = "audioprompts"
 os.makedirs(AUDIO_DIR, exist_ok=True)
+ATTEMPT_AUDIO_DIR = "attempt_audio"
+os.makedirs(ATTEMPT_AUDIO_DIR, exist_ok=True)
 
 # Set to True to enable audio dumping
 DUMP_AUDIO=False
@@ -62,6 +68,150 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         self.speech_recognizer.stop_continuous_recognition()
         self.executor.shutdown(wait=False)
         print("Speech recognition stopped.")
+
+    def _resolve_student_example(self, student_id, session_id, example_id, record_date):
+        from .models import StudentExample
+
+        records = StudentExample.objects.prefetch_related('practiced_skills').filter(
+            example_id=example_id,
+            date=record_date,
+        )
+
+        if student_id and student_id != 'unknown':
+            records = records.filter(student__id=student_id)
+        elif session_id:
+            records = records.filter(anonymous_session__session_id=session_id)
+        else:
+            return None
+
+        return records.first()
+
+    def _save_attempt_audio(self, student_id, session_id, example_id, audio_bytes):
+        if not audio_bytes:
+            return ""
+
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        owner = str(student_id) if student_id and student_id != 'unknown' else f"anon_{(session_id or 'unknown')[:12]}"
+        audio_filename = f"{owner}_{example_id}_{timestamp}_{uuid.uuid4().hex[:8]}.wav"
+        audio_filepath = os.path.join(ATTEMPT_AUDIO_DIR, audio_filename)
+
+        wav_data = self.convert_pcm_to_wav(audio_bytes)
+        with open(audio_filepath, "wb") as f:
+            f.write(wav_data)
+
+        return audio_filepath
+
+    def _serialize_answer(self, answer_value):
+        if answer_value is None:
+            return ""
+        if isinstance(answer_value, (dict, list)):
+            return json.dumps(answer_value, ensure_ascii=False)
+        return str(answer_value)
+
+    def _get_example_context(self, example_id):
+        from .models import Example, Answer
+
+        try:
+            example = Example.objects.get(id=example_id)
+            answer = Answer.objects.filter(example=example).first()
+            return example.example, (answer.answer if answer else "No correct answer found")
+        except Exception:
+            return "Example not found", "No correct answer found"
+
+    def _is_comparison_speech(self, text_value):
+        text = (text_value or "").lower()
+        comparison_roots = [
+            'väčšie', 'vacsie', 'vetšie', 'vetsie',
+            'menšie', 'mensie',
+            'rovné', 'rovne', 'rovna', 'rovná',
+            'väčší', 'vacsi', 'vetší', 'vetsi',
+            'menší', 'mensi',
+            'rovný', 'rovny',
+        ]
+        return any(keyword in text for keyword in comparison_roots)
+
+    def _should_ignore_speech_attempt(self, action, transcription):
+        # Hard fail-safe: ignore random speech that has no digits and is not
+        # a comparison answer. This prevents false "evaluated=false" entries.
+        if action != 'evaluated':
+            return False
+        has_digits = bool(re.search(r'\d', transcription or ''))
+        if has_digits:
+            return False
+        return not self._is_comparison_speech(transcription)
+
+    def _store_attempt_log(
+        self,
+        student_id,
+        session_id,
+        example_id,
+        record_date,
+        duration,
+        input_type,
+        language,
+        action,
+        is_correct,
+        transcription,
+        parsed_answer,
+        example_text,
+        correct_answer,
+        audio_bytes,
+        audio_format,
+        meta=None,
+    ):
+        from .models import ExampleAttempt, ExampleSkill, Skill
+
+        if self._should_ignore_speech_attempt(action, transcription):
+            print(f"[DEBUG] Ignoring non-numeric speech log: '{transcription}'")
+            return
+
+        student_example = self._resolve_student_example(student_id, session_id, example_id, record_date)
+        if not student_example:
+            print(f"[WARN] StudentExample not found for logging: example={example_id}, date={record_date}")
+            return
+
+        skill_ids = list(student_example.practiced_skills.values_list('id', flat=True))
+        if not skill_ids:
+            skill_ids = list(
+                ExampleSkill.objects.filter(example_id=example_id).values_list('skill_id', flat=True).distinct()
+            )
+        skill_names = list(Skill.objects.filter(id__in=skill_ids).values_list('name', flat=True))
+
+        audio_file_path = self._save_attempt_audio(student_id, session_id, example_id, audio_bytes)
+
+        attempt = ExampleAttempt.objects.create(
+            student_example=student_example,
+            student=student_example.student,
+            anonymous_session=student_example.anonymous_session,
+            example_id=example_id,
+            attempt_number=max(student_example.attempts, 1),
+            duration=duration or 0,
+            source='speech',
+            input_type=input_type or '',
+            language=language or '',
+            action=action,
+            is_correct=is_correct,
+            transcription=transcription or '',
+            parsed_answer=self._serialize_answer(parsed_answer),
+            example_text=example_text or '',
+            correct_answer=correct_answer or '',
+            audio_file_path=audio_file_path,
+            audio_format=audio_format or '',
+            practiced_skill_ids=skill_ids,
+            practiced_skill_names=skill_names,
+            meta=meta or {},
+        )
+
+        # Cloud sync runs in a background daemon thread so it never blocks
+        # the WebSocket callback or the user-facing result.
+        def _background_cloud_sync(att):
+            try:
+                sync_attempt_to_mega(att)
+                retry_pending_attempt_uploads(limit=5)
+            except Exception as cloud_error:
+                print(f"[ERROR] Background cloud sync failed for attempt {att.id}: {cloud_error}")
+
+        threading.Thread(target=_background_cloud_sync, args=(attempt,), daemon=True).start()
 
     async def receive(self, text_data=None, bytes_data=None):
 
@@ -135,6 +285,45 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
             elif evt.result.reason == speechsdk.ResultReason.NoMatch:
                 print(f"[DEBUG] NO_MATCH: Azure did not understand anything")
                 print(f"[DEBUG] NoMatch details: {evt.result.no_match_details if hasattr(evt.result, 'no_match_details') else 'N/A'}")
+
+                student_id = self.metadata.get('student_id', 'unknown')
+                session_id = self.metadata.get('session_id', None)
+                example_id = self.metadata.get('example_id', 'unknown')
+                input_type = self.metadata.get('input_type', '')
+                record_date = self.metadata.get('record_date')
+                audio_bytes = bytes(self.speech_data)
+
+                try:
+                    from .utils import calculate_duration
+                    duration = calculate_duration(record_date) if record_date else 0
+                except Exception:
+                    duration = 0
+
+                if example_id != 'unknown' and record_date:
+                    example_text, correct_answer = self._get_example_context(example_id)
+                    try:
+                        self._store_attempt_log(
+                            student_id=student_id,
+                            session_id=session_id,
+                            example_id=example_id,
+                            record_date=record_date,
+                            duration=duration,
+                            input_type=input_type,
+                            language=self.language,
+                            action='no_match',
+                            is_correct=False,
+                            transcription=evt.result.text,
+                            parsed_answer='NO_MATCH',
+                            example_text=example_text,
+                            correct_answer=correct_answer,
+                            audio_bytes=audio_bytes,
+                            audio_format=self.audio_format,
+                            meta={'azure_reason': 'NoMatch'},
+                        )
+                    except Exception as log_error:
+                        print(f"[ERROR] Failed to store NO_MATCH log: {log_error}")
+
+                self.speech_data = bytearray()
                 # Send fail response to frontend
                 response_data = {
                     "isCorrect": False,
@@ -154,6 +343,45 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                 if hasattr(evt.result, 'cancellation_details') and evt.result.cancellation_details:
                     print(f"[DEBUG] Cancellation reason: {evt.result.cancellation_details.reason}")
                     print(f"[DEBUG] Error details: {evt.result.cancellation_details.error_details}")
+
+                student_id = self.metadata.get('student_id', 'unknown')
+                session_id = self.metadata.get('session_id', None)
+                example_id = self.metadata.get('example_id', 'unknown')
+                input_type = self.metadata.get('input_type', '')
+                record_date = self.metadata.get('record_date')
+                audio_bytes = bytes(self.speech_data)
+
+                try:
+                    from .utils import calculate_duration
+                    duration = calculate_duration(record_date) if record_date else 0
+                except Exception:
+                    duration = 0
+
+                if example_id != 'unknown' and record_date:
+                    example_text, correct_answer = self._get_example_context(example_id)
+                    try:
+                        self._store_attempt_log(
+                            student_id=student_id,
+                            session_id=session_id,
+                            example_id=example_id,
+                            record_date=record_date,
+                            duration=duration,
+                            input_type=input_type,
+                            language=self.language,
+                            action='error',
+                            is_correct=False,
+                            transcription=evt.result.text,
+                            parsed_answer='CANCELED',
+                            example_text=example_text,
+                            correct_answer=correct_answer,
+                            audio_bytes=audio_bytes,
+                            audio_format=self.audio_format,
+                            meta={'azure_reason': 'Canceled'},
+                        )
+                    except Exception as log_error:
+                        print(f"[ERROR] Failed to store CANCELED log: {log_error}")
+
+                self.speech_data = bytearray()
                 # Send fail response to frontend
                 response_data = {
                     "isCorrect": False,
@@ -177,15 +405,19 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     # Initialize response data for all branches
                     response_data = {}
                     evaluation_data = {}
+                    action = "evaluated"
+                    is_correct_for_log = None
+                    parsed_answer_for_log = None
                     
                     student_id = self.metadata.get('student_id', 'unknown')
                     session_id = self.metadata.get('session_id', None)
                     example_id = self.metadata.get('example_id', 'unknown')
+                    audio_bytes = bytes(self.speech_data)
                     #print(f"[DEBUG] student_id={student_id}, session_id={session_id}, example_id={example_id}")
 
                     # Sent audio will be dumped in WAV
                     if DUMP_AUDIO:  
-                        wav_data = self.convert_pcm_to_wav(self.speech_data)
+                        wav_data = self.convert_pcm_to_wav(audio_bytes)
                         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
                         audio_filename = f"{student_id}_{example_id}_{timestamp}.wav"
@@ -253,6 +485,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                         request = factory.post('skip-example/', skip_data)
                         skip_example(request)
                         response_data = {'skipped': True}
+                        action = "skipped"
                         evaluation_data = {
                             "student_id": student_id,
                             "example_id": example_id,
@@ -273,6 +506,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                         request = factory.post('delete-record/', delete_data)
                         delete_example_record(request)
                         response_data = {'finished': True}
+                        action = "terminated"
                         evaluation_data = {
                             "student_id": student_id,
                             "example_id": example_id,
@@ -284,118 +518,187 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
                     # Transcript does not contain 'skip' or 'terminate' words - evaluate answer 
                     else:
-                        # Check if answer contains only numbers/symbols for INLINE/WORD types
-                        if input_type == 'INLINE' or input_type == 'WORD':
                             import re
-                            # Check if text contains letters (except for specific cases)
-                            has_letters = bool(re.search(r'[a-zA-ZáäčďéíľľňóôŕšťúůýžÁÄČĎÉÍĽŇÓÔŕŘŠŤÚŮÝŽ]', student_answer))
-                            
-                            if has_letters:
-                                print(f"[DEBUG] INLINE/WORD answer contains letters: '{student_answer}'")
-                                # Try to extract numbers from the text
-                                numbers = re.findall(r'\d+(?:[.,]\d+)?', student_answer)
-                                if numbers:
-                                    # Use the first number found
-                                    extracted_number = numbers[0].replace(',', '.')
-                                    print(f"[DEBUG] Extracted number from text: '{extracted_number}'")
-                                    student_answer = extracted_number
-                                    # Continue with evaluation using extracted number
-                                else:
-                                    # No number found - ignore
-                                    print(f"[DEBUG] No number found in text - IGNORING")
-                                    return
-                            
-                            # Evaluate the answer (either direct number or extracted)
-                            isCorrect, continue_with_next, student_answer = InlineSpeechAnswerChecker.verifyAnswer(
-                                student_id, example_id, record_date, duration, student_answer, session_id=session_id
-                            )
-                            response_data = {
-                                "isCorrect": isCorrect,
-                                "continue_with_next": continue_with_next,
-                                "student_answer": student_answer
-                            }
-                            evaluation_data = {
-                                "student_id": student_id,
-                                "example_id": example_id,
-                                "transcription": evt.result.text,
-                                "example_text": example_text,
-                                "correct_answer": correct_answer,
-                                "evaluation": isCorrect
-                            }
-                        # Fraction answer evaluated by LLM
-                        elif input_type == 'FRAC':
-                            
-                            try:
-                                isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
-                                    student_id, example_id, record_date, duration, student_answer, 'fraction'
-                                )
 
-                            # LLM rate limit reached - use FractionSpeechAnswerChecker
-                            except GeminiRateLimitError:
-                                print("FRAC gemini limit reached - will use FractionSpeechAnswerChecker")
-                                isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
-                                    student_id, example_id, record_date, duration, student_answer
-                                )
-                            
-                            response_data = {
-                                "isCorrect": isCorrect,
-                                "continue_with_next": continue_with_next,
-                                "student_answer": student_answer
-                            }
-                            evaluation_data = {
-                                "student_id": student_id,
-                                "example_id": example_id,
-                                "transcription": evt.result.text,
-                                "example_text": example_text,
-                                "correct_answer": correct_answer,
-                                "evaluation": isCorrect
-                            }
+                            # Comparison-specific root words (unambiguously comparison operators
+                            # in Slovak/Czech math context). Generic words like 'ako', 'než', 'nez'
+                            # are intentionally excluded — they appear in everyday speech and would
+                            # cause random utterances to bypass the word filter.
+                            _comparison_roots = [
+                                'väčšie', 'vacsie', 'vetšie', 'vetsie',
+                                'menšie', 'mensie',
+                                'rovné', 'rovne', 'rovna', 'rovná',
+                                'väčší', 'vacsi', 'vetší', 'vetsi',
+                                'menší', 'mensi',
+                                'rovný', 'rovny',
+                            ]
 
-                        # Variable answer evaluated by LLM  
-                        elif input_type == 'VAR':
+                            def _is_comparison_answer(text):
+                                t = text.lower()
+                                return any(kw in t for kw in _comparison_roots)
 
-                            try:
-                                isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
-                                    student_id, example_id, record_date, duration, student_answer, 'variable'
-                                )
+                            # Universal word-only guard: if the transcription has no digits
+                            # and is not a comparison-operator answer, silently ignore it
+                            # for evaluation, but keep the recording in logs with a non-evaluated status.
+                            # Applies to ALL input types so random speech like "dobre", "neviem", "päť"
+                            # is never counted as incorrect answer.
+                            if not re.search(r'\d', student_answer) and not _is_comparison_answer(student_answer):
+                                print(f"[DEBUG] Word-only answer filtered (no digits, no comparison): '{student_answer}'")
+                                response_data = {
+                                    "isCorrect": None,
+                                    "continue_with_next": False,
+                                    "filtered": True,
+                                    "filter_reason": "non_numeric_speech",
+                                }
+                                action = "skipped"
+                                is_correct_for_log = None
+                                parsed_answer_for_log = ""
+                                evaluation_data = {
+                                    "student_id": student_id,
+                                    "example_id": example_id,
+                                    "transcription": evt.result.text,
+                                    "example_text": example_text,
+                                    "correct_answer": correct_answer,
+                                    "evaluation": "filtered_non_numeric",
+                                }
+                            else:
 
-                            # LLM rate limit reached - use VariableSpeechAnswerChecker
-                            except GeminiRateLimitError:
-                                print("VAR gemini limit reached - will use VariableSpeechAnswerChecker")
-                                isCorrect, continue_with_next, student_answer = VariableSpeechAnswerChecker.verifyAnswer(
-                                    student_id, example_id, record_date, duration, student_answer
-                                )
-                            
-                            response_data = {
-                                "isCorrect": isCorrect,
-                                "continue_with_next": continue_with_next,
-                                "student_answer": student_answer
-                            }
-                            evaluation_data = {
-                                "student_id": student_id,
-                                "example_id": example_id,
-                                "transcription": evt.result.text,
-                                "example_text": example_text,
-                                "correct_answer": correct_answer,
-                                "evaluation": isCorrect
-                            }
+                                # Check if answer contains only numbers/symbols for INLINE/WORD types
+                                if input_type == 'INLINE' or input_type == 'WORD':
+                                    has_letters = bool(re.search(r'[a-zA-ZáäčďéíľľňóôŕšťúůýžÁÄČĎÉÍĽŇÓÔŕŘŠŤÚŮÝŽ]', student_answer))
+
+                                    if has_letters and not _is_comparison_answer(student_answer):
+                                        # Mixed text with digits (e.g. "päťdesiat 3") — extract last number
+                                        numbers = re.findall(r'\d+(?:[.,]\d+)?', student_answer)
+                                        if numbers:
+                                            extracted_number = numbers[-1].replace(',', '.')
+                                            print(f"[DEBUG] Extracted last number from text: '{extracted_number}'")
+                                            student_answer = extracted_number
+                                        # pure-word no-digit case already handled by guard above
+
+                                    # Evaluate the answer (either direct number, extracted number, or comparison word)
+                                    isCorrect, continue_with_next, student_answer = InlineSpeechAnswerChecker.verifyAnswer(
+                                        student_id, example_id, record_date, duration, student_answer, session_id=session_id
+                                    )
+                                    response_data = {
+                                        "isCorrect": isCorrect,
+                                        "continue_with_next": continue_with_next,
+                                        "student_answer": student_answer
+                                    }
+                                    is_correct_for_log = isCorrect
+                                    parsed_answer_for_log = student_answer
+                                    evaluation_data = {
+                                        "student_id": student_id,
+                                        "example_id": example_id,
+                                        "transcription": evt.result.text,
+                                        "example_text": example_text,
+                                        "correct_answer": correct_answer,
+                                        "evaluation": isCorrect
+                                    }
+                                # Fraction answer evaluated by LLM
+                                elif input_type == 'FRAC':
+
+                                    try:
+                                        isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
+                                            student_id, example_id, record_date, duration, student_answer, 'fraction'
+                                        )
+
+                                    # LLM rate limit reached - use FractionSpeechAnswerChecker
+                                    except GeminiRateLimitError:
+                                        print("FRAC gemini limit reached - will use FractionSpeechAnswerChecker")
+                                        isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
+                                            student_id, example_id, record_date, duration, student_answer
+                                        )
+
+                                    response_data = {
+                                        "isCorrect": isCorrect,
+                                        "continue_with_next": continue_with_next,
+                                        "student_answer": student_answer
+                                    }
+                                    is_correct_for_log = isCorrect
+                                    parsed_answer_for_log = student_answer
+                                    evaluation_data = {
+                                        "student_id": student_id,
+                                        "example_id": example_id,
+                                        "transcription": evt.result.text,
+                                        "example_text": example_text,
+                                        "correct_answer": correct_answer,
+                                        "evaluation": isCorrect
+                                    }
+
+                                # Variable answer evaluated by LLM  
+                                elif input_type == 'VAR':
+
+                                    try:
+                                        isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
+                                            student_id, example_id, record_date, duration, student_answer, 'variable'
+                                        )
+
+                                    # LLM rate limit reached - use VariableSpeechAnswerChecker
+                                    except GeminiRateLimitError:
+                                        print("VAR gemini limit reached - will use VariableSpeechAnswerChecker")
+                                        isCorrect, continue_with_next, student_answer = VariableSpeechAnswerChecker.verifyAnswer(
+                                            student_id, example_id, record_date, duration, student_answer
+                                        )
+
+                                    response_data = {
+                                        "isCorrect": isCorrect,
+                                        "continue_with_next": continue_with_next,
+                                        "student_answer": student_answer
+                                    }
+                                    is_correct_for_log = isCorrect
+                                    parsed_answer_for_log = student_answer
+                                    evaluation_data = {
+                                        "student_id": student_id,
+                                        "example_id": example_id,
+                                        "transcription": evt.result.text,
+                                        "example_text": example_text,
+                                        "correct_answer": correct_answer,
+                                        "evaluation": isCorrect
+                                    }
                         
-                        else:
-                            # Unknown input type
-                            print(f"[ERROR] Unknown input_type: '{input_type}'", flush=True)
-                            response_data = {
-                                "isCorrect": False,
-                                "continue_with_next": False,
-                                "student_answer": f"Error: Unknown input type '{input_type}'"
-                            }
-                            evaluation_data = {
-                                "student_id": student_id,
-                                "example_id": example_id,
-                                "transcription": evt.result.text,
-                                "example_text": example_text,
-                                "correct_answer": correct_answer,
-                                "evaluation": "error_unknown_type"
-                            }
+                                else:
+                                    # Unknown input type
+                                    print(f"[ERROR] Unknown input_type: '{input_type}'", flush=True)
+                                    action = "error"
+                                    response_data = {
+                                        "isCorrect": False,
+                                        "continue_with_next": False,
+                                        "student_answer": f"Error: Unknown input type '{input_type}'"
+                                    }
+                                    evaluation_data = {
+                                        "student_id": student_id,
+                                        "example_id": example_id,
+                                        "transcription": evt.result.text,
+                                        "example_text": example_text,
+                                        "correct_answer": correct_answer,
+                                        "evaluation": "error_unknown_type"
+                                    }
+
+                    try:
+                        self._store_attempt_log(
+                            student_id=student_id,
+                            session_id=session_id,
+                            example_id=example_id,
+                            record_date=record_date,
+                            duration=duration,
+                            input_type=input_type,
+                            language=self.language,
+                            action=action,
+                            is_correct=is_correct_for_log,
+                            transcription=evt.result.text,
+                            parsed_answer=parsed_answer_for_log,
+                            example_text=example_text,
+                            correct_answer=correct_answer,
+                            audio_bytes=audio_bytes,
+                            audio_format=self.audio_format,
+                            meta={
+                                "continue_with_next": response_data.get("continue_with_next"),
+                                "evaluation": evaluation_data.get("evaluation"),
+                            },
+                        )
+                    except Exception as log_error:
+                        print(f"[ERROR] Failed to store attempt log: {log_error}")
                         
                     # Save evaluation data to JSON file
                     if DUMP_AUDIO:

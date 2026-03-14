@@ -517,13 +517,15 @@ export const getRelatedTasksCount = async (skillId) => {
  * @param {string} answer - users answer to the question.
  * @param {Array<number>} skills - array of skill ids which user was practicing.
  */
-export const sendSurveyAnswer = async (questionType, questionText, answer, skills) => {
+export const sendSurveyAnswer = async (questionType, questionText, answer, skills, studentId = null, sessionId = null) => {
   try {
     await apiClient.post('survey-answer/', {
       question_type: questionType,
       question_text: questionText,
       answer,
-      skills
+      skills,
+      student_id: studentId,
+      session_id: sessionId
     });
 
   } catch (error) {
@@ -603,6 +605,33 @@ export const getAllStudentsStats = async () => {
     return response.data;
   } catch (error) {
     throw error.response?.data?.error || 'Error fetching students list.';
+  }
+};
+
+/**
+ * Fetches list of anonymous sessions with aggregated stats
+ * @returns {Promise<Array>} Array of anonymous sessions
+ */
+export const getAllAnonymousSessionsStats = async () => {
+  try {
+    const response = await apiClient.get('analytics/anonymous-sessions/');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching anonymous sessions list.';
+  }
+};
+
+/**
+ * Fetches complete stored personal data (attempt logs + summary)
+ * @param {Object} params - { student_id } or { session_id }
+ * @returns {Promise<Object>} user data payload
+ */
+export const getMyData = async (params) => {
+  try {
+    const response = await apiClient.get('my-data/', { params });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching my data.';
   }
 };
 

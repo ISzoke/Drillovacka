@@ -109,6 +109,7 @@ const handleLogoClick = () => {
             <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Příklady</RouterLink>
             <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Dovednosti</RouterLink>
             <RouterLink to="/analytics/skills" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Skill Analytics</RouterLink>
+            <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Moje dáta</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Odhlásit se</button>
           </template>
 
@@ -158,6 +159,7 @@ const handleLogoClick = () => {
             <RouterLink to="/tasks" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Příklady</RouterLink>
             <RouterLink to="/skill-creator" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Dovednosti</RouterLink>
             <RouterLink to="/analytics/skills" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Skill Analytics</RouterLink>
+            <RouterLink to="/analytics/my-data" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Moje dáta</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">Odhlásit se</button> 
           </template>
 

@@ -8,10 +8,13 @@
 -->
 
 <script setup>
-import { defineProps, computed, ref } from 'vue';
+import { defineProps, computed, ref, onMounted, onUnmounted } from 'vue';
 import { sendSurveyAnswer } from '@/api/apiClient';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useRecorderStore } from '@/stores/useRecorderStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { getSessionId } from '@/utils/sessionManager';
 import {dictionary} from '@/utils/dictionary';
 
 const props = defineProps({
@@ -43,6 +46,11 @@ const props = defineProps({
 
 const langStore = useLanguageStore();
 const router = useRouter();
+const recorderStore = useRecorderStore();
+const authStore = useAuthStore();
+
+const student_id = authStore.id || 0;
+const session_id = student_id === 0 ? getSessionId() : null;
 
 // Total number of practiced examples   
 const total = computed(() => {
@@ -76,26 +84,74 @@ const percentages = computed(() => {
 });
 
 
-// Emoji ratings so the user can rate the application   
-const selectedEmoji = ref(null);
+const feedbackText = ref('');
 
-const emojiRatings = ref([
-  { icon: "fas fa-frown", label: { cs: "Nelíbilo se mi to.", en: "I didn't like it." } },
-  { icon: "fas fa-meh", label: { cs: "Nic moc, mohlo by to být lepší.", en: "It was okay, could be better." } },
-  { icon: "fas fa-smile", label: { cs: "Dobré, ale něco bych zlepšil/a.", en: "Good, but I would improve something." } },
-  { icon: "fas fa-smile-beam", label: { cs: "Super! Bavilo mě to.", en: "Great! I enjoyed it." } },
-]);
+const feedbackPrompt = {
+    cs: 'Napíš, alebo řekni, čo se ti líbilo nebo co by jsi změnil/a...  ',
+    en: 'Do you have any feedback for us? ',
+    sk: 'Napíš, alebo povedz, čo sa ti páčilo alebo čo by si zmenil/a...  '
+};
 
-// Handle selected emoji rating - save the answer
-const handleEmojiSelection = async () => {
-    if(langStore.language == 'en') router.push({ path: '/en' });
+const feedbackPlaceholder = {
+    cs: 'Napíš, čo sa ti páčilo alebo čo by si zmenil/a... ',
+    en: 'Write what you liked or what should be improved... ',
+    sk: 'Napíš, čo sa ti páčilo alebo čo by si zmenil/a... '
+};
 
-    if(selectedEmoji.value === null) {
-        return;
-    }    
+const feedbackQuestionByLang = {
+    cs: 'Máš pre nás nejaký feedback?',
+    en: 'Do you have any feedback for us?',
+    sk: 'Máš pre nás nejaký feedback?'
+};
 
-    await sendSurveyAnswer('summary', 'Jak se ti líbilo procvičování s touto aplikací?', emojiRatings.value[selectedEmoji.value].label, props.topics);  
-}
+const isSubmitting = ref(false);
+const feedbackSubmitted = ref(false);
+
+const toggleAudioFeedback = () => {
+    if (recorderStore.isRecording) {
+        recorderStore.stopRecording();
+    } else {
+        recorderStore.startRecording(true);
+    }
+};
+
+const confirmFeedback = async () => {
+    isSubmitting.value = true;
+    
+    // Stop recording if still active
+    if (recorderStore.isRecording) {
+        recorderStore.stopRecording();
+        // Wait for WebSocket to close and transcription to be saved
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    const trimmedFeedback = feedbackText.value.trim();
+    if (trimmedFeedback.length > 0) {
+        await sendSurveyAnswer('final-feedback-text', feedbackQuestionByLang[langStore.language], trimmedFeedback, props.topics, student_id, session_id);
+    }
+
+    feedbackSubmitted.value = true;
+    isSubmitting.value = false;
+};
+
+const backToMenu = () => {
+    if (langStore.language === 'en') {
+        router.push({ path: '/en' });
+    } else {
+        router.push({ path: '/' });
+    }
+};
+
+onMounted(() => {
+    recorderStore.updateSurveyQuestionData(feedbackQuestionByLang[langStore.language], props.topics, student_id, session_id);
+    console.log('[DEBUG Summary.vue] onMounted - student_id:', student_id, 'session_id:', session_id);
+});
+
+onUnmounted(() => {
+    if (recorderStore.isRecording) {
+        recorderStore.stopRecording();
+    }
+});
 </script>
 
 <template>
@@ -155,33 +211,67 @@ const handleEmojiSelection = async () => {
             </div>
         </div>
 
-        <!-- Emoji rating section -->
+        <!-- Final optional feedback section -->
         <div class="flex flex-col items-center my-8 md:my-12">
-            <div class="flex justify-center text-center text-xl font-semibold mb-4">{{ dictionary[langStore.language].summarySurveyText }}</div>
-            <div class="flex space-x-3 md:space-x-6">
-                <div v-for="(emoji, index) in emojiRatings" :key="index" class="flex flex-col items-center">
-                    <button @click="selectedEmoji = index" :key="selectedEmoji"
-                        class="text-5xl rounded-full transition transform hover:scale-110 border-4 p-2 text-gray-400 " :class="selectedEmoji === index
-                            ? 'border-yellow-500 text-yellow-400 bg-yellow-100 shadow-md scale-110'
-                            : 'border-gray-300 bg-white '">
+            <div class="flex justify-center text-center text-xl font-semibold mb-4">{{ feedbackPrompt[langStore.language] }}</div>
 
-                        <i :class="emoji.icon" class="drop-shadow-md bg-black p-1 rounded-full"></i>
-                    </button>
+            <textarea
+                v-model="feedbackText"
+                :placeholder="feedbackPlaceholder[langStore.language]"
+                :disabled="isSubmitting || feedbackSubmitted"
+                rows="4"
+                class="w-full md:w-[700px] max-w-full border-2 border-primary/40 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            />
 
-                    <span class="text-center text-sm md:text-md font-medium mt-2 w-16 md:w-32">
-                        {{ emoji.label[langStore.language] }}
+            <div v-if="feedbackSubmitted" class="mt-4 text-green-600 font-semibold text-lg flex items-center justify-center">
+                <i class="fas fa-check-circle mr-2"></i>
+                {{ dictionary[langStore.language].feedbackSent }}
+            </div>
+
+            <div class="mt-6 flex flex-col items-center">
+                <div class="text-md text-gray-700 mb-3">{{ dictionary[langStore.language].clickMicText }}</div>
+                <button
+                    @click="toggleAudioFeedback"
+                    :disabled="isSubmitting || feedbackSubmitted"
+                    :class="recorderStore.isRecording ? 'bg-red-500 hover:bg-red-600 border-red-600' : 'bg-green-500 hover:bg-green-600 border-green-600'"
+                    class="w-16 h-16 flex items-center justify-center rounded-full border-4 text-white text-xl transition hover:scale-110 shadow-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    :title="recorderStore.isRecording ? 'Stop Recording' : 'Start Recording'"
+                >
+                    <i :class="recorderStore.isRecording ? 'fas fa-stop' : 'fas fa-microphone'"></i>
+                </button>
+            </div>
+            
+            <!-- Confirm feedback button -->
+            <div class="flex justify-center mt-6">
+                <button
+                    @click="confirmFeedback"
+                    :disabled="isSubmitting || feedbackSubmitted || (feedbackText.trim().length === 0 && !recorderStore.isRecording)"
+                    :class="(isSubmitting || feedbackSubmitted || (feedbackText.trim().length === 0 && !recorderStore.isRecording)) ? 'bg-gray-400 cursor-not-allowed opacity-75' : 'bg-primary hover:bg-primary/80'"
+                    class="text-white text-lg md:text-xl font-semibold px-6 py-3 rounded-xl border-2 border-primary transition"
+                >
+                    <span v-if="isSubmitting">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        {{ dictionary[langStore.language].saving }}
                     </span>
-                </div>
+                    <span v-else-if="feedbackSubmitted">
+                        <i class="fas fa-check mr-2"></i>
+                        {{ dictionary[langStore.language].confirmed }}
+                    </span>
+                    <span v-else>
+                        {{ dictionary[langStore.language].confirm }}
+                    </span>
+                </button>
             </div>
         </div>
 
-        <!-- Button to go back to main menu and save rating -->
+        <!-- Button to go back to main menu -->
         <div class="flex justify-center mt-12 md:mt-16 mb-6 w-full">
-            <RouterLink to="/"
-                @click="handleEmojiSelection"
-                class="text-center text-xl md:text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-3 py-2 md:px-4 md:py-2 cursor-pointer transition">
+            <button
+                @click="backToMenu"
+                class="text-center text-xl md:text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-3 py-2 md:px-4 md:py-2 transition"
+            >
                 {{ dictionary[langStore.language].backtoMainMenu }}
-            </RouterLink>
+            </button>
         </div>
 
     </div>

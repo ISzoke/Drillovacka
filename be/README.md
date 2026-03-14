@@ -38,3 +38,48 @@ python manage.py migrate
 ```sh
 uvicorn be.asgi:application --host 0.0.0.0 --port 8000 --reload
 ```
+
+## Automatic upload of recordings to Dropbox
+
+Use `rclone` to move audio/JSON files from local storage to Dropbox periodically.
+
+### 1. Install rclone on the VPS
+```sh
+sudo apt update
+sudo apt install -y rclone
+```
+
+### 2. Configure Dropbox remote
+```sh
+rclone config
+```
+
+Create a remote named `dropbox`.
+
+### 3. Configure sync script
+```sh
+cd be/scripts
+cp dropbox-sync.env.example dropbox-sync.env
+chmod +x sync_to_dropbox.sh
+```
+
+Adjust paths and remote destination in `dropbox-sync.env`.
+
+### 4. Test manually
+```sh
+cd be/scripts
+./sync_to_dropbox.sh
+tail -n 100 ../dropbox-sync.log
+```
+
+### 5. Run automatically via cron (every 10 minutes)
+```sh
+crontab -e
+```
+
+Add:
+```sh
+*/10 * * * * /home/debian/BP/be/scripts/sync_to_dropbox.sh
+```
+
+The script moves `*.wav` and `*.json` from `be/audioprompts` and `be/survey` to Dropbox after they are at least 2 minutes old (`MIN_AGE=2m`).

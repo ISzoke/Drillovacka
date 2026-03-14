@@ -197,12 +197,77 @@ class VariableAnswerChecker(AnswerChecker):
 
 # Checks spoken inline numeric answers            
 class InlineSpeechAnswerChecker(AnswerChecker):
-    pass
+    
+    # Mapping of Slovak/Czech comparison words to symbols
+    COMPARISON_WORDS = {
+        'väčšie': '>', 'vacsie': '>', 'väčšie než': '>', 'väčšie ako': '>',
+        'väčšie nez': '>', 'vacsie nez': '>', 'vacsie ako': '>',
+        'vetšie': '>', 'vetsie': '>', 'vetšie než': '>', 'vetšie ako': '>',
+        'vetsie nez': '>', 'vetsie ako': '>',
+        'menšie': '<', 'mensie': '<', 'menšie než': '<', 'menšie ako': '<',
+        'menšie nez': '<', 'mensie nez': '<', 'mensie ako': '<',
+        'menšie nako': '<', 'mensie nako': '<',
+        'rovné': '=', 'rovne': '=', 'rovná sa': '=', 'rovna sa': '=',
+        'rovná': '=', 'rovna': '=', 'rovnajú sa': '=', 'rovnaju sa': '=',
+        'rovná se': '=', 'rovna se': '=', 'rovnajú se': '=', 'rovnaju se': '=',
+        'je rovné': '=', 'je rovne': '=', 'je rovná': '=', 'je rovna': '=',
+        'je väčšie': '>', 'je vacsie': '>', 'je vetšie': '>', 'je vetsie': '>',
+        'je menšie': '<', 'je mensie': '<',
+        'väčší': '>', 'vacsi': '>', 'vetší': '>', 'vetsi': '>',
+        'menší': '<', 'mensi': '<',
+        'rovný': '=', 'rovny': '=',
+    }
+
+    @staticmethod
+    def normalize_text(text):
+        """Normalize text by removing extra spaces and converting to lowercase."""
+        return ' '.join(text.lower().strip().split())
+
+    @staticmethod
+    def extract_comparison_symbol(student_answer):
+        """Try to extract comparison symbol from Slovak/Czech spoken words."""
+        normalized_answer = InlineSpeechAnswerChecker.normalize_text(student_answer)
+        
+        # Try to find comparison words in the answer
+        # Check longest phrases first to avoid partial matches
+        sorted_phrases = sorted(InlineSpeechAnswerChecker.COMPARISON_WORDS.keys(), 
+                               key=len, reverse=True)
+        
+        for phrase in sorted_phrases:
+            if phrase in normalized_answer:
+                return InlineSpeechAnswerChecker.COMPARISON_WORDS[phrase]
+        
+        # Check if answer already contains a comparison symbol
+        if '>' in student_answer:
+            return '>'
+        elif '<' in student_answer:
+            return '<'
+        elif '=' in student_answer:
+            return '='
+        
+        return None
 
     @staticmethod
     def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):   
         correct_answer = Answer.objects.get(example_id=example_id).answer
 
+        # Check if this is a comparison operator question
+        if correct_answer in ['<', '>', '=']:
+            extracted_symbol = InlineSpeechAnswerChecker.extract_comparison_symbol(student_answer)
+            
+            if extracted_symbol is None:
+                continue_with_next = InlineSpeechAnswerChecker.updateRecord(
+                    student_id, example_id, date, duration, False, session_id=session_id
+                )
+                return (False, continue_with_next, None)
+            
+            is_correct = (extracted_symbol == correct_answer)
+            continue_with_next = InlineSpeechAnswerChecker.updateRecord(
+                student_id, example_id, date, duration, is_correct, session_id=session_id
+            )
+            return (is_correct, continue_with_next, extracted_symbol)
+
+        # Original numeric answer logic
         try:
             correct_answer = float(correct_answer.replace(",", "."))
         except ValueError:
@@ -214,19 +279,15 @@ class InlineSpeechAnswerChecker(AnswerChecker):
         numbers_in_answer = re.findall(r'\d+\.\d+|\d+', student_answer)
         extracted_numbers = [float(num) for num in numbers_in_answer]
 
-        correct_number = None
-        is_correct = False
+        # Use only the last extracted number from Azure transcription string
+        if not extracted_numbers:
+            continue_with_next = InlineSpeechAnswerChecker.updateRecord(
+                student_id, example_id, date, duration, False, session_id=session_id
+            )
+            return (False, continue_with_next, None)
 
-        # Check if any of the extracted numbers match the correct answer
-        for num in extracted_numbers:
-            if AnswerChecker.compareAnswers(num, correct_answer):
-                is_correct = True
-                correct_number = num
-                break  # stop at the first correct number
-
-        # If no correct number was found, use the last extracted number to be displayed to user
-        if not is_correct and extracted_numbers:
-            correct_number = extracted_numbers[-1] 
+        correct_number = extracted_numbers[-1]
+        is_correct = AnswerChecker.compareAnswers(correct_number, correct_answer)
 
         continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct, session_id=session_id)
 
