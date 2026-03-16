@@ -86,7 +86,7 @@ const confirmDelete = async () => {
     removeSkillFromTree(skillTree.value);
     
     toastStore.addToast({
-      message: `Dovednost ${deletedSkillName.value} byla smazána`,
+      message: `Zručnosť ${deletedSkillName.value} bola zmazaná`,
       type: 'success',
       visible: true,
     });
@@ -95,7 +95,7 @@ const confirmDelete = async () => {
 
   } catch (error) {
     toastStore.addToast({
-      message: `Chyba při mazání dovednosti`,
+      message: `Chyba pri mazaní zručnosti`,
       type: 'error',
       visible: true,
     });
@@ -114,9 +114,9 @@ const getCorrectFormOfTask = (count) => {
 // Get correct form of word 'priklad'
 const getCorrectFormOfExample = (count) => {
   if (count === 1) {
-    return 'příkladem';
+    return 'príkladom';
   } else  {
-    return 'příklady';
+    return 'príkladmi';
   }
 };
 </script>
@@ -124,7 +124,7 @@ const getCorrectFormOfExample = (count) => {
 <template>
 
   <div class="flex flex-col w-full max-w-4xl mx-auto pt-12">
-    <h2 class="text-4xl font-bold text-primary my-4 text-center">Dovednosti</h2>
+    <h2 class="text-4xl font-bold text-primary my-4 text-center">Zručnosti</h2>
 
     <!-- Skill tree root -->
     <SkillNode v-if="skillTree.length" :skills="skillTree" :parent="0" @deleteSkill="openModal"/>
@@ -135,15 +135,14 @@ const getCorrectFormOfExample = (count) => {
   <!-- Delete skill confirmation modal -->
   <div v-if="isModalOpened" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-2/3 md:w-1/2">
-      <p class="text-2xl">Opravdu chcete smazat dovednost <span class="font-bold">{{ deletedSkillName }}</span>?</p>
-      <p class="mt-2 text-lg text-gray-600">Dovednost je spojena s {{ relatedTasks + ' ' + getCorrectFormOfTask() }} a {{ relatedExamples + ' ' + getCorrectFormOfExample()}}</p>
-      <p class="mt-2 text-lg font-semibold text-red-600"><i class="fa-solid fa-triangle-exclamation text-xl"></i> Tato akce je nevratná </p>
+      <p class="text-2xl">Naozaj chceš zmazať zručnosť <span class="font-bold">{{ deletedSkillName }}</span>?</p>
+      <p class="mt-2 text-lg text-gray-600">Zručnosť je prepojená s {{ relatedTasks + ' ' + getCorrectFormOfTask(relatedTasks) }} a {{ relatedExamples + ' ' + getCorrectFormOfExample(relatedExamples)}}</p>
+      <p class="mt-2 text-lg font-semibold text-red-600"><i class="fa-solid fa-triangle-exclamation text-xl"></i> Táto akcia je nevratná </p>
       <div class="mt-4 flex justify-end gap-2 text-xl font-semibold">
-        <button @click="closeModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Zrušit</button>
-        <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Smazat</button>
+        <button @click="closeModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Zrušiť</button>
+        <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Zmazať</button>
       </div>
     </div>
   </div>
 
 </template>
-

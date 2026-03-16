@@ -49,7 +49,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         self.message_queue = asyncio.Queue()
         self.loop = asyncio.get_event_loop()
         self.executor = ThreadPoolExecutor(max_workers=1)
-        self.language = "cs-CZ"
+        self.language = "sk-SK"
         
         # Metadata about language, user and currently solved example
         self.metadata = {}
@@ -540,9 +540,9 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                             # Universal word-only guard: if the transcription has no digits
                             # and is not a comparison-operator answer, silently ignore it
                             # for evaluation, but keep the recording in logs with a non-evaluated status.
-                            # Applies to ALL input types so random speech like "dobre", "neviem", "päť"
-                            # is never counted as incorrect answer.
-                            if not re.search(r'\d', student_answer) and not _is_comparison_answer(student_answer):
+                            # Applies only to INLINE/WORD answers. Fraction/variable speech may be
+                            # recognized in forms where digits are not present in transcription.
+                            if input_type in ('INLINE', 'WORD') and not re.search(r'\d', student_answer) and not _is_comparison_answer(student_answer):
                                 print(f"[DEBUG] Word-only answer filtered (no digits, no comparison): '{student_answer}'")
                                 response_data = {
                                     "isCorrect": None,
@@ -597,17 +597,31 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                                     }
                                 # Fraction answer evaluated by LLM
                                 elif input_type == 'FRAC':
-
+                                    parsed_fraction = FractionSpeechAnswerChecker.extract_fraction_from_text(student_answer)
                                     try:
-                                        isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
-                                            student_id, example_id, record_date, duration, student_answer, 'fraction'
-                                        )
+                                        # Prefer deterministic fraction checker when transcript has number pair.
+                                        if parsed_fraction:
+                                            isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
+                                                student_id, example_id, record_date, duration, student_answer, session_id=session_id
+                                            )
+                                        else:
+                                            isCorrect, continue_with_next, student_answer = LLMAnswerChecker.verifyAnswer(
+                                                student_id, example_id, record_date, duration, student_answer, 'fraction', session_id=session_id
+                                            )
 
                                     # LLM rate limit reached - use FractionSpeechAnswerChecker
                                     except GeminiRateLimitError:
                                         print("FRAC gemini limit reached - will use FractionSpeechAnswerChecker")
                                         isCorrect, continue_with_next, student_answer = FractionSpeechAnswerChecker.verifyAnswer(
-                                            student_id, example_id, record_date, duration, student_answer
+                                            student_id, example_id, record_date, duration, student_answer, session_id=session_id
+                                        )
+
+                                    # Frontend fraction input expects object with numerator/denominator.
+                                    if not isinstance(student_answer, dict):
+                                        student_answer = (
+                                            parsed_fraction
+                                            or FractionSpeechAnswerChecker.extract_fraction_from_latex(correct_answer)
+                                            or {"numerator": "", "denominator": ""}
                                         )
 
                                     response_data = {
@@ -616,7 +630,11 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                                         "student_answer": student_answer
                                     }
                                     is_correct_for_log = isCorrect
-                                    parsed_answer_for_log = student_answer
+                                    parsed_answer_for_log = (
+                                        f"{student_answer.get('numerator')}/{student_answer.get('denominator')}"
+                                        if isinstance(student_answer, dict)
+                                        else student_answer
+                                    )
                                     evaluation_data = {
                                         "student_id": student_id,
                                         "example_id": example_id,

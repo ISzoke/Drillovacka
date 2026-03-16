@@ -106,20 +106,20 @@ const handleLogoClick = () => {
 
           <!-- Admin menu -->
           <template v-else-if="authStore.role == 'admin'">
-            <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Příklady</RouterLink>
-            <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Dovednosti</RouterLink>
-            <RouterLink to="/analytics/skills" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Skill Analytics</RouterLink>
-            <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Moje dáta</RouterLink>
-            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Odhlásit se</button>
+            <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].tasks }}</RouterLink>
+            <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].skills }}</RouterLink>
+            <RouterLink to="/analytics/skills" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
+            <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].myData }}</RouterLink>
+            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
           </template>
 
           <!-- Logged in user -->
           <template v-else>
             <RouterLink to="/dashboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              <i class="fa-solid fa-chart-line mr-1"></i>Dashboard
+              <i class="fa-solid fa-chart-line mr-1"></i>{{ dictionary[langStore.language].dashboard }}
             </RouterLink>
             <RouterLink to="/my-progress" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              <i class="fa-solid fa-list-check mr-1"></i>Môj pokrok
+              <i class="fa-solid fa-list-check mr-1"></i>{{ dictionary[langStore.language].myProgress }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].profile }}
@@ -156,20 +156,20 @@ const handleLogoClick = () => {
 
           <!-- Admin menu -->
           <template v-else-if="authStore.role == 'admin'">
-            <RouterLink to="/tasks" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Příklady</RouterLink>
-            <RouterLink to="/skill-creator" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Dovednosti</RouterLink>
-            <RouterLink to="/analytics/skills" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Skill Analytics</RouterLink>
-            <RouterLink to="/analytics/my-data" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">Moje dáta</RouterLink>
-            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">Odhlásit se</button> 
+            <RouterLink to="/tasks" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasks }}</RouterLink>
+            <RouterLink to="/skill-creator" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skills }}</RouterLink>
+            <RouterLink to="/analytics/skills" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
+            <RouterLink to="/analytics/my-data" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].myData }}</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">{{ dictionary[langStore.language].logout }}</button> 
           </template>
 
           <!-- Logged in user -->
           <template v-else>
             <RouterLink to="/dashboard" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
-              <i class="fa-solid fa-chart-line mr-2"></i>Dashboard
+              <i class="fa-solid fa-chart-line mr-2"></i>{{ dictionary[langStore.language].dashboard }}
             </RouterLink>
             <RouterLink to="/my-progress" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
-              <i class="fa-solid fa-list-check mr-2"></i>Môj pokrok
+              <i class="fa-solid fa-list-check mr-2"></i>{{ dictionary[langStore.language].myProgress }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
               {{ dictionary[langStore.language].profile }}

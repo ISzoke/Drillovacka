@@ -17,7 +17,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
 import { useLanguageStore } from './stores/useLanguageStore';
 import { getSessionId } from '@/utils/sessionManager';
-import { initSession } from '@/api/apiClient';
+import { initSession, updateSessionLanguage } from '@/api/apiClient';
 
 
 // Initialize stores and router instances
@@ -35,9 +35,10 @@ const initializeSession = async () => {
       const sessionId = getSessionId();
       const sessionData = await initSession(sessionId);
       
-      // Set language from session if different from current
+      // Frontend language is the source of truth so old anonymous sessions
+      // created before the Slovak default do not switch the UI back to Czech.
       if (sessionData.language && sessionData.language !== langStore.language) {
-        langStore.setLanguage(sessionData.language);
+        await updateSessionLanguage(sessionId, langStore.language);
       }
     } catch (error) {
       console.error('Failed to initialize session:', error);

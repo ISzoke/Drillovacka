@@ -14,6 +14,7 @@ import { onMounted } from 'vue';
 import { useRoute} from 'vue-router';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { dictionary } from '@/utils/dictionary';
 
 // Stores
 const authStore = useAuthStore();
@@ -41,7 +42,7 @@ onMounted(() => {
   <!-- View for admin - tasks and skills management -->
   <div v-else>
     <p class="text-4xl text-primary flex justify-center font-bold pt-16">
-      Vítejte na hlavní stránce
+      {{ dictionary[langStore.language].adminHomeTitle }}
     </p>
 
     <div class="flex flex-col items-center justify-center gap-8 pt-16">
@@ -51,7 +52,7 @@ onMounted(() => {
            transition transform  hover:shadow-xl 
            hover:bg-secondary hover:border-secondary flex items-center justify-center text-3xl text-center font-bold text-primary p-4 
               duration-300 ease-in-out hover:text-white">
-        Příklady
+        {{ dictionary[langStore.language].tasks }}
       </RouterLink>
 
       <!-- Skill list and creator -->
@@ -59,7 +60,7 @@ onMounted(() => {
            transition transform  hover:shadow-xl 
            hover:bg-secondary hover:border-secondary flex items-center justify-center text-3xl text-center font-bold text-primary p-4 
               duration-300 ease-in-out hover:text-white"> 
-        Dovednosti
+        {{ dictionary[langStore.language].skills }}
       </RouterLink>
       
     </div>

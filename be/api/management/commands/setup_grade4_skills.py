@@ -1,9 +1,14 @@
 """
 ================================================================================
- Module: setup_grade2_skills.py
+ Module: setup_grade4_skills.py
  Description:
-    Creates and assigns a focused set of grade 2 (2. ročník) drill skills
-    based on mental arithmetic automation to 100.
+        Creates and assigns a focused set of grade 4 (4. ročník) drill skills.
+        Grade 4 focus:
+        - násobilka (automatizácia)
+        - delenie so zvyškom
+        - násobenie dvojciferným číslom
+        - delenie jednociferným číslom
+        - sčítanie a odčítanie do 10 000
 ================================================================================
 """
 
@@ -14,23 +19,31 @@ from api.models import GradeLevel, Skill
 
 
 class Command(BaseCommand):
-    help = "Prepare grade 2 skills (drill-oriented leaf skills)."
+    help = "Prepare grade 4 skills (drill-oriented leaf skills)."
 
-    GRADE_2_SKILLS = [
+    GRADE_4_SKILLS = [
         {
-            "name": "Sčítanie do 100 bez prechodu cez desiatku",
+            "name": "Násobilka do 10×10",
             "skill_type": "OPERATION",
         },
         {
-            "name": "Sčítanie do 100 s prechodom cez desiatku",
+            "name": "Násobenie dvojciferným číslom",
             "skill_type": "OPERATION",
         },
         {
-            "name": "Odčítanie do 100",
+            "name": "Delenie jednociferným číslom",
             "skill_type": "OPERATION",
         },
         {
-            "name": "Doplňovanie do 100",
+            "name": "Sčítanie do 10 000",
+            "skill_type": "OPERATION",
+        },
+        {
+            "name": "Odčítanie do 10 000",
+            "skill_type": "OPERATION",
+        },
+        {
+            "name": "Prevody jednotiek dĺžky II",
             "skill_type": "OPERATION",
         },
     ]
@@ -39,35 +52,35 @@ class Command(BaseCommand):
         parser.add_argument(
             "--apply",
             action="store_true",
-            help="Apply changes. Without this flag, runs in dry-run mode.",
+            help="Apply changes. Without this flag, command runs in dry-run mode.",
         )
 
     def handle(self, *args, **options):
         apply_changes = options["apply"]
 
-        grade_2 = GradeLevel.objects.filter(grade=2).first()
-        if not grade_2:
-            self.stdout.write(self.style.ERROR("Grade 2 does not exist. Run seed_grades first."))
+        grade_4 = GradeLevel.objects.filter(grade=4).first()
+        if not grade_4:
+            self.stdout.write(self.style.ERROR("Grade 4 does not exist. Run seed_grades first."))
             return
 
         parent = Skill.objects.filter(name="Operace", deleted=False).first()
+        target_names = [item["name"] for item in self.GRADE_4_SKILLS]
 
-        target_names = [item["name"] for item in self.GRADE_2_SKILLS]
-        leaf_skills_with_grade2 = Skill.objects.filter(
+        leaf_skills_with_grade4 = Skill.objects.filter(
             deleted=False,
             subskills__isnull=True,
-            grade_levels=grade_2,
+            grade_levels=grade_4,
         ).distinct()
-        to_unassign = leaf_skills_with_grade2.exclude(name__in=target_names)
+        to_unassign = leaf_skills_with_grade4.exclude(name__in=target_names)
 
-        self.stdout.write("=== Grade 2 setup preview ===")
-        self.stdout.write(f"Leaf skills currently assigned to grade 2: {leaf_skills_with_grade2.count()}")
-        self.stdout.write(f"Leaf skills to unassign from grade 2: {to_unassign.count()}")
+        self.stdout.write("=== Grade 4 setup preview ===")
+        self.stdout.write(f"Leaf skills currently assigned to grade 4: {leaf_skills_with_grade4.count()}")
+        self.stdout.write(f"Leaf skills to unassign from grade 4: {to_unassign.count()}")
 
         for skill in to_unassign:
-            self.stdout.write(f"  - unassign grade 2: {skill.name} (ID {skill.id})")
+            self.stdout.write(f"  - unassign grade 4: {skill.name} (ID {skill.id})")
 
-        for item in self.GRADE_2_SKILLS:
+        for item in self.GRADE_4_SKILLS:
             existing = Skill.objects.filter(name=item["name"], deleted=False).first()
             action = "reuse" if existing else "create"
             self.stdout.write(f"  - {action} target skill: {item['name']}")
@@ -78,9 +91,9 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             for skill in to_unassign:
-                skill.grade_levels.remove(grade_2)
+                skill.grade_levels.remove(grade_4)
 
-            for item in self.GRADE_2_SKILLS:
+            for item in self.GRADE_4_SKILLS:
                 skill = Skill.objects.filter(name=item["name"], deleted=False).first()
                 if not skill:
                     parent_height = parent.height if parent else 0
@@ -102,6 +115,6 @@ class Command(BaseCommand):
                     if updates:
                         skill.save(update_fields=updates)
 
-                skill.grade_levels.add(grade_2)
+                skill.grade_levels.add(grade_4)
 
-        self.stdout.write(self.style.SUCCESS("\n✓ Grade 2 skills setup applied."))
+        self.stdout.write(self.style.SUCCESS("\n✓ Grade 4 skills setup applied."))

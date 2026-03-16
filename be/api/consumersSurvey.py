@@ -43,7 +43,7 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
 
         self.loop = asyncio.get_event_loop()
         self.executor = asyncio.get_running_loop().run_in_executor
-        self.language = "cs-CZ"
+        self.language = "sk-SK"
         
         self.speech_recognizer, self.stream = self.create_speech_recognizer()
         

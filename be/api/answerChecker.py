@@ -295,6 +295,42 @@ class InlineSpeechAnswerChecker(AnswerChecker):
 
 # Checks spoken fraction-based answers
 class FractionSpeechAnswerChecker(AnswerChecker):
+
+    @staticmethod
+    def extract_fraction_from_text(student_answer):
+        """Extract numerator/denominator pair from speech transcript digits."""
+        numbers_in_answer = re.findall(r'\d+\.\d+|\d+', student_answer or "")
+        if len(numbers_in_answer) < 2:
+            return None
+
+        # Use the last pair - transcript may contain extra numbers/noise.
+        numerator = numbers_in_answer[-2].replace(',', '.')
+        denominator = numbers_in_answer[-1].replace(',', '.')
+
+        try:
+            numerator_f = float(numerator)
+            denominator_f = float(denominator)
+        except ValueError:
+            return None
+
+        if denominator_f == 0:
+            return None
+
+        return {"numerator": numerator_f, "denominator": denominator_f}
+
+    @staticmethod
+    def extract_fraction_from_latex(correct_answer):
+        """Extract numerator/denominator from LaTeX fraction answer (\\frac{a}{b})."""
+        match = re.match(r"\\frac\{(\d+)\}\{(\d+)\}", correct_answer or "")
+        if not match:
+            return None
+
+        numerator = float(match.group(1).replace(',', '.'))
+        denominator = float(match.group(2).replace(',', '.'))
+        if denominator == 0:
+            return None
+
+        return {"numerator": numerator, "denominator": denominator}
     
     @staticmethod
     def verifyAnswer(student_id, example_id, date, duration, student_answer, session_id=None):   
@@ -309,31 +345,21 @@ class FractionSpeechAnswerChecker(AnswerChecker):
         else:
             return (False, False) 
 
-        # Extract all numbers from the spoken answer
-        numbers_in_answer = re.findall(r'\d+\.\d+|\d+', student_answer)
+        parsed = FractionSpeechAnswerChecker.extract_fraction_from_text(student_answer)
+        if not parsed:
+            continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
+            return (False, continue_with_next, {"numerator": "", "denominator": ""})
 
-        if not numbers_in_answer:
-            return (False, False) 
+        student_numerator = parsed["numerator"]
+        student_denominator = parsed["denominator"]
 
-        student_fractions = []
-        i = 0
-        # Create fractions from extracted numbers in pairs (numerator, denominator)
-        while i < len(numbers_in_answer) - 1:
-            numerator = float(numbers_in_answer[i].replace(',', '.'))
-            denominator = float(numbers_in_answer[i+1].replace(',', '.'))
-            student_fractions.append((numerator, denominator))
-            i += 2 
-
-        # Compare each fraction with the correct answer
-        for student_numerator, student_denominator in student_fractions:
-            if (AnswerChecker.compareAnswers(correct_numerator, student_numerator) and 
+        if (AnswerChecker.compareAnswers(correct_numerator, student_numerator) and
                 AnswerChecker.compareAnswers(correct_denominator, student_denominator)):
-                # Correct answer
-                continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
-                return (True, continue_with_next, {"numerator": student_numerator, "denominator": student_denominator})
-        # Incorrect answer
+            continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, True, session_id=session_id)
+            return (True, continue_with_next, {"numerator": student_numerator, "denominator": student_denominator})
+
         continue_with_next = FractionSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
-        return (False, continue_with_next, {"numerator": student_fractions[-1][0], "denominator": student_fractions[-1][1]})
+        return (False, continue_with_next, {"numerator": student_numerator, "denominator": student_denominator})
 
 # Checks spoken variable-based answers
 class VariableSpeechAnswerChecker(AnswerChecker):

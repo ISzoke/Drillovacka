@@ -22,10 +22,11 @@ from django.db.models import Count, Sum, Avg, Max, Q, F
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, Admin, Step, GradeLevel, AnonymousSession
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, Admin, Step, GradeLevel, AnonymousSession
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
+from .example_report_cloud_sync import retry_pending_report_uploads, sync_report_to_mega
 import json
 import random
 from datetime import datetime
@@ -1496,6 +1497,103 @@ def save_survey_answer(request):
         json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
     
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def save_example_report(request):
+    student, anonymous_session = get_user_identity(request)
+    example_id = request.data.get('example_id')
+    report_type = request.data.get('report_type')
+    note = (request.data.get('note') or '').strip()
+    language = (request.data.get('language') or '').strip()
+
+    if not student and not anonymous_session:
+        return Response({"error": "Student ID or Session ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not example_id or not report_type:
+        return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+    allowed_types = {choice[0] for choice in ExampleReport.REPORT_TYPE_CHOICES}
+    if report_type not in allowed_types:
+        return Response({"error": "Invalid report type"}, status=status.HTTP_400_BAD_REQUEST)
+
+    example = get_object_or_404(Example.objects.prefetch_related('answers', 'exampleskill_set__skill'), id=example_id)
+    correct_answer_obj = example.answers.first()
+    skill_ids = list(example.exampleskill_set.values_list('skill_id', flat=True).distinct())
+    skill_names = list(Skill.objects.filter(id__in=skill_ids).values_list('name', flat=True))
+
+    report = ExampleReport.objects.create(
+        student=student,
+        anonymous_session=anonymous_session,
+        example=example,
+        report_type=report_type,
+        note=note,
+        input_type=example.input_type or '',
+        language=language or '',
+        example_text=example.example or '',
+        correct_answer=correct_answer_obj.answer if correct_answer_obj else '',
+        practiced_skill_ids=skill_ids,
+        practiced_skill_names=skill_names,
+        meta={},
+    )
+
+    sync_result = sync_report_to_mega(report)
+    retry_pending_report_uploads(limit=3)
+
+    return Response(
+        {
+            "report_id": report.id,
+            "mega_uploaded": sync_result.get("uploaded", False),
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['GET'])
+def get_example_reports(request):
+    limit = request.query_params.get('limit', 500)
+
+    try:
+        limit = max(1, min(int(limit), 2000))
+    except (TypeError, ValueError):
+        limit = 500
+
+    reports = ExampleReport.objects.select_related(
+        'student',
+        'anonymous_session',
+        'example__task',
+    ).order_by('-created_at')[:limit]
+
+    data = []
+    for report in reports:
+        meta = report.meta or {}
+        data.append(
+            {
+                "report_id": report.id,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+                "report_type": report.report_type,
+                "note": report.note,
+                "student_id": report.student_id,
+                "student_username": report.student.username if report.student_id else '',
+                "anonymous_session_id": report.anonymous_session.session_id if report.anonymous_session_id else '',
+                "example_id": report.example_id,
+                "task_id": report.example.task_id if report.example_id and report.example.task_id else None,
+                "task_name": report.example.task.name if report.example_id and report.example.task_id else '',
+                "example_text": report.example_text,
+                "correct_answer": report.correct_answer,
+                "input_type": report.input_type,
+                "language": report.language,
+                "practiced_skill_ids": report.practiced_skill_ids,
+                "practiced_skill_names": report.practiced_skill_names,
+                "mega_uploaded": meta.get("mega_uploaded", False),
+                "mega_json_url": meta.get("mega_json_url", ""),
+                "mega_error": meta.get("mega_error", ""),
+                "local_json_name": meta.get("local_json_name", ""),
+                "meta": meta,
+            }
+        )
+
+    return Response(data, status=status.HTTP_200_OK)
 
 # Get all grade levels (1-9)
 @api_view(['GET'])

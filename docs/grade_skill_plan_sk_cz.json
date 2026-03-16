@@ -1,0 +1,189 @@
+{
+  "meta": {
+    "description": "Návrh skillov a typov príkladov po ročníkoch (SK + CZ)",
+    "version": "1.0",
+    "scope": "grade_1_to_9"
+  },
+  "grades": [
+    {
+      "grade": 1,
+      "skills": [
+        {
+          "skill_sk": "Sčítanie a odčítanie do 20 bez prechodu",
+          "skill_cz": "Sčítání a odčítání do 20 bez přechodu",
+          "example_types": ["doplň výsledok", "porovnaj čísla", "slovná úloha"]
+        },
+        {
+          "skill_sk": "Rozklad čísla",
+          "skill_cz": "Rozklad čísla",
+          "example_types": ["rozlož číslo na desiatky/jednotky", "dopĺňanie chýbajúceho sčítanca"]
+        },
+        {
+          "skill_sk": "Poradie čísel do 100",
+          "skill_cz": "Pořadí čísel do 100",
+          "example_types": ["usporiadaj čísla", "predchodca/následník"]
+        }
+      ]
+    },
+    {
+      "grade": 2,
+      "skills": [
+        {
+          "skill_sk": "Sčítanie a odčítanie do 100 s prechodom",
+          "skill_cz": "Sčítání a odčítání do 100 s přechodem",
+          "example_types": ["stĺpcové počítanie", "rýchle príklady", "slovná úloha"]
+        },
+        {
+          "skill_sk": "Násobenie a delenie v obore malej násobilky",
+          "skill_cz": "Násobení a dělení v oboru malé násobilky",
+          "example_types": ["doplň výsledok", "dvojice príklad-výsledok", "výber správnej možnosti"]
+        },
+        {
+          "skill_sk": "Jednotky dĺžky a času (základy)",
+          "skill_cz": "Jednotky délky a času (základy)",
+          "example_types": ["prepočty jednoduchých jednotiek", "práca s hodinami"]
+        }
+      ]
+    },
+    {
+      "grade": 3,
+      "skills": [
+        {
+          "skill_sk": "Sčítanie a odčítanie do 1000",
+          "skill_cz": "Sčítání a odčítání do 1000",
+          "example_types": ["stĺpcová metóda", "odhad a kontrola"]
+        },
+        {
+          "skill_sk": "Násobenie a delenie dvojciferným číslom (základ)",
+          "skill_cz": "Násobení a dělení dvojciferným číslem (základ)",
+          "example_types": ["postupné počítanie", "slovná úloha"]
+        },
+        {
+          "skill_sk": "Geometria: obvod jednoduchých útvarov",
+          "skill_cz": "Geometrie: obvod jednoduchých útvarů",
+          "example_types": ["výpočet obvodu", "doplnenie chýbajúcej strany"]
+        }
+      ]
+    },
+    {
+      "grade": 4,
+      "skills": [
+        {
+          "skill_sk": "Písomné násobenie a delenie",
+          "skill_cz": "Písemné násobení a dělení",
+          "example_types": ["postupový výpočet", "kontrola výsledku"]
+        },
+        {
+          "skill_sk": "Zlomky: časť celku",
+          "skill_cz": "Zlomky: část celku",
+          "example_types": ["urči zlomok obrázka", "porovnaj zlomky s rovnakým menovateľom"]
+        },
+        {
+          "skill_sk": "Jednotky hmotnosti, objemu, času",
+          "skill_cz": "Jednotky hmotnosti, objemu, času",
+          "example_types": ["prevody jednotiek", "slovné úlohy z praxe"]
+        }
+      ]
+    },
+    {
+      "grade": 5,
+      "skills": [
+        {
+          "skill_sk": "Desatinné čísla (základné operácie)",
+          "skill_cz": "Desetinná čísla (základní operace)",
+          "example_types": ["zarovnanie desatinnej čiarky", "doplnenie čísla"]
+        },
+        {
+          "skill_sk": "Zlomky: sčítanie/odčítanie s rovnakým menovateľom",
+          "skill_cz": "Zlomky: sčítání/odčítání se stejným jmenovatelem",
+          "example_types": ["výpočet", "slovná úloha"]
+        },
+        {
+          "skill_sk": "Obsah a obvod obdĺžnika/štvorca",
+          "skill_cz": "Obsah a obvod obdélníku/čtverce",
+          "example_types": ["výpočet podľa rozmerov", "hľadanie neznámej strany"]
+        }
+      ]
+    },
+    {
+      "grade": 6,
+      "skills": [
+        {
+          "skill_sk": "Celé čísla a operácie s nimi",
+          "skill_cz": "Celá čísla a operace s nimi",
+          "example_types": ["číselná os", "sčítanie/odčítanie záporných čísel"]
+        },
+        {
+          "skill_sk": "Pomer a mierka",
+          "skill_cz": "Poměr a měřítko",
+          "example_types": ["výpočet podľa mierky", "porovnanie pomerov"]
+        },
+        {
+          "skill_sk": "Výrazy s premennou (základ)",
+          "skill_cz": "Výrazy s proměnnou (základ)",
+          "example_types": ["dosadzovanie", "zjednodušenie výrazu"]
+        }
+      ]
+    },
+    {
+      "grade": 7,
+      "skills": [
+        {
+          "skill_sk": "Percentá a promile",
+          "skill_cz": "Procenta a promile",
+          "example_types": ["výpočet časti z celku", "slovné úlohy (zľavy, navýšenie)"]
+        },
+        {
+          "skill_sk": "Rovnice s jednou neznámou",
+          "skill_cz": "Rovnice s jednou neznámou",
+          "example_types": ["lineárna rovnica", "kontrola skúškou"]
+        },
+        {
+          "skill_sk": "Priama a nepriama úmernosť",
+          "skill_cz": "Přímá a nepřímá úměrnost",
+          "example_types": ["tabuľkové úlohy", "grafická interpretácia"]
+        }
+      ]
+    },
+    {
+      "grade": 8,
+      "skills": [
+        {
+          "skill_sk": "Lineárne funkcie",
+          "skill_cz": "Lineární funkce",
+          "example_types": ["určenie smernice", "čítanie z grafu", "predpis funkcie"]
+        },
+        {
+          "skill_sk": "Mocniny a odmocniny",
+          "skill_cz": "Mocniny a odmocniny",
+          "example_types": ["zjednodušenie výrazu", "porovnanie hodnôt"]
+        },
+        {
+          "skill_sk": "Pytagorova veta",
+          "skill_cz": "Pythagorova věta",
+          "example_types": ["výpočet strany", "aplikácia v slovnej úlohe"]
+        }
+      ]
+    },
+    {
+      "grade": 9,
+      "skills": [
+        {
+          "skill_sk": "Kvadratické výrazy a rovnice (základ)",
+          "skill_cz": "Kvadratické výrazy a rovnice (základ)",
+          "example_types": ["rozklad na súčin", "výpočet koreňov jednoduchých rovníc"]
+        },
+        {
+          "skill_sk": "Sústavy rovníc",
+          "skill_cz": "Soustavy rovnic",
+          "example_types": ["dosadzovacia metóda", "sčítacia metóda"]
+        },
+        {
+          "skill_sk": "Príprava na prijímačky: mix úloh",
+          "skill_cz": "Příprava na přijímačky: mix úloh",
+          "example_types": ["kombinované slovné úlohy", "krátky test 10–15 úloh"]
+        }
+      ]
+    }
+  ]
+}

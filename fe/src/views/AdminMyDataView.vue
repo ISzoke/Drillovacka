@@ -2,6 +2,94 @@
   <div class="p-6 max-w-7xl mx-auto">
     <h1 class="text-2xl font-bold mb-4">Moje zaznamenané dáta</h1>
 
+    <div class="border rounded-lg p-4 mb-6">
+      <div class="flex items-center justify-between gap-4 mb-3">
+        <h2 class="text-lg font-semibold">Nahlásené príklady</h2>
+        <button
+          @click="loadReports"
+          class="bg-amber-500 text-white px-4 py-2 rounded"
+        >
+          Obnoviť nahlásenia
+        </button>
+      </div>
+
+      <div v-if="reportsLoading" class="text-gray-500">Načítavam nahlásenia...</div>
+      <div v-else-if="reportsError" class="text-red-600">{{ reportsError }}</div>
+      <div v-else-if="exampleReports.length === 0" class="text-gray-500">Zatiaľ nie sú žiadne nahlásenia.</div>
+      <div v-else class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-2 border">Čas</th>
+              <th class="p-2 border">Používateľ</th>
+              <th class="p-2 border">Dôvod</th>
+              <th class="p-2 border">Poznámka</th>
+              <th class="p-2 border">Task</th>
+              <th class="p-2 border">Príklad</th>
+              <th class="p-2 border">Správna odpoveď</th>
+              <th class="p-2 border">Typ vstupu</th>
+              <th class="p-2 border">Jazyk</th>
+              <th class="p-2 border">Zručnosti</th>
+              <th class="p-2 border">MEGA / meta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="report in exampleReports" :key="report.report_id">
+              <td class="p-2 border whitespace-nowrap">{{ formatDate(report.created_at) }}</td>
+              <td class="p-2 border">
+                <div v-if="report.student_id">
+                  <div class="font-semibold">{{ report.student_username || 'študent' }}</div>
+                  <div class="text-xs text-gray-600">ID: {{ report.student_id }}</div>
+                </div>
+                <div v-else>
+                  <div class="font-semibold">anonymný používateľ</div>
+                  <div class="text-xs text-gray-600 break-all">{{ report.anonymous_session_id || '-' }}</div>
+                </div>
+              </td>
+              <td class="p-2 border">{{ formatReportType(report.report_type) }}</td>
+              <td class="p-2 border">{{ report.note || '-' }}</td>
+              <td class="p-2 border">
+                <div class="font-semibold">{{ report.task_name || '-' }}</div>
+                <div class="text-xs text-gray-600">Example ID: {{ report.example_id }}</div>
+              </td>
+              <td class="p-2 border">{{ report.example_text }}</td>
+              <td class="p-2 border">{{ report.correct_answer || '-' }}</td>
+              <td class="p-2 border text-center">{{ report.input_type || '-' }}</td>
+              <td class="p-2 border text-center">{{ report.language || '-' }}</td>
+              <td class="p-2 border">{{ (report.practiced_skill_names || []).join(', ') || '-' }}</td>
+              <td class="p-2 border min-w-56">
+                <div class="text-xs space-y-2">
+                  <div>
+                    <span class="font-semibold">Uploaded:</span>
+                    <span :class="report.mega_uploaded ? 'text-green-700' : 'text-gray-600'">
+                      {{ report.mega_uploaded ? 'áno' : 'nie' }}
+                    </span>
+                  </div>
+                  <div v-if="report.mega_json_url">
+                    <a
+                      :href="report.mega_json_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue-600 underline break-all"
+                    >
+                      JSON na MEGA
+                    </a>
+                  </div>
+                  <div v-else class="text-gray-500">MEGA link: -</div>
+                  <div class="break-all text-gray-600">{{ report.local_json_name || '' }}</div>
+                  <div v-if="report.mega_error" class="text-red-600 break-all">{{ report.mega_error }}</div>
+                  <details class="mt-2">
+                    <summary class="cursor-pointer text-gray-700">Raw meta</summary>
+                    <pre class="mt-2 whitespace-pre-wrap break-all text-[11px] text-gray-600">{{ JSON.stringify(report.meta || {}, null, 2) }}</pre>
+                  </details>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
       <div>
         <label class="block text-sm font-semibold mb-1">Typ identity</label>
@@ -198,7 +286,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { getAllAnonymousSessionsStats, getAllStudentsStats, getMyData } from '@/api/apiClient'
+import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getMyData } from '@/api/apiClient'
 
 const identityType = ref('student')
 const identityValue = ref('')
@@ -211,6 +299,9 @@ const data = ref(null)
 const selectedStudentName = ref('')
 const allStudents = ref([])
 const allAnonymousSessions = ref([])
+const reportsLoading = ref(false)
+const reportsError = ref('')
+const exampleReports = ref([])
 
 const filteredStudents = computed(() => {
   const text = (filterText.value || '').trim().toLowerCase()
@@ -259,6 +350,16 @@ function formatPercent(value) {
   return `${(value * 100).toFixed(1)}%`
 }
 
+function formatReportType(value) {
+  const mapping = {
+    wrong_answer: 'Zlá odpoveď',
+    wrong_grade: 'Nepasuje k ročníku',
+    unclear: 'Nejasné zadanie',
+    other: 'Iný problém',
+  }
+  return mapping[value] || value || '-'
+}
+
 async function loadStudents() {
   studentsLoading.value = true
   try {
@@ -278,6 +379,18 @@ async function loadAnonymousSessions() {
     error.value = typeof e === 'string' ? e : 'Chyba pri načítaní anonymných sessions.'
   } finally {
     anonymousLoading.value = false
+  }
+}
+
+async function loadReports() {
+  reportsLoading.value = true
+  reportsError.value = ''
+  try {
+    exampleReports.value = await getExampleReports(1000)
+  } catch (e) {
+    reportsError.value = typeof e === 'string' ? e : 'Chyba pri načítaní nahlásení.'
+  } finally {
+    reportsLoading.value = false
   }
 }
 
@@ -325,6 +438,7 @@ async function loadData() {
 onMounted(() => {
   loadStudents()
   loadAnonymousSessions()
+  loadReports()
 })
 </script>
 

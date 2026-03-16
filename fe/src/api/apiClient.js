@@ -534,6 +534,22 @@ export const sendSurveyAnswer = async (questionType, questionText, answer, skill
 };
 
 /**
+ * Sends an example report for a concrete practiced example.
+ *
+ * @param {Object} payload - report payload
+ * @returns {Promise<Object>} server response
+ */
+export const sendExampleReport = async (payload) => {
+  try {
+    const response = await apiClient.post('example-report/', payload);
+    return response.data;
+  } catch (error) {
+    console.error('Error sending example report:', error);
+    throw error.response?.data?.error || 'Error sending example report.';
+  }
+};
+
+/**
  * Fetches all available grade levels (1-9).
  * 
  * @returns {Promise<Array<Object>>} array of grade level objects with id and grade.
@@ -632,6 +648,22 @@ export const getMyData = async (params) => {
     return response.data;
   } catch (error) {
     throw error.response?.data?.error || 'Error fetching my data.';
+  }
+};
+
+/**
+ * Fetches reported examples for admin overview.
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export const getExampleReports = async (limit = 500) => {
+  try {
+    const response = await apiClient.get('example-reports/', {
+      params: { limit }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching example reports.';
   }
 };
 

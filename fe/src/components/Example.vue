@@ -17,7 +17,7 @@ import Timer from '@/components/Example/Timer.vue';
 import SpeechRecorder from '@/components/Example/SpeechRecorder.vue';
 import Answer from '@/components/Example/Answer.vue';
 import Tips from '@/components/Example/Tips.vue';
-import { createRecord, skipExample, deleteRecord, checkAnswer } from '@/api/apiClient';
+import { createRecord, skipExample, deleteRecord, checkAnswer, sendExampleReport } from '@/api/apiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
@@ -51,6 +51,12 @@ const variableInput = ref(null);
 const timer = ref(null);
 const speechRecorder = ref(null);
 const step = ref('');
+const showReportForm = ref(false);
+const reportType = ref('wrong_answer');
+const reportNote = ref('');
+const reportSubmitting = ref(false);
+const reportSubmitted = ref(false);
+const reportError = ref('');
 
 // Stores
 const authStore = useAuthStore();
@@ -66,6 +72,13 @@ const record_date = ref('');
 
 let isWordProblem = ref(false);
 const showAnswer = ref(false);
+
+const reportOptions = computed(() => ([
+  { value: 'wrong_answer', label: dictionary[langStore.language].reportWrongAnswer },
+  { value: 'wrong_grade', label: dictionary[langStore.language].reportWrongGrade },
+  { value: 'unclear', label: dictionary[langStore.language].reportUnclear },
+  { value: 'other', label: dictionary[langStore.language].reportOther },
+]));
 
 // Sends answer to be evaluated for inline answers and emits evaluation result
 const checkInline = async (answer) => {
@@ -123,12 +136,48 @@ const finish = () => {
   emits('finished');
 }
 
+const toggleReportForm = () => {
+  showReportForm.value = !showReportForm.value;
+};
+
+const submitReport = async () => {
+  if (reportSubmitting.value || reportSubmitted.value) {
+    return;
+  }
+
+  reportSubmitting.value = true;
+  try {
+    await sendExampleReport({
+      student_id,
+      session_id,
+      example_id: props.example.id,
+      report_type: reportType.value,
+      note: reportNote.value.trim(),
+      language: langStore.language,
+    });
+    reportSubmitted.value = true;
+    showReportForm.value = true;
+    reportError.value = '';
+    reportNote.value = '';
+  } catch (error) {
+    reportError.value = error || dictionary[langStore.language].somethingWentWrong;
+  } finally {
+    reportSubmitting.value = false;
+  }
+};
+
 // Watch changes in example text to re-render latex
 watch(
   () => props.example,
   () => {
     renderMathJax();
     isWordProblem = props.example.input_type == 'WORD';
+    showReportForm.value = false;
+    reportType.value = 'wrong_answer';
+    reportNote.value = '';
+    reportSubmitting.value = false;
+    reportSubmitted.value = false;
+    reportError.value = '';
   },
   { immediate: true }
 );
@@ -320,6 +369,64 @@ defineExpose({ getStep, displayAnswer });
            transition ease-in-out hover:bg-gray-300 hover:border-gray-700 hover:scale-105 shadow-md"
         :class="showAnswer ? 'pointer-events-none' : ''">
         {{ dictionary[langStore.language].skip.toUpperCase() }}
+      </div>
+
+      <div class="mt-4 w-full max-w-md px-4 flex flex-col items-center">
+        <button
+          @click="toggleReportForm"
+          class="w-full text-center text-lg font-bold text-amber-900 bg-amber-100 border-2 border-amber-300 px-5 py-2 rounded-2xl transition hover:bg-amber-200"
+          :class="showAnswer ? 'pointer-events-none opacity-60' : ''"
+        >
+          {{ dictionary[langStore.language].reportExample }}
+        </button>
+
+        <div v-if="showReportForm" class="mt-4 w-full bg-white border-2 border-amber-200 rounded-2xl shadow-md p-4 text-left">
+          <div class="mb-3">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              {{ dictionary[langStore.language].reportReason }}
+            </label>
+            <select
+              v-model="reportType"
+              class="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white"
+              :disabled="reportSubmitting || reportSubmitted"
+            >
+              <option v-for="option in reportOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              {{ dictionary[langStore.language].reportNote }}
+            </label>
+            <textarea
+              v-model="reportNote"
+              rows="3"
+              class="w-full border border-gray-300 rounded-xl px-3 py-2"
+              :placeholder="dictionary[langStore.language].reportPlaceholder"
+              :disabled="reportSubmitting || reportSubmitted"
+            />
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <button
+              @click="submitReport"
+              class="text-white bg-amber-500 hover:bg-amber-600 border-2 border-amber-600 rounded-xl px-4 py-2 font-semibold transition disabled:bg-gray-400 disabled:border-gray-400"
+              :disabled="reportSubmitting || reportSubmitted"
+            >
+              {{ reportSubmitting ? dictionary[langStore.language].saving : dictionary[langStore.language].reportSubmit }}
+            </button>
+
+            <p v-if="reportSubmitted" class="text-sm font-semibold text-green-700">
+              {{ dictionary[langStore.language].reportSent }}
+            </p>
+          </div>
+
+          <p v-if="reportError" class="mt-3 text-sm font-semibold text-red-600">
+            {{ reportError }}
+          </p>
+        </div>
       </div>
 
     </div>

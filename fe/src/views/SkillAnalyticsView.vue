@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 max-w-6xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Skill Analytics</h1>
+    <h1 class="text-2xl font-bold mb-4">Analytika zručností</h1>
     
     <!-- Filter: Student ID or All Students -->
     <div class="mb-4 flex gap-2 items-end">

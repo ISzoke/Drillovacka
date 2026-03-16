@@ -26,6 +26,7 @@ urlpatterns = [
     path('my-data/', views.get_my_data, name='get-my-data'),
     path('attempt-audio/<int:attempt_id>/', views.get_attempt_audio, name='get-attempt-audio'),
     path('attempt-logs/', views.get_attempt_logs, name='get-attempt-logs'),
+    path('example-reports/', views.get_example_reports, name='get-example-reports'),
     path('update-record/', views.update_example_record, name='update-example-record'),
     path('delete-record/', views.delete_example_record, name='delete-example-record'),
     path('skip-example/', views.skip_example, name='skip-example'),
@@ -55,6 +56,7 @@ urlpatterns = [
     path('student/update-language/', views.update_student_language, name='update-student-language'),
 
     path('survey-answer/', views.save_survey_answer, name='save-survey-answer'),
+    path('example-report/', views.save_example_report, name='save-example-report'),
     
     path('grade-levels/', views.get_grade_levels, name='get-grade-levels'),
     path('skills/<int:skill_id>/grade-levels/', views.update_skill_grade_levels, name='update-skill-grade-levels'),

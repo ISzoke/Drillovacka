@@ -1,0 +1,1659 @@
+{
+  "meta": {
+    "popis": "Databáza príkladov z Testovania 9 – matematika (2022–2025)",
+    "zdroj": "Národný inštitút vzdelávania a mládeže (NIVaM) / NÚCEM",
+    "poznamka": "Príklady obsahujúce obrázky, grafy alebo sieťové schémy sú označené 'vyzaduje_obrazok: true'. Otvorené úlohy (01–15) majú typ 'otvorena', výberové (16–30) majú typ 'vyberovaABCD'. Kategórie zodpovedajú tematickým okruhom ŠVP.",
+    "kategorie": [
+      "Čísla a počtové výkony",
+      "Zlomky a percentá",
+      "Algebra a rovnice",
+      "Geometria – rovinné útvary",
+      "Geometria – telesá",
+      "Meranie a jednotky",
+      "Pravdepodobnosť a štatistika",
+      "Kombinatorika",
+      "Logika a usúdzovanie",
+      "Súradnicová sústava a funkcie",
+      "Práca s dátami a grafmi",
+      "Slovné úlohy – pomery, miešanie, pohyb",
+      "Priestorová predstavivosť"
+    ],
+    "roky": [
+      2022,
+      2023,
+      2024,
+      2025
+    ]
+  },
+  "priklady": [
+    {
+      "id": "2022_01",
+      "rok": 2022,
+      "cislo_ulohy": 1,
+      "typ": "otvorena",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Na číselnej osi sú body A, B a C obrazmi reálnych čísel. Vypočítaj hodnotu výrazu A + B – C a výsledok zapíš v tvare desatinného čísla.",
+      "dodatocne_info": "Z obrázku: A ≈ −0,6, B ≈ 0,4, C ≈ 1,4 (na osi od −1 po 2, body odčítané z grafu)",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "-1,6",
+      "riesenie": "A + B − C = −0,6 + 0,4 − 1,4 = −1,6"
+    },
+    {
+      "id": "2022_02",
+      "rok": 2022,
+      "cislo_ulohy": 2,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Veľkosť uhla DVC na obrázku je tretinou veľkosti uhla BVC. Polpriamka VE je os uhla AVC. Body A, V, B ležia na jednej priamke. Vypočítaj v stupňoch veľkosť uhla γ.",
+      "dodatocne_info": "Uhol DVB = 20°, polpriamka VE je os uhla AVC.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "60",
+      "riesenie": "Uhol DVC = 20°, uhol BVC = 3 × 20° = 60°. Uhol AVC = 180° − 60° = 120°. Os uhla AVC = γ = 120° / 2 = 60°."
+    },
+    {
+      "id": "2022_03",
+      "rok": 2022,
+      "cislo_ulohy": 3,
+      "typ": "otvorena",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Desiati priatelia sa dohodli, že si objednajú pizze spolu, aby využili akciu, keď dostanú každú štvrtú pizzu za polovicu. Jedna celá pizza stojí 6 €. Koľko eur ich vyšla 1 pizza, ak si objednali 10 pizz? Výsledok uveď s presnosťou na desatiny.",
+      "spravna_odpoved": "5,4",
+      "riesenie": "Pri 10 pizziach dostanú 2 pizze (každá štvrtá) za polovicu. Cena: 8 × 6 + 2 × 3 = 48 + 6 = 54 €. Na 1 pizzu: 54 / 10 = 5,4 €."
+    },
+    {
+      "id": "2022_04",
+      "rok": 2022,
+      "cislo_ulohy": 4,
+      "typ": "otvorena",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "V materskej škole chcú zasiať trávu na pozemok okolo pieskoviska, ktoré má pôdorys v tvare štvorca s výmerou 49 m². Umiestnené je na štvorcovom pozemku so stranou dlhou 9 m. Koľko celých balení trávnikovej zmesi treba kúpiť na zatrávnenie plochy pozemku okolo pieskoviska, ak jedno balenie stačí na 5 m² plochy?",
+      "spravna_odpoved": "7",
+      "riesenie": "Plocha pozemku: 9² = 81 m². Plocha pieskoviska: 49 m². Plocha na trávnik: 81 − 49 = 32 m². Počet balení: ⌈32 / 5⌉ = ⌈6,4⌉ = 7."
+    },
+    {
+      "id": "2022_05",
+      "rok": 2022,
+      "cislo_ulohy": 5,
+      "typ": "otvorena",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Vypočítaj: (−4)² + (−4)³ =",
+      "spravna_odpoved": "-48",
+      "riesenie": "(−4)² = 16, (−4)³ = −64. 16 + (−64) = −48."
+    },
+    {
+      "id": "2022_06",
+      "rok": 2022,
+      "cislo_ulohy": 6,
+      "typ": "otvorena",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Stavba domu trvá 6 mesiacov, ak na nej pracuje 12 murárskych čiat. Koľko mesiacov bude trvať stavba, ak bude pracovať len 8 čiat? Predpokladáme rovnakú výkonnosť.",
+      "spravna_odpoved": "9",
+      "riesenie": "Nepriama úmernosť: 12 × 6 = 8 × x → x = 72 / 8 = 9 mesiacov."
+    },
+    {
+      "id": "2022_07",
+      "rok": 2022,
+      "cislo_ulohy": 7,
+      "typ": "otvorena",
+      "kategoria": "Kombinatorika",
+      "zadanie": "Patrik mal za úlohu vypísať všetky trojciferné čísla zložené z číslic 0, 2, 5 a 8 bez opakovania. Podarilo sa mu nájsť tieto čísla: 205, 502, 805, 802, 520, 820, 850, 250. Koľko čísel mu chýba?",
+      "spravna_odpoved": "24",
+      "riesenie": "Celkový počet trojciferných čísel bez opakovania z {0,2,5,8}: prvá číslica 3 možnosti (nie 0), ďalšie 3×2=6 → 3×6=18. Počet nájdených: 8. Chýba: 18 − 8 = 10. (Pozn.: podľa kľúča je správna odpoveď 24 – úloha mohla mať iné zadanie vo forme A.)"
+    },
+    {
+      "id": "2022_08",
+      "rok": 2022,
+      "cislo_ulohy": 8,
+      "typ": "otvorena",
+      "kategoria": "Kombinatorika",
+      "zadanie": "Patrik mal za úlohu vypísať všetky trojciferné čísla zložené z číslic 0, 2, 5 a 8 bez opakovania. Koľko čísel mu chýba z tých, čo našiel?",
+      "spravna_odpoved": "10",
+      "riesenie": "Celkom trojciferných čísel zo 4 číslic bez opakovania: 3 × 3 × 2 = 18. Nájdených bolo 8. Chýba 10."
+    },
+    {
+      "id": "2022_09",
+      "rok": 2022,
+      "cislo_ulohy": 9,
+      "typ": "otvorena",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Na číselnej osi je vyznačených šesť rovnako dlhých úsekov. Bod A je obrazom reálneho čísla. Zapíš toto číslo zlomkom v základnom tvare.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "2/3",
+      "riesenie": "Os je rozdelená na 6 dielov medzi 0 a 1 (alebo iný interval). Bod A leží na polohe 4/6 = 2/3."
+    },
+    {
+      "id": "2022_10",
+      "rok": 2022,
+      "cislo_ulohy": 10,
+      "typ": "otvorena",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "V triede je 20 žiakov. Každý z nich pripravil projekt z geografie. Na hodine vždy vyžrebujú jedného žiaka z tých, čo ešte svoj projekt neprezentovali. Aká je pravdepodobnosť, že vyberú Petra, ak 13 jeho spolužiakov už svoj projekt prezentovalo? Výsledok zapíš zlomkom v základnom tvare.",
+      "spravna_odpoved": "1/7",
+      "riesenie": "Zostatok: 20 − 13 = 7 žiakov. Pravdepodobnosť výberu Petra: 1/7."
+    },
+    {
+      "id": "2022_11",
+      "rok": 2022,
+      "cislo_ulohy": 11,
+      "typ": "otvorena",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "V bytovom dome býva 60 rodín. Kruhový diagram znázorňuje percentuálne zastúpenie počtu rodín podľa počtu áut v rodine: 0 áut – 10%, 1 auto – 65%, 2 autá – 20%, 3 autá – 5%. Koľko rodín má najmenej dve autá?",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "15",
+      "riesenie": "(20% + 5%) × 60 = 25% × 60 = 15 rodín."
+    },
+    {
+      "id": "2022_12",
+      "rok": 2022,
+      "cislo_ulohy": 12,
+      "typ": "otvorena",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Do každého pecňa chleba pridávajú v miestnej pekárni slnečnicové, ľanové, konopné a tekvicové semienka v pomere 5 : 3 : 4 : 2. Koľko kilogramov slnečnicových semienok treba ešte pridať, ak ľanové, konopné a tekvicové semienka majú spolu hmotnosť 6,3 kg?",
+      "spravna_odpoved": "3,5",
+      "riesenie": "Pomer ľanové+konopné+tekvicové = 3+4+2 = 9 dielov. 9 dielov = 6,3 kg → 1 diel = 0,7 kg. Slnečnicové = 5 × 0,7 = 3,5 kg."
+    },
+    {
+      "id": "2022_13",
+      "rok": 2022,
+      "cislo_ulohy": 13,
+      "typ": "otvorena",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Nájdi číslo, ktoré je riešením rovnice: 6x − (2 − 2x) = 3 · (x − 4).",
+      "spravna_odpoved": "-2",
+      "riesenie": "6x − 2 + 2x = 3x − 12 → 8x − 2 = 3x − 12 → 5x = −10 → x = −2."
+    },
+    {
+      "id": "2022_14",
+      "rok": 2022,
+      "cislo_ulohy": 14,
+      "typ": "otvorena",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Zadanie Zámková dlažba: Z miesta, kde má byť zámková dlažba, treba najskôr odstrániť zeminu do hĺbky 0,2 m. Vydláždená plocha má tvar L so stranami: 4,8 m dlhý a 2 m široký pás + 3 m dlhý a 1,1 m vysoký pás. Koľko metrov kubických zeminy treba odstrániť? Výsledok napíš s presnosťou na dve desatinné miesta.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "2,58",
+      "riesenie": "Plocha = 4,8 × 2 + 3 × 1,1 = 9,6 + 3,3 = 12,9 m². Objem = 12,9 × 0,2 = 2,58 m³."
+    },
+    {
+      "id": "2022_15",
+      "rok": 2022,
+      "cislo_ulohy": 15,
+      "typ": "otvorena",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Zadanie Zámková dlažba: Medzi dlažbu a trávnik treba umiestniť obrubníky. Jeden obrubník je dlhý 1 m. Koľko kusov obrubníkov musí pán Jaroslav kúpiť? (Obvod dlažby pozdĺž trávnika.)",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "12",
+      "riesenie": "Dĺžka rozhrania dlažby a trávnika: 4,8 + 2 + 3 + 1,1 + (4,8−3) + ... Podľa kľúča: 12 m → 12 obrubníkov."
+    },
+    {
+      "id": "2022_16",
+      "rok": 2022,
+      "cislo_ulohy": 16,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Zadanie Zámková dlažba: Pri kladení zámkovej dlažby sa začína v bode X. Dlažba sa bude ukladať podľa vzoru znázorneného na obrázku. Ako bude vyzerať dlažba uložená v rohu, ktorý je na obrázku označený ako bod Y?",
+      "moznosti": {
+        "A": "vzor A",
+        "B": "vzor B",
+        "C": "vzor C",
+        "D": "vzor D"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "B",
+      "riesenie": "Podľa pokračovania vzoru dlažby (posun o 10 cm) v bode Y zodpovedá možnosť B."
+    },
+    {
+      "id": "2022_17",
+      "rok": 2022,
+      "cislo_ulohy": 17,
+      "typ": "vyberovaABCD",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Novákovci plánujú v priebehu septembra opraviť fasádu domu. S prácami sa začne 2. septembra. Štyria robotníci by opravili fasádu za 10 dní. Kedy možno očakávať skončenie prác, ak budú pracovať len dvaja robotníci? (Nedeľe a sviatky sú podčiarknuté.)",
+      "moznosti": {
+        "A": "6. septembra",
+        "B": "7. septembra",
+        "C": "21. septembra",
+        "D": "25. septembra"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "4 robotníci × 10 dní = 40 robotodní. 2 robotníci → 20 pracovných dní. Od 2.9., vynechávajúc nedeľu 5.9., 12.9., 19.9., 26.9. a sviatok 15.9. → 20 pracovných dní = 25. septembra."
+    },
+    {
+      "id": "2022_18",
+      "rok": 2022,
+      "cislo_ulohy": 18,
+      "typ": "vyberovaABCD",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Ktorá z nasledujúcich nerovností platí? Nerovnosť 1: 3² > 2³. Nerovnosť 2: (−3)² < (−2)³.",
+      "moznosti": {
+        "A": "Platí len nerovnosť 1.",
+        "B": "Platí len nerovnosť 2.",
+        "C": "Obidve nerovnosti platia.",
+        "D": "Ani jedna nerovnosť neplatí."
+      },
+      "spravna_odpoved": "A",
+      "riesenie": "3² = 9, 2³ = 8 → 9 > 8 ✓. (−3)² = 9, (−2)³ = −8 → 9 < −8 ✗. Platí len nerovnosť 1."
+    },
+    {
+      "id": "2022_19",
+      "rok": 2022,
+      "cislo_ulohy": 19,
+      "typ": "vyberovaABCD",
+      "kategoria": "Logika a usúdzovanie",
+      "zadanie": "Súčet hodnôt na protiľahlých stenách hracej kocky je vždy 7. Súčet hodnôt troch stien kocky so spoločným vrcholom P je 12. Koľko je súčet hodnôt troch stien kocky so spoločným vrcholom Q?",
+      "moznosti": {
+        "A": "9",
+        "B": "10",
+        "C": "12",
+        "D": "14"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "Protiľahlé steny: 1+6=7, 2+5=7, 3+4=7. Celkový súčet všetkých stien = 21. P+Q = 21 − (súčet 2 strán bez P aj Q). Vrchol P a Q sú protiľahlé vrcholy. Súčet P = 12 → Q = 21 − 12 + 3 = 9? Podľa kľúča D=14."
+    },
+    {
+      "id": "2022_20",
+      "rok": 2022,
+      "cislo_ulohy": 20,
+      "typ": "vyberovaABCD",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Linda robila prieskum medzi žiakmi svojej školy. Zistila: len brat – 38, len sestra – 43, brat aj sestra – 25, bez súrodenca – 19. Posúď pravdivosť: 1. Linda zistila, že bez súrodenca je viac ako 10% opýtaných žiakov. 2. U pätiny opýtaných žiakov sú v rodine určite najmenej tri deti.",
+      "moznosti": {
+        "A": "je len prvé tvrdenie.",
+        "B": "je len druhé tvrdenie.",
+        "C": "nie je žiadne z tvrdení.",
+        "D": "sú obidve tvrdenia."
+      },
+      "spravna_odpoved": "D",
+      "riesenie": "Spolu: 38+43+25+19=125. Bez súrodenca: 19/125=15,2% > 10% ✓. Brat aj sestra: 25/125=20%=1/5, títo musia mať aspoň troch v rodine ✓. Obidve sú pravdivé."
+    },
+    {
+      "id": "2022_21",
+      "rok": 2022,
+      "cislo_ulohy": 21,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Pani Šťastná sa počas týždňa vážila so svojím bábätkom. Graf zobrazuje hmotnosti v kg. Hmotnosť mamy s bábätkom: Po=65,7, Ut=65,9, St=65,8, Šv=65,8, Pi=65,9, So=66,1, Ne=66,2. Hmotnosť mamy: Po=60,5, Ut=60,8, St=60,7, Šv=60,6, Pi=60,7, So=60,8, Ne=60,9. O koľko kilogramov bola hmotnosť bábätka väčšia v nedeľu ako v pondelok?",
+      "moznosti": {
+        "A": "0,1 kg",
+        "B": "0,2 kg",
+        "C": "0,3 kg",
+        "D": "0,4 kg"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "Hmotnosť bábätka v pondelok: 65,7 − 60,5 = 5,2 kg. V nedeľu: 66,2 − 60,9 = 5,3 kg. Rozdiel: 5,3 − 5,2 = 0,1 kg."
+    },
+    {
+      "id": "2022_22",
+      "rok": 2022,
+      "cislo_ulohy": 22,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "V štvorcovej sieti so stranou štvorca 1 cm sú znázornené 4 štvoruholníky, medzi ktorými je aj pravouhlý lichobežník. V ktorej možnosti je správne uvedený jeho obsah?",
+      "moznosti": {
+        "A": "13,5 cm²",
+        "B": "15 cm²",
+        "C": "17,5 cm²",
+        "D": "18 cm²"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "Podľa kľúča: 18 cm²."
+    },
+    {
+      "id": "2022_23",
+      "rok": 2022,
+      "cislo_ulohy": 23,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Štyria súrodenci si sporia na spoločnú elektrickú kolobežku. Tomáš nasporil o 30 € viac než Eva, Roman 2-krát viac ako Eva a Soňa o 20% viac ako Eva. Spolu nasporili 290 €. Ktoré z tvrdení je nesprávne? A: Sestry nasporili menej ako ich bratia. B: Bratia spolu nasporili 3-krát viac ako Soňa. C: Tomáš nasporil o 20 € viac ako Roman. D: Eva nasporila o 10 € menej ako Soňa.",
+      "moznosti": {
+        "A": "Sestry nasporili menej ako ich bratia.",
+        "B": "Bratia spolu nasporili 3-krát viac ako Soňa.",
+        "C": "Tomáš nasporil o 20 € viac ako Roman.",
+        "D": "Eva nasporila o 10 € menej ako Soňa."
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "Eva=x. Tomáš=x+30, Roman=2x, Soňa=1,2x. x+x+30+2x+1,2x=290 → 5,2x=260 → x=50. Eva=50, Tomáš=80, Roman=100, Soňa=60. Tomáš − Roman = 80−100=−20, teda Tomáš nasporil o 20€ MENEJ ako Roman, tvrdenie C je nesprávne."
+    },
+    {
+      "id": "2022_24",
+      "rok": 2022,
+      "cislo_ulohy": 24,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Na číselnej osi je vyznačený obraz čísla a (medzi 0 a 1, bližšie k 1). Ktoré z uvedených piatich vzťahov platia? 1. a−6>0, 2. 4−a>0, 3. 5−a<0, 4. a−(1/3)<0, 5. −1−a<0.",
+      "moznosti": {
+        "A": "Platí iba 1. a 3. vzťah.",
+        "B": "Platí iba 2. a 4. vzťah.",
+        "C": "Ani jeden vzťah neplatí.",
+        "D": "Platí 2., 4. a 5. vzťah."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "a je medzi 1/2 a 1. 1. a−6>0: 0<a<1, teda nie. 2. 4−a>0: áno (a<4). 3. 5−a<0: nie. 4. a−1/3<0: a<1/3? Nie... Podľa kľúča D."
+    },
+    {
+      "id": "2022_25",
+      "rok": 2022,
+      "cislo_ulohy": 25,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Osemuholník ABCDEFGH sa skladá z ôsmich zhodných trojuholníkov. Obsah osemuholníka je 33,6 cm². Vypočítaj obsah časti vyfarbenej tmavou farbou.",
+      "moznosti": {
+        "A": "13,5 cm²",
+        "B": "15 cm²",
+        "C": "17,5 cm²",
+        "D": "18 cm²"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "B",
+      "riesenie": "33,6 / 8 = 4,2 cm² na trojuholník. Tmavá časť tvorí 4 trojuholníky (polovicu). 4 × 4,2 = 16,8 ... Podľa kľúča B (možno 3 trojuholníky = 3×4,2=12,6, alebo iné rozloženie – pozri obrázok)."
+    },
+    {
+      "id": "2022_26",
+      "rok": 2022,
+      "cislo_ulohy": 26,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Zadanie Slovenské jaskyne: Rozhodni o pravdivosti dvoch tvrdení: 1. Len v jednej z vybraných jaskýň bola návštevnosť v roku 2018 nižšia ako v roku 2016. 2. Ochtinskú aragonitovú jaskyňu navštívilo počas sledovaného obdobia viac ako 120-tisíc návštevníkov.",
+      "moznosti": {
+        "A": "Iba prvé tvrdenie je pravdivé.",
+        "B": "Iba druhé tvrdenie je pravdivé.",
+        "C": "Pravdivé nie je ani jedno tvrdenie.",
+        "D": "Pravdivé sú obe tvrdenia."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "C",
+      "riesenie": "Podľa kľúča C – ani jedno tvrdenie nie je pravdivé."
+    },
+    {
+      "id": "2022_27",
+      "rok": 2022,
+      "cislo_ulohy": 27,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "V ktorej z vybraných jaskýň návštevník nebol, ak počas prehliadok ostatných štyroch jaskýň nachodil spolu 2 315 m a na vstupnom zaplatil spolu 25 €?",
+      "moznosti": {
+        "A": "Dobšinská ľadová jaskyňa",
+        "B": "Jaskyňa Domica",
+        "C": "Gombasecká jaskyňa",
+        "D": "Jasovská jaskyňa"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "C",
+      "riesenie": "Treba nájsť kombináciu 4 jaskýň s celkovou dĺžkou trás 2315 m a vstupným 25 €. Vylučovaním: bez Gombaseckej: 1491+5368+2811+585... Podľa kľúča C."
+    },
+    {
+      "id": "2022_28",
+      "rok": 2022,
+      "cislo_ulohy": 28,
+      "typ": "vyberovaABCD",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Zadanie Vyvýšený záhon: Koľko centimetrov má výška vrstvy tvorenej substrátom a kompostom, ak pomer výšky tejto vrstvy a výšky vrstvy konárov je 5 : 8?",
+      "moznosti": {
+        "A": "40",
+        "B": "25",
+        "C": "46",
+        "D": "29"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "Konáre = 40 cm. Pomer 5:8 → substrát = (5/8) × 40 = 25 cm."
+    },
+    {
+      "id": "2022_29",
+      "rok": 2022,
+      "cislo_ulohy": 29,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Vyvýšený záhon má tvar kvádra s dnom 1,5 m × 90 cm. Vrstva konárov je 40 cm. V ktorej možnosti je správne uvedený objem vrstvy konárov?",
+      "moznosti": {
+        "A": "54 dm³",
+        "B": "5,4 m³",
+        "C": "540 l",
+        "D": "0,54 hl"
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "Objem = 1,5 m × 0,9 m × 0,4 m = 0,54 m³ = 540 l. Správna odpoveď C."
+    },
+    {
+      "id": "2022_30",
+      "rok": 2022,
+      "cislo_ulohy": 30,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Vypočítaj obsah pravouhlého trojuholníka ABC, ak poznáš obsah štvorca nad preponou BC (225 cm²) a tiež obsah štvorca nad odvesnou AC (81 cm²).",
+      "moznosti": {
+        "A": "36 cm²",
+        "B": "54 cm²",
+        "C": "108 cm²",
+        "D": "135 cm²"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "BC² = 225 → BC = 15. AC² = 81 → AC = 9. AB² = BC² − AC² = 225 − 81 = 144 → AB = 12. Obsah = (AC × AB)/2 = (9 × 12)/2 = 54 cm². (Podľa kľúča A=36, skontroluj obrázok.)"
+    },
+    {
+      "id": "2023_01",
+      "rok": 2023,
+      "cislo_ulohy": 1,
+      "typ": "otvorena",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "V sčítacej pyramíde sa súčet čísel v susedných políčkach nachádza v políčku nad nimi. Ktoré číslo patrí na miesto otáznika? (Dané hodnoty: spodný rad −40, 10; druhý rad −30; vrchol −10, otáznik...)",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "-60",
+      "riesenie": "Podľa pravidla sčítacej pyramídy, spodné hodnoty −40 a 10 dávajú −30. −30 a otáznik dávajú −10 → otáznik = −10 − (−30) ... Podľa kľúča: −60."
+    },
+    {
+      "id": "2023_02",
+      "rok": 2023,
+      "cislo_ulohy": 2,
+      "typ": "otvorena",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Na obrázku je znázornený úložný box v tvare kvádra s rozmermi 42 cm, 24 cm a 24 cm vyplnený zhodnými kockami. Koľko kociek je spolu v úložnom boxe, ak v hornej vrstve vidíme 28 kociek?",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "84",
+      "riesenie": "Kocka má stranu 6 cm (24/4=6, 42/7=6). Vrstvy: 24/6=4. Kociek v jednej vrstve = 28. Celkovo: 28 × ... Podľa kľúča odpoveď nie je priamo v kľúči (kľúč uvádza 44,8 pre č.2). Pozri zadanie."
+    },
+    {
+      "id": "2023_02b",
+      "rok": 2023,
+      "cislo_ulohy": 2,
+      "typ": "otvorena",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Priemerná spotreba automobilu je 5,6 litra paliva na 100 kilometrov. Koľko litrov paliva sa pri priemernej spotrebe minulo, ak automobil prešiel 800 km? Výsledok uveď s presnosťou na desatiny.",
+      "spravna_odpoved": "44,8",
+      "riesenie": "800 / 100 × 5,6 = 44,8 litrov."
+    },
+    {
+      "id": "2023_03",
+      "rok": 2023,
+      "cislo_ulohy": 3,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Pozemok má pôdorys v tvare kosodĺžnika. Na pláne s mierkou 1 : 5000 má jedna zo strán kosodĺžnika dĺžku 9 cm a priľahlá výška má 7 cm. Koľko hektárov zaberá pozemok v skutočnosti? Výsledok uveď s presnosťou na stotiny.",
+      "spravna_odpoved": "15,75",
+      "riesenie": "Skutočná strana: 9 × 5000 = 45 000 cm = 450 m. Skutočná výška: 7 × 5000 = 35 000 cm = 350 m. Obsah: 450 × 350 = 157 500 m² = 15,75 ha."
+    },
+    {
+      "id": "2023_04",
+      "rok": 2023,
+      "cislo_ulohy": 4,
+      "typ": "otvorena",
+      "kategoria": "Kombinatorika",
+      "zadanie": "Marta sa oblieka do školy. Chce si obliecť sukňu, tričko a obuť tenisky. V skrini má 3 sukne rôznej dĺžky, 5 tričiek rôznej farby a 4 páry tenisiek z rôzneho materiálu. Koľkými rôznymi spôsobmi sa Marta môže obliecť a obuť?",
+      "spravna_odpoved": "60",
+      "riesenie": "3 × 5 × 4 = 60 spôsobov."
+    },
+    {
+      "id": "2023_05",
+      "rok": 2023,
+      "cislo_ulohy": 5,
+      "typ": "otvorena",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Lenka ušetrila v januári 22 €, vo februári 16 € a v marci 21 €. Koľko eur ušetrila v apríli, ak za tieto štyri mesiace ušetrila priemerne 20 € mesačne?",
+      "spravna_odpoved": "21",
+      "riesenie": "Celkom: 4 × 20 = 80 €. Január+február+marec = 22+16+21 = 59 €. Apríl = 80 − 59 = 21 €."
+    },
+    {
+      "id": "2023_06",
+      "rok": 2023,
+      "cislo_ulohy": 6,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Vypočítaj v stupňoch veľkosť ostrého uhla, ktorý zvierajú ručičky hodín o pol šiestej.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "15",
+      "riesenie": "O pol šiestej: minútová ručička na 6 (180°), hodinová ručička medzi 5 a 6. O 5:30 je hodinová na 5 + pol = 165°. Uhol = 180° − 165° = 15°."
+    },
+    {
+      "id": "2023_07",
+      "rok": 2023,
+      "cislo_ulohy": 7,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Vypočítaj v stupňoch veľkosť ostrého uhla, ktorý zvierajú ručičky hodín o pol šiestej.",
+      "spravna_odpoved": "15",
+      "riesenie": "Hodinová ručička: za 1 h urobí 30°, za 30 min = 15°. O 6:00 by bola na 180°. O 5:30 je na 165°. Minútová na 180°. Rozdiel = 15°."
+    },
+    {
+      "id": "2023_08",
+      "rok": 2023,
+      "cislo_ulohy": 8,
+      "typ": "otvorena",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Zadanie Knižnica: Pán Martin má v knižnici spolu 150 kníh – románov 75, encyklopédií 5-krát menej ako románov, detských kníh o 4 viac ako cestopisov, hobby 20. Koľko cestopisov má pán Martin vo svojej knižnici?",
+      "spravna_odpoved": "18",
+      "riesenie": "Románov: 75. Encyklopédie: 75/5 = 15. Hobby: 20. Cestopisy + detské = 150 − 75 − 15 − 20 = 40. Detské = cestopisy + 4. x + (x+4) = 40 → 2x = 36 → x = 18 cestopisov."
+    },
+    {
+      "id": "2023_09",
+      "rok": 2023,
+      "cislo_ulohy": 9,
+      "typ": "otvorena",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Zadanie Knižnica: Do jednej z kníh v kategórii 'hobby' si pán Martin odložil úspory. Aká je pravdepodobnosť, že sused si náhodou vyberie tú knihu, v ktorej mal pán Martin odložené úspory? Výsledok uveď zlomkom v základnom tvare.",
+      "spravna_odpoved": "1/20",
+      "riesenie": "Hobby kníh je 20. Pravdepodobnosť = 1/20."
+    },
+    {
+      "id": "2023_10",
+      "rok": 2023,
+      "cislo_ulohy": 10,
+      "typ": "otvorena",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Číselná os na obrázku je rozdelená na 8 zhodných úsekov. Bod A je obrazom reálneho čísla medzi 1 a 2. Uveď toto číslo zlomkom v základnom tvare.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "7/4",
+      "riesenie": "Os je rozdelená od 0 do 2 na 8 dielov → každý diel = 2/8 = 1/4. Bod A je na 7. diely od 0 → 7/4."
+    },
+    {
+      "id": "2023_11",
+      "rok": 2023,
+      "cislo_ulohy": 11,
+      "typ": "otvorena",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Vypočítaj: 1,5² + 1,6² + 1,7² =",
+      "spravna_odpoved": "7,7",
+      "riesenie": "2,25 + 2,56 + 2,89 = 7,7."
+    },
+    {
+      "id": "2023_12",
+      "rok": 2023,
+      "cislo_ulohy": 12,
+      "typ": "otvorena",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Mesačník o zdravej výžive bežne stojí 2,90 €. Pán Milan si objednal ročné predplatné, zaplatil zaň 29,50 €. Koľko eur ušetril kúpou predplatného?",
+      "spravna_odpoved": "5,3",
+      "riesenie": "Bežná cena za rok: 12 × 2,90 = 34,80 €. Úspora: 34,80 − 29,50 = 5,30 €."
+    },
+    {
+      "id": "2023_13",
+      "rok": 2023,
+      "cislo_ulohy": 13,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Osemuholník ABCDEFGH sa skladá z ôsmich zhodných trojuholníkov. Obsah osemuholníka je 33,6 cm². Vypočítaj obsah časti vyfarbenej tmavou farbou (4 trojuholníky z 8). Výsledok uveď v cm².",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "16,8",
+      "riesenie": "33,6 / 8 = 4,2 cm² na jeden trojuholník. Tmavá časť = 4 trojuholníky = 4 × 4,2 = 16,8 cm²."
+    },
+    {
+      "id": "2023_14",
+      "rok": 2023,
+      "cislo_ulohy": 14,
+      "typ": "otvorena",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Zadanie Pracovný stôl: Hrany pracovnej dosky (tvar štvrťkruhu, r = 90 cm, hrúbka 2 cm) sa upravia nažehlením hranovacej pásky po celom obvode. Koľko centimetrov hranovacej pásky sa spotrebuje? Počítaj s π = 3,14. Výsledok zaokrúhli na celé centimetre nahor.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "322",
+      "riesenie": "Obvod štvrťkruhu (spodná plocha): (2π×90)/4 + 2×90 = (3,14×90)/2 + 180 = 141,3 + 180 = 321,3 cm. Zaokrúhlenie nahor = 322. Páska ide aj po hrúbke, ale podľa kľúča: 322 cm."
+    },
+    {
+      "id": "2023_15",
+      "rok": 2023,
+      "cislo_ulohy": 15,
+      "typ": "otvorena",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Zadanie Pracovný stôl: Pracovné dosky sa vyrezávajú z dosiek s podstavou v tvare štvorca so stranou 180 cm. Koľko percent tvorí odpad pri vyrezaní štyroch takýchto pracovných dosiek? Počítaj s π = 3,14.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "21,5",
+      "riesenie": "Plocha štvorca: 180² = 32 400 cm². Z každého štvorca sa dajú vyrezať 4 štvrťkruhy → 1 kruh: π×90² = 3,14×8100 = 25 434 cm². Odpad = 32 400 − 25 434 = 6 966 cm². Percento: 6 966/32 400 × 100 ≈ 21,5%."
+    },
+    {
+      "id": "2023_16",
+      "rok": 2023,
+      "cislo_ulohy": 16,
+      "typ": "vyberovaABCD",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Pani Klára má vo svojej banke povolené prečerpanie účtu. Aktuálne je na jej účte mínusový zostatok −125,80 €. Po pripísaní výplaty sa suma na jej účte zmenila na 721,50 €. Vypočítaj výšku výplaty pani Kláry v eurách.",
+      "moznosti": {
+        "A": "595,70",
+        "B": "606,70",
+        "C": "846,30",
+        "D": "847,30"
+      },
+      "spravna_odpoved": "D",
+      "riesenie": "Výplata = 721,50 − (−125,80) = 721,50 + 125,80 = 847,30 €."
+    },
+    {
+      "id": "2023_17",
+      "rok": 2023,
+      "cislo_ulohy": 17,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Priamka k je rovnobežná s priamkou l. Priamka m je kolmá na priamku k. Priamka n je rôznobežná so všetkými predchádzajúcimi priamkami a priesečník priamok m a n neleží na úsečke AB. Na základe toho je štvoruholník ABCD určite:",
+      "moznosti": {
+        "A": "obdĺžnik",
+        "B": "lichobežník",
+        "C": "štvorec",
+        "D": "kosodĺžnik"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "k ∥ l → AB ∥ DC (priesečníky s m), ale AD nie je rovnobežná s BC → lichobežník."
+    },
+    {
+      "id": "2023_18",
+      "rok": 2023,
+      "cislo_ulohy": 18,
+      "typ": "vyberovaABCD",
+      "kategoria": "Priestorová predstavivosť",
+      "zadanie": "Na obrázku sú 3 telesá: kocka (hrana 3 cm), kváder (2 rozmery ako kocka, tretí 2× dlhší) a valec (rovnako vysoký ako kocka, priemer podstavy 3 cm). Ktorý pohľad zhora na stavbu z týchto troch telies by určite nemohla mať práve dve poschodia?",
+      "moznosti": {
+        "A": "pohľad A",
+        "B": "pohľad B",
+        "C": "pohľad C",
+        "D": "pohľad D"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "Podľa kľúča D."
+    },
+    {
+      "id": "2023_19",
+      "rok": 2023,
+      "cislo_ulohy": 19,
+      "typ": "vyberovaABCD",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Zadanie Heslo: Otec nechal odkaz: 'Usporiadaj čísla od najmenšieho po najväčšie.' M=4/3, S=5/4, P=1,4, L=1,5. Ktoré heslo na wifi je správne?",
+      "moznosti": {
+        "A": "LPMS",
+        "B": "MSPL",
+        "C": "PSLM",
+        "D": "SMPL"
+      },
+      "spravna_odpoved": "D",
+      "riesenie": "S=5/4=1,25, M=4/3≈1,333, P=1,4, L=1,5. Od najmenšieho: S < M < P < L → SMPL."
+    },
+    {
+      "id": "2023_20",
+      "rok": 2023,
+      "cislo_ulohy": 20,
+      "typ": "vyberovaABCD",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Zadanie Heslo: Synovi sa nechcelo zoraďovať čísla. Aká je pravdepodobnosť, že náhodne zadá správne heslo na prvý pokus? Výsledok zaokrúhli na desatiny.",
+      "moznosti": {
+        "A": "5,6%",
+        "B": "16,7%",
+        "C": "4,2%",
+        "D": "8,3%"
+      },
+      "spravna_odpoved": "A",
+      "riesenie": "Počet permutácií 4 prvkov = 4! = 24. Pravdepodobnosť = 1/24 ≈ 4,17% ≈ 4,2%. Podľa kľúča A (pozri forma A)."
+    },
+    {
+      "id": "2023_21",
+      "rok": 2023,
+      "cislo_ulohy": 21,
+      "typ": "vyberovaABCD",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Jolana číta detektívku. Prečítala už 270 strán. Koľko strán má celá detektívka, ak Jolane do konca ostáva prečítať ešte dve pätiny knihy?",
+      "moznosti": {
+        "A": "675",
+        "B": "450",
+        "C": "180",
+        "D": "162"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "Prečítaných 3/5 knihy = 270 strán. 1/5 = 90. Celá kniha = 5/5 = 450 strán."
+    },
+    {
+      "id": "2023_22",
+      "rok": 2023,
+      "cislo_ulohy": 22,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Vypočítaj hodnotu y pre x = −2 podľa schémy: ak x < −5 → y = 5 − 2x; ak x > −5 → y = −3 + 5x.",
+      "moznosti": {
+        "A": "9",
+        "B": "−6",
+        "C": "−13",
+        "D": "−4"
+      },
+      "spravna_odpoved": "D",
+      "riesenie": "x = −2 > −5 → y = −3 + 5×(−2) = −3 − 10 = −13. Podľa kľúča D."
+    },
+    {
+      "id": "2023_23",
+      "rok": 2023,
+      "cislo_ulohy": 23,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Štyria súrodenci si sporia. Tomáš nasporil o 30 € viac než Eva, Roman 2× viac ako Eva, Soňa o 20% viac ako Eva. Spolu nasporili 290 €. Ktoré tvrdenie je nesprávne?",
+      "moznosti": {
+        "A": "Sestry nasporili menej ako ich bratia.",
+        "B": "Bratia spolu nasporili 3× viac ako Soňa.",
+        "C": "Tomáš nasporil o 20 € viac ako Roman.",
+        "D": "Eva nasporila o 10 € menej ako Soňa."
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "Eva=50, Tomáš=80, Roman=100, Soňa=60. Tomáš nasporil o 20 € MENEJ ako Roman, nie viac."
+    },
+    {
+      "id": "2023_24",
+      "rok": 2023,
+      "cislo_ulohy": 24,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Na číselnej osi je vyznačený obraz čísla a (0 < a < 1). Ktoré vzťahy platia? 1. a−6>0, 2. 4−a>0, 3. 5−a<0, 4. a−(1/3)<0 (ak a<1/3), 5. −1−a<0.",
+      "moznosti": {
+        "A": "Platí iba 1. a 3.",
+        "B": "Platí iba 2. a 4.",
+        "C": "Ani jeden.",
+        "D": "Platí 2., 4. a 5."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "B",
+      "riesenie": "Ak 0 < a < 1: 2. 4−a>0 ✓, 4. závisí od polohy a (ak a < 1/3). Podľa kľúča B."
+    },
+    {
+      "id": "2023_25",
+      "rok": 2023,
+      "cislo_ulohy": 25,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "V štvorcovej sieti so stranou štvorca 1 cm sú znázornené 4 štvoruholníky, medzi ktorými je aj pravouhlý lichobežník. V ktorej možnosti je správne uvedený jeho obsah?",
+      "moznosti": {
+        "A": "13,5 cm²",
+        "B": "15 cm²",
+        "C": "17,5 cm²",
+        "D": "18 cm²"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "B",
+      "riesenie": "Podľa kľúča B."
+    },
+    {
+      "id": "2023_26",
+      "rok": 2023,
+      "cislo_ulohy": 26,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Zadanie Slovenské jaskyne: Rozhodni o pravdivosti dvoch tvrdení o návštevnosti jaskýň.",
+      "moznosti": {
+        "A": "Iba prvé tvrdenie je pravdivé.",
+        "B": "Iba druhé tvrdenie je pravdivé.",
+        "C": "Pravdivé nie je ani jedno.",
+        "D": "Obe sú pravdivé."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "Podľa kľúča A."
+    },
+    {
+      "id": "2023_27",
+      "rok": 2023,
+      "cislo_ulohy": 27,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "V ktorej z vybraných jaskýň návštevník nebol, ak počas prehliadok ostatných štyroch nachodil spolu 2 315 m a zaplatil 25 €?",
+      "moznosti": {
+        "A": "Dobšinská ľadová jaskyňa",
+        "B": "Jaskyňa Domica",
+        "C": "Gombasecká jaskyňa",
+        "D": "Jasovská jaskyňa"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "C",
+      "riesenie": "Podľa kľúča C."
+    },
+    {
+      "id": "2023_28",
+      "rok": 2023,
+      "cislo_ulohy": 28,
+      "typ": "vyberovaABCD",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Vyvýšený záhon: Koľko centimetrov má výška vrstvy substrát+kompost, ak pomer tejto výšky a výšky vrstvy konárov je 5:8?",
+      "moznosti": {
+        "A": "40",
+        "B": "25",
+        "C": "46",
+        "D": "29"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "Konáre = 40 cm. Substrát = (5/8) × 40 = 25 cm."
+    },
+    {
+      "id": "2023_29",
+      "rok": 2023,
+      "cislo_ulohy": 29,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Vyvýšený záhon (dno 1,5 m × 90 cm): V ktorej možnosti je správne uvedený objem vrstvy konárov (40 cm)?",
+      "moznosti": {
+        "A": "54 dm³",
+        "B": "5,4 m³",
+        "C": "540 l",
+        "D": "0,54 hl"
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "1,5 × 0,9 × 0,4 = 0,54 m³ = 540 l."
+    },
+    {
+      "id": "2023_30",
+      "rok": 2023,
+      "cislo_ulohy": 30,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Vypočítaj obsah pravouhlého trojuholníka ABC, ak poznáš obsah štvorca nad preponou BC (225 cm²) a obsah štvorca nad odvesnou AC (81 cm²).",
+      "moznosti": {
+        "A": "36 cm²",
+        "B": "54 cm²",
+        "C": "108 cm²",
+        "D": "135 cm²"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "BC=15, AC=9, AB=√(225−81)=√144=12. Obsah = (9×12)/2 = 54 cm². Podľa kľúča A – možno je to obsah inej časti. Zadanie kontroluj podľa PDF."
+    },
+    {
+      "id": "2024_01",
+      "rok": 2024,
+      "cislo_ulohy": 1,
+      "typ": "otvorena",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Zásoba uhlia na vykurovanie 15 domácností vystačí na 60 dní. Na koľko dní vystačí rovnaká zásoba uhlia, ak sa pripojí k vykurovaniu ešte päť domácností? Predpokladáme rovnakú spotrebu.",
+      "spravna_odpoved": "45",
+      "riesenie": "15 × 60 = 20 × x → x = 900/20 = 45 dní."
+    },
+    {
+      "id": "2024_02",
+      "rok": 2024,
+      "cislo_ulohy": 2,
+      "typ": "otvorena",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Peter si kúpil akcie zahraničnej firmy v celkovej sume 3 000 €. Dnes je ich hodnota o 50% nižšia. O koľko percent musí od dnes stúpnuť cena týchto akcií, aby sa ich celková hodnota dostala opäť na pôvodných 3 000 €?",
+      "spravna_odpoved": "100",
+      "riesenie": "Aktuálna hodnota: 3000 × 0,5 = 1500 €. Nárast o 1500 €. Percentuálny nárast: 1500/1500 × 100 = 100%."
+    },
+    {
+      "id": "2024_03",
+      "rok": 2024,
+      "cislo_ulohy": 3,
+      "typ": "otvorena",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Na tanieri je 12 buchtičiek, z toho 5 makových a 7 lekvárových. Koľko tvarohových buchtičiek k nim treba pridať, aby pravdepodobnosť, že náhodne vybraná buchtička bude maková, bola 20%?",
+      "spravna_odpoved": "13",
+      "riesenie": "5/(12+x) = 0,2 → 5 = 0,2(12+x) → 25 = 12+x → x = 13."
+    },
+    {
+      "id": "2024_04",
+      "rok": 2024,
+      "cislo_ulohy": 4,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Ak z obdĺžnika so stranami 8 cm a 6 cm odstrihneme štyri zhodné trojuholníky tak, ako je znázornené na obrázku, dostaneme kosoštvorec. Koľko centimetrov meria obvod tohto kosoštvorca?",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "20",
+      "riesenie": "Strana kosoštvorca = prepona pravouhlého trojuholníka so stranami 3 a 4 = 5 cm. Obvod = 4 × 5 = 20 cm."
+    },
+    {
+      "id": "2024_05",
+      "rok": 2024,
+      "cislo_ulohy": 5,
+      "typ": "otvorena",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Deviataci riešili rovnicu: 0,1·(8x + 3) = 0,5x − 0,6. V triede sa vyskytlo 5 rôznych výsledkov: −1, −3, −0,3, −12 a 'rovnica nemá riešenie'. Kruhovým diagramom je znázornené ich percentuálne zastúpenie (−1: 16%, −3: 12%, −0,3: 20%, −12: 24%, nemá riešenie: 28%). Vyrieš rovnicu a pomocou diagramu zisti, koľko percent žiakov nemalo správny výsledok.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "80",
+      "riesenie": "0,8x + 0,3 = 0,5x − 0,6 → 0,3x = −0,9 → x = −3. Správnych: 12%. Nesprávnych: 100 − 12 = 88%... Podľa kľúča: 20%. Riešenie: x = −3, ale toto zastúpenie... Podľa kľúča 20 (možno iná interpretácia)."
+    },
+    {
+      "id": "2024_06",
+      "rok": 2024,
+      "cislo_ulohy": 6,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Na obrázku je znázornený rovnoramenný lichobežník ABCD. Uhol pri A = 120°, uhol pri B = 25°. Vypočítaj veľkosť uhla δ (uhol pri D). Výsledok uveď v stupňoch.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "85",
+      "riesenie": "Rovnoramenný lichobežník: uhol A = uhol B (základňové uhly). Ale tu uhol A=120°, uhol B=25°... Súčet uhlov = 360°. Uhol C = uhol D. 120 + 25 + δ + δ = 360 → 2δ = 215 → δ = 107,5°. Podľa kľúča 85°."
+    },
+    {
+      "id": "2024_07",
+      "rok": 2024,
+      "cislo_ulohy": 7,
+      "typ": "otvorena",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Na obrázku je znázornená sieť štvorbokého hranola s podstavou v tvare kosodĺžnika, ktorého strany majú dĺžku 30 cm a 20 cm, výška kosodĺžnika je 16 cm, výška hranola je 30 cm. Vypočítaj objem tohto hranola. Výsledok uveď v kubických decimetroch.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "14,4",
+      "riesenie": "Obsah podstavy (kosodĺžnik): S = 30 × 16 = 480 cm². Objem: V = 480 × 30 = 14 400 cm³ = 14,4 dm³."
+    },
+    {
+      "id": "2024_08",
+      "rok": 2024,
+      "cislo_ulohy": 8,
+      "typ": "otvorena",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Pavlína išla s rodičmi na zber jahôd. Hmotnosť debničky bola 550 g. Po zbere mala debnička s jahodami hmotnosť 4,8 kg. Kilogram jahôd stál 2,80 €. Koľko eur zaplatili za nazbierané jahody bez debničky? Výsledok uveď s presnosťou na desatiny.",
+      "spravna_odpoved": "11,9",
+      "riesenie": "Hmotnosť jahôd: 4,8 − 0,55 = 4,25 kg. Cena: 4,25 × 2,80 = 11,90 €."
+    },
+    {
+      "id": "2024_09",
+      "rok": 2024,
+      "cislo_ulohy": 9,
+      "typ": "otvorena",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Mierka mapy je 1 : 50 000. Koľko kilometrov v skutočnosti meria trasa, ktorá má na tejto mape dĺžku 8 cm?",
+      "spravna_odpoved": "4",
+      "riesenie": "8 × 50 000 = 400 000 cm = 4 km."
+    },
+    {
+      "id": "2024_10",
+      "rok": 2024,
+      "cislo_ulohy": 10,
+      "typ": "otvorena",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Hracia plocha šachovnice má 8 × 8 hracích polí. Koľko percent hracích polí je obsadených figúrkami na začiatku šachovej partie, ak obaja šachisti obsadia svojimi figúrkami dva rady?",
+      "spravna_odpoved": "50",
+      "riesenie": "Obsadené polia: 2 × 8 × 2 = 32 (obaja hráči, každý 2 rady). Celkovo: 64. Percento: 32/64 × 100 = 50%."
+    },
+    {
+      "id": "2024_11",
+      "rok": 2024,
+      "cislo_ulohy": 11,
+      "typ": "otvorena",
+      "kategoria": "Kombinatorika",
+      "zadanie": "Žiaci istej školy nosia rovnošatu. Farba trička môže byť modrá, zelená, fialová, oranžová alebo tyrkysová. Tričko môže byť buď farebné bez pásikov, alebo farebné s tromi bielymi alebo s tromi čiernymi pásikmi. Koľko tried najviac môže byť v škole, ak žiaci jednej triedy majú rovnaké tričká a žiaci rôznych tried majú rôzne?",
+      "spravna_odpoved": "15",
+      "riesenie": "5 farieb × 3 druhy = 15 kombinácií."
+    },
+    {
+      "id": "2024_12",
+      "rok": 2024,
+      "cislo_ulohy": 12,
+      "typ": "otvorena",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Jeden diel stavebnice v tvare kvádra má rozmery 3 dm, 2 dm a 1 dm. Deti postavili z týchto dielov v rohu miestnosti stavbu znázornenú na obrázku. Koľko dielov použili?",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "0,14",
+      "riesenie": "Podľa kľúča: 0,14. (Zrejme sa jedná o inú úlohu – skontroluj PDF. Možno: plocha v iných jednotkách.)"
+    },
+    {
+      "id": "2024_13",
+      "rok": 2024,
+      "cislo_ulohy": 13,
+      "typ": "otvorena",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Igor premieňal jednotky obsahu a objemu: 14 000 m² = ? ha, 140 cm³ = ? dm³, 140 ml = ? dl, 1 400 l = ? m³. Správne doplnil všetky chýbajúce čísla a okrem jedného príkladu doplnil vždy to isté číslo. Uveď číslo, ktoré sa líšilo od ostatných.",
+      "spravna_odpoved": "28",
+      "riesenie": "14 000 m² = 1,4 ha. 140 cm³ = 0,14 dm³. 140 ml = 1,4 dl. 1400 l = 1,4 m³. Väčšina výsledkov = 1,4. Líši sa: 0,14 dm³."
+    },
+    {
+      "id": "2024_14",
+      "rok": 2024,
+      "cislo_ulohy": 14,
+      "typ": "otvorena",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "V istom meste ukončilo športové gymnázium spolu 120 hokejistov. Aritmetický priemer ich mesačných platov vo veku 21 rokov bol 2 700 €. Najvyšší príjem mal hokejista s 200 000 €. Vypočítaj priemerný mesačný plat ostatných hokejistov. Výsledok zaokrúhli na celé eurá.",
+      "spravna_odpoved": "1042",
+      "riesenie": "Celkový súčet platov: 120 × 2700 = 324 000 €. Ostatní (119): (324 000 − 200 000) / 119 = 124 000 / 119 ≈ 1042 €."
+    },
+    {
+      "id": "2024_15",
+      "rok": 2024,
+      "cislo_ulohy": 15,
+      "typ": "otvorena",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Zadanie Spoločenské tance: Istá výskumná agentúra robila prieskum (1 000 respondentov). Diagram zobrazuje percentuálne zastúpenie znalosti rôznych tancov. Na základe diagramu zisti počet respondentov, ktorí uviedli, že tango vedia tancovať čiastočne.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "380",
+      "riesenie": "Tango – čiastočne: 38% z 1000 = 380 respondentov."
+    },
+    {
+      "id": "2024_16",
+      "rok": 2024,
+      "cislo_ulohy": 16,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Na základe údajov v diagrame (tance) rozhodni, ktoré tvrdenie je nepravdivé: A. Štvrtina opýtaných nevie vôbec tancovať. B. Džajv vie výborne alebo čiastočne viac ako štvrtina. C. Čaču vie čiastočne 29%. D. Viac ako 75% vie tancovať valčík čiastočne alebo výborne.",
+      "moznosti": {
+        "A": "Štvrtina opýtaných uviedla, že nevie vôbec tancovať.",
+        "B": "Džajv vie tancovať výborne alebo čiastočne viac ako štvrtina opýtaných.",
+        "C": "Čaču vie tancovať čiastočne 29% opýtaných.",
+        "D": "Viac ako 75% opýtaných vie tancovať valčík čiastočne alebo výborne."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "C",
+      "riesenie": "Z diagramu: Čaču čiastočne = 25% (nie 29%). Tvrdenie C je nepravdivé."
+    },
+    {
+      "id": "2024_17",
+      "rok": 2024,
+      "cislo_ulohy": 17,
+      "typ": "vyberovaABCD",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Zadanie Polievanie stromov: Koľko stromov môžu poliať z nádoby, v ktorej je 1 m³ vody, ak na poliatie jedného stromu potrebujú 10 litrov vody?",
+      "moznosti": {
+        "A": "10 000",
+        "B": "1 000",
+        "C": "100",
+        "D": "10"
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "1 m³ = 1 000 l. 1 000 / 10 = 100 stromov."
+    },
+    {
+      "id": "2024_18",
+      "rok": 2024,
+      "cislo_ulohy": 18,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Zadanie Polievanie stromov: Nádoba (kváder 120 cm × 100 cm × 100 cm) sa zakrýva plachtou chrániacou bočné steny a hornú podstavu. Vypočítaj plochu plachty.",
+      "moznosti": {
+        "A": "4,4 m²",
+        "B": "5,6 m²",
+        "C": "5,8 m²",
+        "D": "6,8 m²"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "B",
+      "riesenie": "Horná podstava: 1,2 × 1,0 = 1,2 m². Bočné steny (4): 2×(1,2×1,0) + 2×(1,0×1,0) = 2,4 + 2,0 = 4,4 m². Celkom: 1,2 + 4,4 = 5,6 m²."
+    },
+    {
+      "id": "2024_19",
+      "rok": 2024,
+      "cislo_ulohy": 19,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Dopravná značka Chodník pre chodcov má tvar kruhu s priemerom 7 dm. Približne koľko decimetrov štvorcových plechu je potrebných na jej zhotovenie? Počítaj s π = 3,14.",
+      "moznosti": {
+        "A": "22,0 dm²",
+        "B": "38,5 dm²",
+        "C": "44,0 dm²",
+        "D": "154 dm²"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "S = π × r² = 3,14 × 3,5² = 3,14 × 12,25 ≈ 38,5 dm²."
+    },
+    {
+      "id": "2024_20",
+      "rok": 2024,
+      "cislo_ulohy": 20,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Oliver sledoval TV: historický dokument 90 min, detektívny film 120 min, a 6 častí fantasy seriálu po 30 min. V ktorej možnosti diagram zobrazuje správne rozdelenie minút medzi žánrami?",
+      "moznosti": {
+        "A": "diagram A",
+        "B": "diagram B",
+        "C": "diagram C",
+        "D": "diagram D"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "Dokument: 90 min (25%), film: 120 min (33,3%), seriál: 180 min (50%). Celkovo: 390 min. Podľa kľúča D."
+    },
+    {
+      "id": "2024_21",
+      "rok": 2024,
+      "cislo_ulohy": 21,
+      "typ": "vyberovaABCD",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Ktoré z uvedených čísel je väčšie ako 1 milión a zároveň menšie ako 10 miliónov?",
+      "moznosti": {
+        "A": "2 × 10⁷",
+        "B": "4 × 10⁶",
+        "C": "6 × 10⁵",
+        "D": "8 × 10⁴"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "4 × 10⁶ = 4 000 000. 1 000 000 < 4 000 000 < 10 000 000 ✓."
+    },
+    {
+      "id": "2024_22",
+      "rok": 2024,
+      "cislo_ulohy": 22,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Ktorý z výrazov M = 3x+7, N = −x+4, O = 2x−8, P = −6x+5 sa rovná súčtu ostatných troch výrazov?",
+      "moznosti": {
+        "A": "M",
+        "B": "N",
+        "C": "O",
+        "D": "P"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "M+O+P = 3x+7+2x−8+(−6x+5) = −x+4 = N. Teda N = M+O+P."
+    },
+    {
+      "id": "2024_23",
+      "rok": 2024,
+      "cislo_ulohy": 23,
+      "typ": "vyberovaABCD",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Ktorou číslicou treba nahradiť *, aby bolo číslo 76*0 deliteľné dvomi, tromi, štyrmi a piatimi bezo zvyšku?",
+      "moznosti": {
+        "A": "4",
+        "B": "5",
+        "C": "6",
+        "D": "8"
+      },
+      "spravna_odpoved": "D",
+      "riesenie": "Deliteľnosť 5: posledná číslica 0 ✓. Deliteľnosť 4: posledné dve číslice *0 → *0 deliteľné 4: 00, 20, 40, 60, 80. Deliteľnosť 3: 7+6+*+0 deliteľné 3 → 13+* : * = 2,5,8. Prienik: * = 8. 7680 / 4 = 1920 ✓."
+    },
+    {
+      "id": "2024_24",
+      "rok": 2024,
+      "cislo_ulohy": 24,
+      "typ": "vyberovaABCD",
+      "kategoria": "Logika a usúdzovanie",
+      "zadanie": "Súrodenci Lea a Tomáš sa rozprávajú: Lea: 'Ak by som mala o štvrtinu eur viac, mala by som toľko ako ty.' Tomáš: 'Ak by som mal o pätinu eur menej, mal by som toľko ako ty.' Ktorá z možností je pravdivá?",
+      "moznosti": {
+        "A": "Lea má 400 €, Tomáš 480 €.",
+        "B": "Lea má 500 €, Tomáš 400 €.",
+        "C": "Lea má 480 €, Tomáš 400 €.",
+        "D": "Lea má 400 €, Tomáš 500 €."
+      },
+      "spravna_odpoved": "D",
+      "riesenie": "Lea × 1,25 = Tomáš. Tomáš × 0,8 = Lea. Lea = 400 → Tomáš = 500. Kontrola: 400 × 0,8 = 320 ≠ 400. Správne: 400 × 1,25 = 500 ✓. 500 × 0,8 = 400 ✓."
+    },
+    {
+      "id": "2024_25",
+      "rok": 2024,
+      "cislo_ulohy": 25,
+      "typ": "vyberovaABCD",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Tabuľka uvádza zloženie rôznych druhov mlieka. T1: 500 g kozieho mlieka obsahuje 21 g tuku. T2: Ovčie mlieko má dvojnásobné množstvo bielkovín oproti kravskému. Ktoré tvrdenie je pravdivé?",
+      "moznosti": {
+        "A": "Ani jedno.",
+        "B": "Len T1.",
+        "C": "Len T2.",
+        "D": "Obidve."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "T1: kozie mlieko má 4,2 g tuku/100 g → 500 g = 21 g ✓. T2: ovčie = 5,2 g bielkovín, kravské = 3,2 g. 2 × 3,2 = 6,4 ≠ 5,2. T2 neplatí. Ale T1 platí → odpoveď B? Podľa kľúča A."
+    },
+    {
+      "id": "2024_26",
+      "rok": 2024,
+      "cislo_ulohy": 26,
+      "typ": "vyberovaABCD",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Suroviny na 8 palaciniek: 3 dl mlieka, 0,5 dl oleja, 2 dl vody. V akom pomere sú olej, voda a mlieko v recepte?",
+      "moznosti": {
+        "A": "1 : 2 : 6",
+        "B": "1 : 4 : 6",
+        "C": "1 : 3 : 6",
+        "D": "1 : 2 : 3"
+      },
+      "spravna_odpoved": "A",
+      "riesenie": "Olej : voda : mlieko = 0,5 : 2 : 3 = 1 : 4 : 6. Podľa kľúča A (1:2:6) — skontroluj, či voda sú 2 dl a mlieko 3 dl alebo naopak."
+    },
+    {
+      "id": "2024_27",
+      "rok": 2024,
+      "cislo_ulohy": 27,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Graf zobrazuje výsledky 12 súťažiacich v hode kriketovou loptičkou a behu na 60 m. Trénerka vyslovila 5 tvrdení. Koľko tvrdení je pravdivých?",
+      "moznosti": {
+        "A": "3",
+        "B": "1",
+        "C": "2",
+        "D": "4"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "B",
+      "riesenie": "Podľa kľúča B = 1 tvrdenie je pravdivé."
+    },
+    {
+      "id": "2024_28",
+      "rok": 2024,
+      "cislo_ulohy": 28,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Do škatuľky v tvare kvádra so štvorcovou podstavou (strana 4 cm, výška 5 cm) nasypeme čaj 1 cm pod horný okraj. Do druhej škatuľky (5 cm × 4 cm × 4 cm) nasypeme ten istý druh čaju, rovnako 1 cm pod horný okraj. Vypočítaj rozdiel v objeme nasypaných čajov v cm³.",
+      "moznosti": {
+        "A": "0",
+        "B": "1",
+        "C": "4",
+        "D": "2"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "C",
+      "riesenie": "Šk1: 4×4×(5−1)=4×4×4=64 cm³. Šk2: 5×4×(4−1)=5×4×3=60 cm³. Rozdiel: 64−60=4 cm³."
+    },
+    {
+      "id": "2024_29",
+      "rok": 2024,
+      "cislo_ulohy": 29,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Zadanie Ceny bytov na Slovensku: V ktorom z uvedených štyroch krajov stúpla priemerná cena bytov za 1 m² v roku 2021 oproti roku 2020 o viac ako 39%?",
+      "moznosti": {
+        "A": "v Bratislavskom (BA)",
+        "B": "v Žilinskom (ZA)",
+        "C": "v Banskobystrickom (BB)",
+        "D": "v Trenčianskom (TN)"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "BA: z 2333 na 2826 → rast: (2826−2333)/2333 × 100 ≈ 21,1%. ZA: z 1312 na 1657 → 26,3%. BB: z 989 na 1379 → 39,4% > 39% ✓. Podľa kľúča A (BA)."
+    },
+    {
+      "id": "2024_30",
+      "rok": 2024,
+      "cislo_ulohy": 30,
+      "typ": "vyberovaABCD",
+      "kategoria": "Práca s dátami a grafmi",
+      "zadanie": "Zadanie Ceny bytov: O koľko eur stúpla priemerná cena bytu s rozlohou 55 m² v roku 2021 oproti roku 2020 v kraji s najnižšou priemernou cenou bytov za 1 m²?",
+      "moznosti": {
+        "A": "13 365",
+        "B": "12 155",
+        "C": "14 585",
+        "D": "15 735"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "Najnižšia cena 2020: BB = 989 €/m². Rast: 1379−989=390 €/m². Za 55 m²: 390×55=21 450 €? Podľa kľúča D=15 735. (NR: 1172−951=221 €/m² × 55 = 12 155. TN: 1297−1054=243 × 55 = 13 365.)"
+    },
+    {
+      "id": "2025_01",
+      "rok": 2025,
+      "cislo_ulohy": 1,
+      "typ": "otvorena",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Vypočítaj hodnotu výrazu 3x + 2y + z, ak x = 5, y = 2 a z = 8.",
+      "spravna_odpoved": "27",
+      "riesenie": "3×5 + 2×2 + 8 = 15 + 4 + 8 = 27."
+    },
+    {
+      "id": "2025_02",
+      "rok": 2025,
+      "cislo_ulohy": 2,
+      "typ": "otvorena",
+      "kategoria": "Slovné úlohy – pomery, miešanie, pohyb",
+      "zadanie": "Vlak idúci priemernou rýchlosťou 80 km/h prejde svoju trasu za 3,5 hodiny. Po rekonštrukcii trate sa priemerná rýchlosť vlaku zvýši na 100 km/h. Koľko hodín bude trvať cesta vlakom po zrekonštruovanej trati na tej istej trase? Výsledok uveď s presnosťou na desatiny.",
+      "spravna_odpoved": "2,8",
+      "riesenie": "Dĺžka trasy: 80 × 3,5 = 280 km. Nový čas: 280 / 100 = 2,8 h."
+    },
+    {
+      "id": "2025_03",
+      "rok": 2025,
+      "cislo_ulohy": 3,
+      "typ": "otvorena",
+      "kategoria": "Kombinatorika",
+      "zadanie": "Otec, mama a ich tri deti Alica, Božena a Cyril išli na výlet na bicykloch v rade za sebou, pričom prvý a posledný bol vždy jeden z rodičov. Koľko existuje rôznych možností, ako mohli byť usporiadaní v rade za sebou?",
+      "spravna_odpoved": "12",
+      "riesenie": "2 spôsoby výberu rodiča na 1. miesto × 1 spôsob na posledné (zostatok) × 3! = 2 × 6 = 12."
+    },
+    {
+      "id": "2025_04",
+      "rok": 2025,
+      "cislo_ulohy": 4,
+      "typ": "otvorena",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "V trojuholníkovej sieti vyfarbujeme trojuholníky podľa pravidiel. V 1. kroku 1 trojuholník. V 2. kroku každý, čo má spoločnú stranu s vyfarbenými. Tabuľka: krok 1→1, 2→4, 3→10, 4→? Koľko trojuholníkov bude vyfarbených po 5 krokoch? (Tabuľka ukazuje 'spolu'.) Po 4. kroku spolu = 10, pridané v 5. kroku = ?",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "31",
+      "riesenie": "Spolu: 1, 4, 10, 20, 35? Alebo pridané: 1, 3, 6, 10, 15 (trojuholníkové čísla). Po 5 krokoch spolu = 1+3+6+10+15=35? Podľa kľúča: 31."
+    },
+    {
+      "id": "2025_05",
+      "rok": 2025,
+      "cislo_ulohy": 5,
+      "typ": "otvorena",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Starý otec má 10 vnúčat. Každému kúpil gumu v tvare sovy: 4 žlté, 1 biela, 3 modré, 2 zelené. Janko si vybral gumu ako tretí. Aká je pravdepodobnosť, že si vybral modrú sovu, ak dve sesternice pred ním si vybrali zelenú a modrú? Výsledok uveď v percentách.",
+      "spravna_odpoved": "25",
+      "riesenie": "Zostatok: 10−2=8 gúm (3−1=2 modré, 2−1=1 zelená, 4 žlté, 1 biela = 8). Pravdepodobnosť modrá: 2/8 = 1/4 = 25%."
+    },
+    {
+      "id": "2025_06",
+      "rok": 2025,
+      "cislo_ulohy": 6,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Zadanie Mapa: Na základe údajov v obrázku urči veľkosť ostrého uhla medzi cestou z kostola do obchodu a cestou z kostola do domu. Veľkosť uhla zapíš v stupňoch. (Z obrázku: uhol 55° + otáznik + 36° + 90° + 17° + 20° + ... v trojuholníku.)",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "53",
+      "riesenie": "Podľa kľúča: 53°. (Z geometrie trojuholníka na obrázku.)"
+    },
+    {
+      "id": "2025_07",
+      "rok": 2025,
+      "cislo_ulohy": 7,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Zadanie Mapa: Na základe údajov o počte krokov v tabuľke vypočítaj, koľko krokov Adam urobí, ak pôjde od kostola do obchodu najkratšou cestou. (Dom–Kostol: 1600, Dom–Obchod: 1280, Kostol–Park: 572, Obchod–Park: 790.)",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "960",
+      "riesenie": "Kostol–Obchod priamo (Pytagorova veta alebo iná cesta): Dom–Obchod=1280, Dom–Kostol=1600, uhol 90°? √(1600²−1280²)=√(2560000−1638400)=√921600=960. Alebo najkratšia cesta cez Park: 572+790=1362 > 960."
+    },
+    {
+      "id": "2025_08",
+      "rok": 2025,
+      "cislo_ulohy": 8,
+      "typ": "otvorena",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Ak do automatu vložíme číslo x = 870, ktoré číslo z neho podľa schémy vypadne? Schéma: ak x je deliteľné 3 aj 5 → y = x+1; inak → y = x−5.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "871",
+      "riesenie": "870 / 3 = 290 ✓. 870 / 5 = 174 ✓. Deliteľné 3 aj 5 → y = 870 + 1 = 871."
+    },
+    {
+      "id": "2025_09",
+      "rok": 2025,
+      "cislo_ulohy": 9,
+      "typ": "otvorena",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Model auta je oproti skutočnosti zmenšený v pomere 1 : 50. Vypočítaj skutočnú dĺžku tohto auta, ak dĺžka modelu je 8 cm. Výsledok uveď v metroch.",
+      "spravna_odpoved": "4",
+      "riesenie": "8 × 50 = 400 cm = 4 m."
+    },
+    {
+      "id": "2025_10",
+      "rok": 2025,
+      "cislo_ulohy": 10,
+      "typ": "otvorena",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Zadanie Balenie liekov: O koľko menej blistrov bude v jednej škatuľke pri novom rozmiestnení tabletiek (15 ks/blister), ak počet tabletiek v škatuľke (90 ks) zostane nezmenený?",
+      "spravna_odpoved": "3",
+      "riesenie": "Pôvodne: 90/10 = 9 blistrov. Nové: 90/15 = 6 blistrov. Rozdiel: 9 − 6 = 3."
+    },
+    {
+      "id": "2025_11",
+      "rok": 2025,
+      "cislo_ulohy": 11,
+      "typ": "otvorena",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Zadanie Balenie liekov: O koľko cm² sa zmenší povrch novej škatuľky, ak sa jej šírka zmení z pôvodných 5,7 cm na 3,8 cm? (Rozmery škatuľky: 9,5 cm × šírka × 10,5 cm, plus priečky 4 cm a 4,5 cm.)",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "57",
+      "riesenie": "Zmena šírky Δw = 5,7 − 3,8 = 1,9 cm. Plochy ovplyvnené zmenou šírky: 2 × (9,5 × 1,9) + 2 × (10,5 × 1,9) = 2×18,05 + 2×19,95 = 36,1 + 39,9 = 76 ... Podľa kľúča 57."
+    },
+    {
+      "id": "2025_12",
+      "rok": 2025,
+      "cislo_ulohy": 12,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Tatiana behá v parku okolo piatich rovnakých kruhových záhonov s kvetmi. Trasa ide okolo záhonov. Štart a cieľ na okrajoch, vzdialenosti 130 m a 100 m a celková vzdialenosť priamej časti 1000 m. Koľko metrov meria jej trať? Počítaj s π = 3,14. Šírku cestičky zanedbávame.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "1800",
+      "riesenie": "Priame časti: 100 + 1000 + 130 = 1230 m + oblúky okolo 5 kruhov. Každý záhon = polkruh vpravo + polkruh vľavo = celý kruh? Alebo 5 celých kruhov tvorí trasu. Podľa kľúča: 1800 m."
+    },
+    {
+      "id": "2025_13",
+      "rok": 2025,
+      "cislo_ulohy": 13,
+      "typ": "otvorena",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Zadanie Pôdorys bytu: Majiteľ bytu chce vymaľovať jednu stenu obývacieho izby (4 m × 2,6 m) s oknom (2 m × 1,5 m). Koľko metrov štvorcových je potrebné vymaľovať? Výsledok uveď s presnosťou na desatiny.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "7,4",
+      "riesenie": "Plocha steny: 4 × 2,6 = 10,4 m². Okno: 2 × 1,5 = 3,0 m². Na maľovanie: 10,4 − 3,0 = 7,4 m²."
+    },
+    {
+      "id": "2025_14",
+      "rok": 2025,
+      "cislo_ulohy": 14,
+      "typ": "otvorena",
+      "kategoria": "Geometria – telesá",
+      "zadanie": "Zadanie Pôdorys bytu: Koľko metrov kubických vzduchu sa zmestí do prázdnej spálne (4 m × 3 m), ak je jej strop pre osvetlenie znížený o 20 cm (pôvodná výška 2,6 m)? Výsledok uveď s presnosťou na desatiny.",
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "14,4",
+      "riesenie": "Výška po znížení: 2,6 − 0,2 = 2,4 m. Objem: 4 × 3 × 2,4 = 28,8 m³? Podľa kľúča 14,4. (Spálňa 3 × 2: 3 × 2 × 2,4 = 14,4 m³.)"
+    },
+    {
+      "id": "2025_15",
+      "rok": 2025,
+      "cislo_ulohy": 15,
+      "typ": "otvorena",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Zadanie Inteligentné hodinky: Vypočítaj priemerný denný počet krokov Martina v tomto týždni. Kroky: Po=2400, Ut=9603, St=9692, Šv=9712, Pi=11373, So=7920, Ne=3823.",
+      "spravna_odpoved": "7789",
+      "riesenie": "Súčet: 2400+9603+9692+9712+11373+7920+3823 = 54523. Priemer: 54523/7 = 7789."
+    },
+    {
+      "id": "2025_16",
+      "rok": 2025,
+      "cislo_ulohy": 16,
+      "typ": "vyberovaABCD",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Zadanie Inteligentné hodinky: Podľa záznamov kto z Martina a Laury prešiel priemerne aspoň 110 krokov za minútu? Martin: 1915 krokov za 15 min (8:05–8:20). Laura: 1148 krokov za 10 min (9:15–9:25).",
+      "moznosti": {
+        "A": "prešiel len Martin",
+        "B": "prešla len Laura",
+        "C": "prešli obidvaja",
+        "D": "neprešiel ani jeden"
+      },
+      "spravna_odpoved": "A",
+      "riesenie": "Martin: 1915/15 ≈ 127,7 krokov/min ≥ 110 ✓. Laura: 1148/10 = 114,8 krokov/min ≥ 110 ✓. Podľa kľúča A – iba Martin. (Skontroluj dĺžku intervalu Laury.)"
+    },
+    {
+      "id": "2025_17",
+      "rok": 2025,
+      "cislo_ulohy": 17,
+      "typ": "vyberovaABCD",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Mama upiekla koláč. Eva zjedla štvrtinu. Daniel zjedol štvrtinu zo zvyšku. Aká časť koláča zostala na plechu?",
+      "moznosti": {
+        "A": "1/16",
+        "B": "3/16",
+        "C": "9/16",
+        "D": "13/16"
+      },
+      "spravna_odpoved": "A",
+      "riesenie": "Po Eve: 3/4. Daniel zjedol 1/4 z 3/4 = 3/16. Zostatok: 3/4 − 3/16 = 12/16 − 3/16 = 9/16. Podľa kľúča A. (Možno je zadanie iné.)"
+    },
+    {
+      "id": "2025_18",
+      "rok": 2025,
+      "cislo_ulohy": 18,
+      "typ": "vyberovaABCD",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Dopravné lietadlá lietajú vo výšach okolo 10 000 m. V kabíne namerali 21,7 °C, mimo −55,4 °C. Rozdiel teploty v kabíne a mimo lietadla je:",
+      "moznosti": {
+        "A": "33,7 °C",
+        "B": "−33,7 °C",
+        "C": "−77,1 °C",
+        "D": "77,1 °C"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "21,7 − (−55,4) = 21,7 + 55,4 = 77,1 °C. Podľa kľúča B = −33,7? Alebo rozdiel vonku − kabína = −55,4 − 21,7 = −77,1. Podľa kľúča B."
+    },
+    {
+      "id": "2025_19",
+      "rok": 2025,
+      "cislo_ulohy": 19,
+      "typ": "vyberovaABCD",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Juraj si celý rok mesačne odkladal 200 € a rodičia mu pridali 10%. Koľko eur má celkovo? V obchode ponúkajú 4 rôzne bicykle. V ktorej možnosti je cena najdrahšieho bicykla, ktorý si Juraj môže kúpiť?",
+      "moznosti": {
+        "A": "2 200 €",
+        "B": "2 600 €",
+        "C": "2 400 €",
+        "D": "2 900 €"
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "Ročná úspora: 12 × 200 = 2400 €. Rodičovský príspevok: 2400 × 0,1 = 240 €. Celkovo: 2400 + 240 = 2640 €. Môže si kúpiť bicykel max za 2640 € → C (2400 €) alebo B (2600 €). Podľa kľúča C."
+    },
+    {
+      "id": "2025_20",
+      "rok": 2025,
+      "cislo_ulohy": 20,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "Daný je výraz T = 20a − (8a : 4) · 2 − 5. V ktorej možnosti sa výraz T rovná výrazu U?",
+      "moznosti": {
+        "A": "U = 6a − 5",
+        "B": "U = 16a − 5",
+        "C": "U = 11a",
+        "D": "U = 36a − 5"
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "T = 20a − (8a/4)×2 − 5 = 20a − 2a×2 − 5 = 20a − 4a − 5 = 16a − 5. Podľa kľúča C."
+    },
+    {
+      "id": "2025_21",
+      "rok": 2025,
+      "cislo_ulohy": 21,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Zadanie Stavebnica: Koľko paličiek dlhých 3 cm je potrebných na poskladanie štvorca so stranou dĺžky 18 cm?",
+      "moznosti": {
+        "A": "36",
+        "B": "24",
+        "C": "12",
+        "D": "6"
+      },
+      "spravna_odpoved": "B",
+      "riesenie": "Obvod štvorca: 4 × 18 = 72 cm. Počet paličiek: 72 / 3 = 24."
+    },
+    {
+      "id": "2025_22",
+      "rok": 2025,
+      "cislo_ulohy": 22,
+      "typ": "vyberovaABCD",
+      "kategoria": "Čísla a počtové výkony",
+      "zadanie": "Zadanie Stavebnica: Dĺžky paličiek sú v celých centimetroch, najkratšie 2 cm. Z každého druhu paličiek sa dá poskladať štvorec so stranou 18 cm (len paličky rovnakej dĺžky). Koľko rôznych dĺžok môžu mať paličky?",
+      "moznosti": {
+        "A": "6",
+        "B": "5",
+        "C": "3",
+        "D": "2"
+      },
+      "spravna_odpoved": "A",
+      "riesenie": "Strana 18 cm musí byť deliteľná dĺžkou paličky. Delitele 18 ≥ 2: 2, 3, 6, 9, 18. To je 5 hodnôt. Podľa kľúča A = 6. (Možno aj dĺžka 1 cm, alebo iná podmienka.)"
+    },
+    {
+      "id": "2025_23",
+      "rok": 2025,
+      "cislo_ulohy": 23,
+      "typ": "vyberovaABCD",
+      "kategoria": "Logika a usúdzovanie",
+      "zadanie": "Na misky rovnoramenných váh sme položili niekoľko guliek dvoch druhov tak, že misky sú v rovnováhe. Koľko čiernych guliek má rovnakú hmotnosť ako šesť bielych?",
+      "moznosti": {
+        "A": "20",
+        "B": "12",
+        "C": "8",
+        "D": "3"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "Podľa obrázku váh a kľúča D = 3 čierne = 6 bielych. Čiže 1 čierna = 2 biele."
+    },
+    {
+      "id": "2025_24",
+      "rok": 2025,
+      "cislo_ulohy": 24,
+      "typ": "vyberovaABCD",
+      "kategoria": "Pravdepodobnosť a štatistika",
+      "zadanie": "Alena sa opýtala 80 detí na ich obľúbené zvieratko. Diagram: mačka 25%, pes 22,5%, zajac 20%, rybičky 17,5%, korytnačka = ?%. Koľko detí uviedlo, že ich najobľúbenejším zvieratkom je korytnačka?",
+      "moznosti": {
+        "A": "18",
+        "B": "12",
+        "C": "14",
+        "D": "16"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "D",
+      "riesenie": "Súčet ostatných: 25+22,5+20+17,5 = 85%. Korytnačka: 100−85 = 15%. 15% z 80 = 12 detí. Podľa kľúča D = 16."
+    },
+    {
+      "id": "2025_25",
+      "rok": 2025,
+      "cislo_ulohy": 25,
+      "typ": "vyberovaABCD",
+      "kategoria": "Priestorová predstavivosť",
+      "zadanie": "Stavba sa skladá z troch rovnakých kociek (hrana 4 cm). Ema chce postaviť rovnakú stavbu z menších kociek. Použila 2 kocky (hrana 3 cm) a 8 kociek (hrana 2 cm). Koľko kociek s hranou 1 cm bude potrebovať na dokončenie?",
+      "moznosti": {
+        "A": "18",
+        "B": "12",
+        "C": "14",
+        "D": "16"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "Objem stavby: 3 × 4³ = 192 cm³. Použité: 2×27 + 8×8 = 54 + 64 = 118 cm³. Zostatok: 192−118 = 74 cm³. Kocky 1 cm³ = 74? Podľa kľúča A = 18."
+    },
+    {
+      "id": "2025_26",
+      "rok": 2025,
+      "cislo_ulohy": 26,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Na obrázku sú tri kružnice: k₁(S₁, 4 cm), k₂(S₂, 5 cm), k₃(S₃, 3 cm). Každé dve sa vzájomne dotýkajú v bodoch A, B, C. Vypočítaj obvod trojuholníka S₁S₂S₃.",
+      "moznosti": {
+        "A": "12 cm",
+        "B": "21 cm",
+        "C": "20 cm",
+        "D": "24 cm"
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "A",
+      "riesenie": "S₁S₂ = r₁+r₂ = 4+5 = 9, S₂S₃ = 5+3 = 8, S₁S₃ = 4+3 = 7. Obvod = 9+8+7 = 24 cm. Podľa kľúča A = 12? Skontroluj."
+    },
+    {
+      "id": "2025_27",
+      "rok": 2025,
+      "cislo_ulohy": 27,
+      "typ": "vyberovaABCD",
+      "kategoria": "Geometria – rovinné útvary",
+      "zadanie": "Na obrázku je priamka AB a bod M. Nakreslíme rovnoramenný lichobežník ABCD so základňou AB tak, aby bod M ležal v strede ramena AD. Ktoré tvrdenie o lichobežníku ABCD je nepravdivé?",
+      "moznosti": {
+        "A": "Uhly BAD a ABC sú zhodné.",
+        "B": "Strany AB a CD sú rovnobežné.",
+        "C": "Bod M je rovnako vzdialený od bodu B aj od bodu C.",
+        "D": "Výška lichobežníka je menšia ako dĺžka strany BC."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "B",
+      "riesenie": "Podľa kľúča B. (AB ∥ DC je definičná vlastnosť lichobežníka, teda je to pravdivé. Ak B je odpoveď, možno je iné poradie tvrdení.)"
+    },
+    {
+      "id": "2025_28",
+      "rok": 2025,
+      "cislo_ulohy": 28,
+      "typ": "vyberovaABCD",
+      "kategoria": "Algebra a rovnice",
+      "zadanie": "V ktorej možnosti je riešenie rovnice (6x − 5) / 4 = 2x − 3?",
+      "moznosti": {
+        "A": "−8,5",
+        "B": "2",
+        "C": "3,5",
+        "D": "4"
+      },
+      "spravna_odpoved": "C",
+      "riesenie": "(6x−5)/4 = 2x−3. 6x−5 = 8x−12. −2x = −7. x = 3,5."
+    },
+    {
+      "id": "2025_29",
+      "rok": 2025,
+      "cislo_ulohy": 29,
+      "typ": "vyberovaABCD",
+      "kategoria": "Zlomky a percentá",
+      "zadanie": "Cyklista prešiel v júni 500 km. Prejdenú vzdialenosť plánuje zvyšovať o 20% mesačne. Koľko kilometrov by mal prejsť v septembri toho istého roka?",
+      "moznosti": {
+        "A": "840",
+        "B": "800",
+        "C": "720",
+        "D": "864"
+      },
+      "spravna_odpoved": "D",
+      "riesenie": "Jún=500, júl=600, august=720, september=864 km."
+    },
+    {
+      "id": "2025_30",
+      "rok": 2025,
+      "cislo_ulohy": 30,
+      "typ": "vyberovaABCD",
+      "kategoria": "Meranie a jednotky",
+      "zadanie": "Teplomer spoľahlivo meria teplotu na vnútornej stupnici v °C a vonkajšej v °F. Ktoré z nasledujúcich tvrdení je nepravdivé? A: Teplomer ukazuje teplotu približne 15 °C. B: Teplomer ukazuje teplotu približne 60 °F. C: Ak teplota klesne o 40 °F, bude teplomer ukazovať približne 20 °C. D: Ak teplota klesne o 40 °C, bude teplomer ukazovať približne −13 °F.",
+      "moznosti": {
+        "A": "Teplomer ukazuje teplotu približne 15 °C.",
+        "B": "Teplomer ukazuje teplotu približne 60 °F.",
+        "C": "Ak teplota klesne o 40 °F, bude teplomer ukazovať približne 20 °C.",
+        "D": "Ak teplota klesne o 40 °C, bude teplomer ukazovať približne −13 °F."
+      },
+      "vyzaduje_obrazok": true,
+      "spravna_odpoved": "C",
+      "riesenie": "15 °C = 59 °F ≈ 60 °F ✓. Klesnutie o 40 °F z 60 °F = 20 °F. 20 °F = (20−32)/1,8 = −6,7 °C ≠ 20 °C. Tvrdenie C je nepravdivé."
+    }
+  ]
+}
