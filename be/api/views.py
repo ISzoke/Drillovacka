@@ -1928,11 +1928,12 @@ def get_skills_by_grade(request, grade_id):
     try:
         grade = get_object_or_404(GradeLevel, id=grade_id)
         
-        # Show only leaf skills for the grade to avoid broad parent categories.
+        # Show only leaf skills for the grade that have at least one example.
         skills = Skill.objects.filter(
             grade_levels=grade,
             deleted=False,
             subskills__isnull=True,
+            exampleskill__isnull=False,
         ).distinct().order_by('name')
         
         skills_data = [
