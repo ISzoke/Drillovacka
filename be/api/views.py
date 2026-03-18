@@ -28,7 +28,7 @@ from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerialize
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
 from .example_report_cloud_sync import retry_pending_report_uploads, sync_report_to_mega
-from .attempt_cloud_sync import ensure_attempt_sidecar
+from .attempt_cloud_sync import ensure_attempt_sidecar, sync_write_attempt_to_mega, retry_pending_write_uploads
 from .mega_cloud import download_file_from_mega_to_temp
 from .survey_feedback_sync import create_survey_feedback, retry_pending_survey_feedback_uploads, sync_survey_feedback_to_mega
 import json
@@ -163,7 +163,7 @@ def _create_attempt_log_for_record(
 
     skill_names = list(Skill.objects.filter(id__in=skill_ids).values_list('name', flat=True))
 
-    ExampleAttempt.objects.create(
+    attempt = ExampleAttempt.objects.create(
         student_example=student_example,
         student=student_example.student,
         anonymous_session=student_example.anonymous_session,
@@ -185,6 +185,7 @@ def _create_attempt_log_for_record(
         practiced_skill_names=skill_names,
         meta=meta or {},
     )
+    return attempt
 
 # Add all skill_ids to the related_skills field of each skill
 def create_skill_relations(skill_ids):
@@ -1623,7 +1624,7 @@ def check_answer(request):
             except (TypeError, ValueError):
                 duration_value = 0
 
-            _create_attempt_log_for_record(
+            attempt = _create_attempt_log_for_record(
                 student_example=student_record,
                 example_id=example_id,
                 duration=duration_value,
@@ -1641,6 +1642,18 @@ def check_answer(request):
                     'answer_type': answer_type,
                 },
             )
+
+            if attempt:
+                def _bg_write_sync(att):
+                    try:
+                        sync_write_attempt_to_mega(att)
+                        retry_pending_write_uploads(limit=5)
+                    except Exception as cloud_error:
+                        print(f"[ERROR] Background write sync failed for attempt {att.id}: {cloud_error}")
+
+                import threading
+                threading.Thread(target=_bg_write_sync, args=(attempt,), daemon=True).start()
+
     except Exception as log_error:
         print(f"[ERROR] Failed to log text attempt: {log_error}")
     

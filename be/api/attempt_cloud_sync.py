@@ -197,6 +197,102 @@ def _do_sync(attempt):
     }
 
 
+WRITE_ATTEMPT_DIR = "write_attempts"
+
+
+def sync_write_attempt_to_mega(attempt):
+    """
+    Upload a JSON record for a write/text attempt to MEGA.
+    No audio file — only metadata JSON is uploaded.
+    """
+    if not mega_upload_enabled():
+        return {"uploaded": False, "reason": "mega_disabled"}
+
+    with _upload_lock:
+        if attempt.id in _uploading_ids:
+            return {"uploaded": False, "reason": "already_uploading"}
+        _uploading_ids.add(attempt.id)
+
+    try:
+        return _do_write_sync(attempt)
+    finally:
+        with _upload_lock:
+            _uploading_ids.discard(attempt.id)
+
+
+def _do_write_sync(attempt):
+    os.makedirs(WRITE_ATTEMPT_DIR, exist_ok=True)
+    local_path = os.path.join(WRITE_ATTEMPT_DIR, f"attempt_{attempt.id}.json")
+
+    try:
+        with open(local_path, "w", encoding="utf-8") as f:
+            json.dump(_build_sidecar_payload(attempt), f, indent=2, ensure_ascii=False)
+    except Exception as exc:
+        return {"uploaded": False, "reason": f"json_write_failed: {exc}"}
+
+    upload_result = upload_file_to_mega(local_path)
+
+    meta = dict(attempt.meta or {})
+    meta.update({
+        "mega_json_uploaded": upload_result.get("uploaded", False),
+        "mega_json_url": upload_result.get("public_url", ""),
+        "mega_json_error": upload_result.get("error", ""),
+        "write_json_local_path": local_path,
+    })
+    attempt.meta = meta
+    attempt.save(update_fields=["meta"])
+
+    delete_local = str(os.getenv("MEGA_DELETE_LOCAL_AFTER_UPLOAD", "false")).strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+    if delete_local and upload_result.get("uploaded"):
+        try:
+            os.remove(local_path)
+        except Exception:
+            pass
+
+    return {
+        "uploaded": upload_result.get("uploaded", False),
+        "json_uploaded": upload_result.get("uploaded", False),
+        "json_error": upload_result.get("error", ""),
+    }
+
+
+def retry_pending_write_uploads(limit=10):
+    """
+    Retry pending MEGA uploads for recent write/text attempts.
+    Trigger this opportunistically after each new write attempt.
+    """
+    if not mega_upload_enabled():
+        return {"processed": 0, "uploaded": 0, "reason": "mega_disabled"}
+
+    candidates = ExampleAttempt.objects.filter(
+        source='text',
+    ).order_by('-created_at')[:max(limit * 10, 50)]
+
+    processed = 0
+    uploaded = 0
+
+    for attempt in candidates:
+        if processed >= limit:
+            break
+
+        meta = attempt.meta or {}
+        if meta.get("mega_json_uploaded"):
+            continue
+
+        with _upload_lock:
+            if attempt.id in _uploading_ids:
+                continue
+
+        result = sync_write_attempt_to_mega(attempt)
+        processed += 1
+        if result.get("uploaded"):
+            uploaded += 1
+
+    return {"processed": processed, "uploaded": uploaded}
+
+
 def retry_pending_attempt_uploads(limit=10):
     """
     Retry pending MEGA uploads for recent speech attempts.
