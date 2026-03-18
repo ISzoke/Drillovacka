@@ -34,10 +34,10 @@
             <td class="border p-2 text-center">{{ st.total_examples }}</td>
             <td class="border p-2 text-center">{{ st.solved_count }}</td>
             <td class="border p-2 text-center">
-              <span :class="accuracyColor(st.accuracy)">{{ (st.accuracy * 100).toFixed(1) }}%</span>
+              <span :class="accuracyColor(st.accuracy)">{{ formatPercent(st.accuracy) }}</span>
             </td>
             <td class="border p-2 text-center">{{ st.total_attempts }}</td>
-            <td class="border p-2 text-center">{{ Math.round(st.avg_duration_ms) }}</td>
+            <td class="border p-2 text-center">{{ formatDuration(st.avg_duration_ms) }}</td>
             <td class="border p-2 text-center">{{ formatDate(st.last_practiced) }}</td>
             <td class="border p-2 text-center">
               <button @click="viewStudentDetail(st.student_id)" class="text-blue-600 underline">Zobraziť</button>
@@ -71,13 +71,13 @@
             <td class="border p-2 text-center">{{ row.examples_practiced }}</td>
             <td class="border p-2 text-center">{{ row.solved_count }}</td>
             <td class="border p-2 text-center">
-              <span :class="accuracyColor(row.accuracy)">{{ (row.accuracy * 100).toFixed(1) }}%</span>
+              <span :class="accuracyColor(row.accuracy)">{{ formatPercent(row.accuracy) }}</span>
             </td>
             <td class="border p-2 text-center">
-              <span :class="masteryColor(row.mastery_mean)">{{ (row.mastery_mean * 100).toFixed(1) }}%</span>
+              <span :class="masteryColor(row.mastery_mean)">{{ formatPercent(row.mastery_mean) }}</span>
             </td>
-            <td class="border p-2 text-center">{{ row.avg_attempts_per_example }}</td>
-            <td class="border p-2 text-center">{{ Math.round(row.avg_duration_ms) }}</td>
+            <td class="border p-2 text-center">{{ formatValue(row.avg_attempts_per_example) }}</td>
+            <td class="border p-2 text-center">{{ formatDuration(row.avg_duration_ms) }}</td>
             <td class="border p-2 text-center">{{ formatDate(row.last_practiced) }}</td>
           </tr>
         </tbody>
@@ -145,11 +145,31 @@ function accuracyColor(val) {
   if (val >= 0.6) return 'text-yellow-700 font-semibold'
   return 'text-red-700 font-semibold'
 }
+
 function masteryColor(val) {
   if (val >= 0.85) return 'text-green-700 font-semibold'
   if (val >= 0.6) return 'text-yellow-700 font-semibold'
   return 'text-red-700 font-semibold'
 }
+
+function formatPercent(value) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return '-'
+  return `${(numeric * 100).toFixed(1)}%`
+}
+
+function formatDuration(value) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return '-'
+  return Math.round(numeric)
+}
+
+function formatValue(value) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return '-'
+  return numeric
+}
+
 function formatDate(dt) {
   if (!dt) return '-'
   return new Date(dt).toLocaleString()

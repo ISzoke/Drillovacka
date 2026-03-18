@@ -39,6 +39,7 @@ export const useRecorderStore = defineStore("recorder", () => {
 
   // Survey metadata
   const question_text = ref(null);
+  const question_type = ref('open-question');
   const skillsList = ref(null);
 
   // Audio processing variables
@@ -281,20 +282,21 @@ const processorCode = `
   // Send metadata about survey question
   const sendSurveyQuestionData = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ 
-        question_text: question_text.value, 
-        question_type: 'open-question',
-        skills: JSON.parse(JSON.stringify(skillsList.value)), 
-        student_id: student_id.value,
-        session_id: session_id.value,
+        ws.send(JSON.stringify({ 
+          question_text: question_text.value, 
+          question_type: question_type.value || 'open-question',
+          skills: JSON.parse(JSON.stringify(skillsList.value)), 
+          student_id: student_id.value,
+          session_id: session_id.value,
         format: "pcm"
       }));
       }
   };
 
   // Update metadata about survey question
-  const updateSurveyQuestionData = (questionText, skills, studentId = null, sessionId = null) => {
+  const updateSurveyQuestionData = (questionText, skills, studentId = null, sessionId = null, questionType = 'open-question') => {
     question_text.value = questionText;
+    question_type.value = questionType;
     skillsList.value = skills;
     student_id.value = studentId;
     session_id.value = sessionId;

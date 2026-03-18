@@ -127,7 +127,7 @@ const confirmFeedback = async () => {
 
     const trimmedFeedback = feedbackText.value.trim();
     if (trimmedFeedback.length > 0) {
-        await sendSurveyAnswer('final-feedback-text', feedbackQuestionByLang[langStore.language], trimmedFeedback, props.topics, student_id, session_id);
+        await sendSurveyAnswer('final-feedback-text', feedbackQuestionByLang[langStore.language], trimmedFeedback, props.topics, student_id, session_id, langStore.language);
     }
 
     feedbackSubmitted.value = true;
@@ -143,7 +143,7 @@ const backToMenu = () => {
 };
 
 onMounted(() => {
-    recorderStore.updateSurveyQuestionData(feedbackQuestionByLang[langStore.language], props.topics, student_id, session_id);
+    recorderStore.updateSurveyQuestionData(feedbackQuestionByLang[langStore.language], props.topics, student_id, session_id, 'final-feedback-voice');
     console.log('[DEBUG Summary.vue] onMounted - student_id:', student_id, 'session_id:', session_id);
 });
 

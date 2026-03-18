@@ -7,6 +7,7 @@ import TopicView from '@/views/TopicView.vue'
 import ExampleView from '@/views/ExampleView.vue'
 import SandboxView from '@/views/SandboxView.vue'
 import TasksView from '@/views/TasksView.vue'
+import TaskGradeManagerView from '@/views/TaskGradeManagerView.vue'
 import SkillCreatorView from '@/views/SkillCreatorView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import AdminView from '@/views/AdminView.vue'
@@ -15,6 +16,7 @@ import SkillAnalyticsView from '@/views/SkillAnalyticsView.vue'
 import StudentProgressView from '@/views/StudentProgressView.vue'
 import StudentDashboardView from '@/views/StudentDashboardView.vue'
 import AdminMyDataView from '@/views/AdminMyDataView.vue'
+import BulkImportView from '@/views/BulkImportView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -76,6 +78,18 @@ const router = createRouter({
       path: '/tasks',
       name: 'tasks',
       component: TasksView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/tasks/grades',
+      name: 'task-grade-manager',
+      component: TaskGradeManagerView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/bulk-import',
+      name: 'bulk-import',
+      component: BulkImportView,
       meta: { requiresAdmin: true }
     },
     {

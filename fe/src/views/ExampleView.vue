@@ -13,7 +13,7 @@ import Example from '@/components/Example.vue';
 import ProgressBar from '@/components/Example/ProgressBar.vue';
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
-import { getExamples } from '@/api/apiClient';
+import { getExamples, getTaskExamples } from '@/api/apiClient';
 import correctIcon from '@/assets/img/correct.png';
 import wrongIcon from '@/assets/img/wrong.png'
 import correctSoundSrc from '@/assets/audio/correct.mp3';
@@ -213,11 +213,27 @@ const displaySummary = () => {
 onMounted(() => {
   preloadMedia();
 
+  if (route.query.task_id) {
+      topics.value = [];
+      fetchTaskExamples(Number(route.query.task_id));
+      return;
+  }
+
   if (route.query.topics) {
       topics.value = JSON.parse(route.query.topics);
       fetchExamples(topics.value);
   }
 });
+
+const fetchTaskExamples = async (taskId) => {
+  try {
+    examples.value = await getTaskExamples(taskId);
+  } catch (error) {
+    console.error("Failed to fetch task examples:", error);
+  } finally {
+    loading.value = false;
+  }
+};
 
 </script>
 

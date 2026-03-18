@@ -13,7 +13,7 @@ import { getSessionId } from '@/utils/sessionManager';
 
 // Axios instance for all API requests
 const apiClient = axios.create({
-  baseURL:   'https://rightable-georgann-soppingly.ngrok-free.dev/api/',// 'https://bp-production-37c0.up.railway.app/api/',    'https://drillovacka.applikuapp.com/api/'
+  baseURL: '/api/',
   headers: {
   },
 });
@@ -130,6 +130,7 @@ export const postTask = async (examples, selectedSkills, taskName, taskId, taskF
       } else {
           console.error('Network or server error:', error.message);
       }
+      throw error;
   }
 };
 
@@ -174,6 +175,26 @@ export const getExamples = async (topics) => {
 };
 
 /**
+ * Fetches all examples for a specific task.
+ *
+ * @param {number} taskId - id of the task.
+ * @returns {Promise<Array<Object>>}
+ */
+export const getTaskExamples = async (taskId) => {
+  try {
+    const response = await apiClient.get('examples/', {
+      params: {
+        task_id: taskId,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching task examples:', error);
+    return [];
+  }
+};
+
+/**
  * Retrieves all tasks.
  * 
  * @returns {Promise<Array<Object>>} array of task objects.
@@ -185,6 +206,21 @@ export const getTasks = async () => {
     
   } catch (error) {
     console.error("Error fetching skills:", error)
+  }
+};
+
+/**
+ * Retrieves compact task data for grade assignment admin.
+ *
+ * @returns {Promise<Array<Object>>} array of summarized task objects.
+ */
+export const getTaskAssignmentOverview = async () => {
+  try {
+    const response = await apiClient.get('tasks/assignment-overview/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching task assignment overview:', error);
+    return [];
   }
 };
 
@@ -213,6 +249,25 @@ export const deleteTask = async (taskId) => {
 
   } catch (error) {
     console.error('Error deleting task:', error);
+  }
+};
+
+/**
+ * Updates the grade levels assigned to a task.
+ *
+ * @param {number} taskId - id of the task.
+ * @param {Array<number>} gradeLevelIds - array of grade level ids to assign.
+ * @returns {Promise<Object>} updated task grade data
+ */
+export const updateTaskGradeLevels = async (taskId, gradeLevelIds) => {
+  try {
+    const response = await apiClient.patch(`tasks/${taskId}/grade-levels/`, {
+      grade_levels: gradeLevelIds,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating task grade levels:', error);
+    throw error.response?.data?.error || 'Error updating task grade levels.';
   }
 };
 
@@ -517,7 +572,7 @@ export const getRelatedTasksCount = async (skillId) => {
  * @param {string} answer - users answer to the question.
  * @param {Array<number>} skills - array of skill ids which user was practicing.
  */
-export const sendSurveyAnswer = async (questionType, questionText, answer, skills, studentId = null, sessionId = null) => {
+export const sendSurveyAnswer = async (questionType, questionText, answer, skills, studentId = null, sessionId = null, language = '') => {
   try {
     await apiClient.post('survey-answer/', {
       question_type: questionType,
@@ -525,7 +580,8 @@ export const sendSurveyAnswer = async (questionType, questionText, answer, skill
       answer,
       skills,
       student_id: studentId,
-      session_id: sessionId
+      session_id: sessionId,
+      language,
     });
 
   } catch (error) {
@@ -560,6 +616,22 @@ export const getGradeLevels = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching grade levels:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches manually assigned tasks for a specific grade.
+ *
+ * @param {number} gradeId - id of the grade level.
+ * @returns {Promise<Array<Object>>}
+ */
+export const getTasksByGrade = async (gradeId) => {
+  try {
+    const response = await apiClient.get(`tasks/by-grade/${gradeId}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching tasks by grade:', error);
     return [];
   }
 };
@@ -668,6 +740,22 @@ export const getExampleReports = async (limit = 500) => {
 };
 
 /**
+ * Fetches stored survey/final feedback entries for admin overview.
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export const getSurveyFeedbacks = async (limit = 500) => {
+  try {
+    const response = await apiClient.get('survey-feedbacks/', {
+      params: { limit }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching survey feedbacks.';
+  }
+};
+
+/**
  * Initialize or get anonymous session
  * @param {string} sessionId - Optional existing session ID
  * @returns {Promise<Object>} Session data with session_id, language, created
@@ -717,6 +805,30 @@ export const updateStudentLanguage = async (studentId, language) => {
   } catch (error) {
     throw error.response?.data?.error || 'Error updating language.';
   }
+};
+
+/**
+ * Bulk import tasks with examples.
+ * @param {Array<Object>} tasks - Array of task objects
+ * @returns {Promise<Object>} Import results
+ */
+export const bulkImportTasks = async (tasks) => {
+  try {
+    const response = await apiClient.post('bulk-import-tasks/', { tasks });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error importing tasks.';
+  }
+};
+
+/**
+ * Export attempts as CSV (DKT-ready).
+ * @param {Object} params - Query params (student_id, session_id, all_actions, date_from, date_to)
+ * @returns {Promise<string>} CSV download URL
+ */
+export const getExportCsvUrl = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return `/api/export/csv/${query ? '?' + query : ''}`;
 };
 
 export default apiClient;

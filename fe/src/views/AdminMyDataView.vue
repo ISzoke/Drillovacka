@@ -90,6 +90,103 @@
       </div>
     </div>
 
+    <div class="border rounded-lg p-4 mb-6">
+      <div class="flex items-center justify-between gap-4 mb-3">
+        <h2 class="text-lg font-semibold">Feedback a dotazníky</h2>
+        <button
+          @click="loadSurveyFeedbacks"
+          class="bg-emerald-600 text-white px-4 py-2 rounded"
+        >
+          Obnoviť feedbacky
+        </button>
+      </div>
+
+      <div v-if="feedbacksLoading" class="text-gray-500">Načítavam feedbacky...</div>
+      <div v-else-if="feedbacksError" class="text-red-600">{{ feedbacksError }}</div>
+      <div v-else-if="surveyFeedbacks.length === 0" class="text-gray-500">Zatiaľ nie sú žiadne feedbacky.</div>
+      <div v-else class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-2 border">Čas</th>
+              <th class="p-2 border">Používateľ</th>
+              <th class="p-2 border">Typ</th>
+              <th class="p-2 border">Zdroj</th>
+              <th class="p-2 border">Otázka</th>
+              <th class="p-2 border">Odpoveď</th>
+              <th class="p-2 border">Jazyk</th>
+              <th class="p-2 border">Zručnosti</th>
+              <th class="p-2 border">Audio / MEGA</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="feedback in surveyFeedbacks" :key="feedback.feedback_id">
+              <td class="p-2 border whitespace-nowrap">{{ formatDate(feedback.created_at) }}</td>
+              <td class="p-2 border">
+                <div v-if="feedback.student_id">
+                  <div class="font-semibold">{{ feedback.student_username || 'študent' }}</div>
+                  <div class="text-xs text-gray-600">ID: {{ feedback.student_id }}</div>
+                </div>
+                <div v-else>
+                  <div class="font-semibold">anonymný používateľ</div>
+                  <div class="text-xs text-gray-600 break-all">{{ feedback.anonymous_session_id || '-' }}</div>
+                </div>
+              </td>
+              <td class="p-2 border">{{ formatFeedbackType(feedback.question_type) }}</td>
+              <td class="p-2 border text-center">{{ feedback.source || '-' }}</td>
+              <td class="p-2 border">{{ feedback.question_text || '-' }}</td>
+              <td class="p-2 border">{{ feedback.answer || '-' }}</td>
+              <td class="p-2 border text-center">{{ feedback.language || '-' }}</td>
+              <td class="p-2 border">{{ (feedback.practiced_skill_names || []).join(', ') || '-' }}</td>
+              <td class="p-2 border min-w-56">
+                <div class="space-y-2 text-xs">
+                  <audio
+                    v-if="feedback.audio_url"
+                    :src="feedback.audio_url"
+                    controls
+                    preload="none"
+                    class="w-full"
+                  />
+                  <div v-else class="text-gray-500">Audio: -</div>
+                  <div>
+                    <span class="font-semibold">Uploaded:</span>
+                    <span :class="feedback.mega_uploaded ? 'text-green-700' : 'text-gray-600'">
+                      {{ feedback.mega_uploaded ? 'áno' : 'nie' }}
+                    </span>
+                  </div>
+                  <div v-if="feedback.mega_json_url" class="break-all">
+                    <a
+                      :href="feedback.mega_json_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue-600 underline"
+                    >
+                      JSON na MEGA
+                    </a>
+                  </div>
+                  <div v-if="feedback.mega_audio_url" class="break-all">
+                    <a
+                      :href="feedback.mega_audio_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue-600 underline"
+                    >
+                      Audio na MEGA
+                    </a>
+                  </div>
+                  <div v-if="feedback.mega_error" class="text-red-600 break-all">{{ feedback.mega_error }}</div>
+                  <details>
+                    <summary class="cursor-pointer text-gray-700">Raw meta</summary>
+                    <pre class="mt-2 whitespace-pre-wrap break-all text-[11px] text-gray-600">{{ JSON.stringify(feedback.meta || {}, null, 2) }}</pre>
+                  </details>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
       <div>
         <label class="block text-sm font-semibold mb-1">Typ identity</label>
@@ -286,7 +383,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getMyData } from '@/api/apiClient'
+import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getMyData, getSurveyFeedbacks } from '@/api/apiClient'
 
 const identityType = ref('student')
 const identityValue = ref('')
@@ -302,6 +399,9 @@ const allAnonymousSessions = ref([])
 const reportsLoading = ref(false)
 const reportsError = ref('')
 const exampleReports = ref([])
+const feedbacksLoading = ref(false)
+const feedbacksError = ref('')
+const surveyFeedbacks = ref([])
 
 const filteredStudents = computed(() => {
   const text = (filterText.value || '').trim().toLowerCase()
@@ -360,6 +460,17 @@ function formatReportType(value) {
   return mapping[value] || value || '-'
 }
 
+function formatFeedbackType(value) {
+  const mapping = {
+    'final-feedback-text': 'Záverečný feedback text',
+    'final-feedback-voice': 'Záverečný feedback hlas',
+    'survey-choice': 'Dotazník výber',
+    'survey-scale': 'Dotazník škála',
+    'survey-voice': 'Dotazník hlas',
+  }
+  return mapping[value] || value || '-'
+}
+
 async function loadStudents() {
   studentsLoading.value = true
   try {
@@ -391,6 +502,18 @@ async function loadReports() {
     reportsError.value = typeof e === 'string' ? e : 'Chyba pri načítaní nahlásení.'
   } finally {
     reportsLoading.value = false
+  }
+}
+
+async function loadSurveyFeedbacks() {
+  feedbacksLoading.value = true
+  feedbacksError.value = ''
+  try {
+    surveyFeedbacks.value = await getSurveyFeedbacks(1000)
+  } catch (e) {
+    feedbacksError.value = typeof e === 'string' ? e : 'Chyba pri načítaní feedbackov.'
+  } finally {
+    feedbacksLoading.value = false
   }
 }
 
@@ -439,6 +562,7 @@ onMounted(() => {
   loadStudents()
   loadAnonymousSessions()
   loadReports()
+  loadSurveyFeedbacks()
 })
 </script>
 

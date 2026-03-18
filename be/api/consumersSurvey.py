@@ -12,18 +12,16 @@ import asyncio
 import azure.cognitiveservices.speech as speechsdk
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
-from datetime import datetime
 from be.settings import AZURE_API_KEY, AZURE_REGION
 import django
 import os
 import io
+import threading
 import wave
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "be.settings")
 django.setup()
 from .utils import get_skill_names_string
-
-SURVEY_DIR = "survey"
-os.makedirs(SURVEY_DIR, exist_ok=True)
+from .survey_feedback_sync import create_survey_feedback, retry_pending_survey_feedback_uploads, sync_survey_feedback_to_mega
 
 class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -36,6 +34,7 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
 
         # Survey question data
         self.question_text = ""
+        self.question_type = "open-question"
         self.skills = []
         self.skill_names = ""
         self.student_id = None
@@ -61,36 +60,31 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
 
         # Only save if there's actual content
         if self.full_transcript.strip() or self.audio_buffer:
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            
-            student_id_str = str(self.student_id) if self.student_id else self.session_id if self.session_id else 'unknown'
-            
-            # Save JSON transcription
-            json_filename = f"feedback_voice_{timestamp}_{student_id_str}.json"
-            json_filepath = os.path.join(SURVEY_DIR, json_filename)
-            
-            survey_question_data = {
-                "question_text": self.question_text,
-                "answer": self.full_transcript.strip(),
-                "examples_type": self.skill_names,
-                "student_id": self.student_id,
-                "session_id": self.session_id,
-                "timestamp": timestamp
-            }
+            try:
+                feedback = await asyncio.to_thread(
+                    create_survey_feedback,
+                    question_type=self.question_type or "open-question",
+                    question_text=self.question_text,
+                    answer=self.full_transcript.strip(),
+                    skills=self.skills,
+                    student_id=self.student_id,
+                    session_id=self.session_id,
+                    language=self.language,
+                    source="voice",
+                    audio_bytes=bytes(self.audio_buffer),
+                    audio_format="pcm",
+                )
 
-            with open(json_filepath, "w", encoding="utf-8") as json_file:
-                json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
-            print(f"Survey JSON saved: {json_filepath}")
-            
-            # Save audio WAV file
-            if self.audio_buffer:
-                audio_filename = f"feedback_voice_{timestamp}_{student_id_str}.wav"
-                audio_filepath = os.path.join(SURVEY_DIR, audio_filename)
-                wav_data = self.convert_pcm_to_wav(self.audio_buffer)
-                
-                with open(audio_filepath, "wb") as audio_file:
-                    audio_file.write(wav_data)
-                print(f"Survey audio WAV saved: {audio_filepath}")
+                def _background_feedback_sync(saved_feedback):
+                    try:
+                        sync_survey_feedback_to_mega(saved_feedback)
+                        retry_pending_survey_feedback_uploads(limit=5)
+                    except Exception as feedback_error:
+                        print(f"[ERROR] Background survey feedback sync failed for feedback {saved_feedback.id}: {feedback_error}")
+
+                threading.Thread(target=_background_feedback_sync, args=(feedback,), daemon=True).start()
+            except Exception as exc:
+                print(f"[ERROR] Survey feedback save failed: {exc}")
         
     async def receive(self, text_data=None, bytes_data=None):
 
@@ -101,6 +95,9 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
                 metadata = json.loads(text_data)
                 if "question_text" in metadata:
                     self.question_text = metadata.get("question_text")
+
+                if "question_type" in metadata:
+                    self.question_type = metadata.get("question_type") or "open-question"
 
                 if "skills" in metadata:
                     self.skills = metadata.get("skills")

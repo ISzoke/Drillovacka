@@ -22,12 +22,18 @@ from django.db.models import Count, Sum, Avg, Max, Q, F
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, Admin, Step, GradeLevel, AnonymousSession
+import shutil
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
 from .example_report_cloud_sync import retry_pending_report_uploads, sync_report_to_mega
+from .attempt_cloud_sync import ensure_attempt_sidecar
+from .mega_cloud import download_file_from_mega_to_temp
+from .survey_feedback_sync import create_survey_feedback, retry_pending_survey_feedback_uploads, sync_survey_feedback_to_mega
 import json
+import csv
+import io
 import random
 from datetime import datetime
 import uuid
@@ -65,6 +71,55 @@ def _serialize_attempt_answer(value):
     if isinstance(value, (dict, list)):
         return pyjson.dumps(value, ensure_ascii=False)
     return str(value)
+
+
+def _existing_nonempty_file(path):
+    return bool(path) and os.path.exists(path) and os.path.isfile(path) and os.path.getsize(path) > 0
+
+
+class _DeleteOnCloseFile:
+    def __init__(self, path, temp_dir=""):
+        self._file = open(path, "rb")
+        self._path = path
+        self._temp_dir = temp_dir
+
+    def __getattr__(self, attr):
+        return getattr(self._file, attr)
+
+    def close(self):
+        try:
+            self._file.close()
+        finally:
+            try:
+                if self._path and os.path.exists(self._path):
+                    os.remove(self._path)
+            except Exception:
+                pass
+
+            try:
+                if self._temp_dir and os.path.isdir(self._temp_dir):
+                    shutil.rmtree(self._temp_dir, ignore_errors=True)
+            except Exception:
+                pass
+
+
+def _temporary_cloud_file_response(public_url, filename_hint, content_type):
+    downloaded = download_file_from_mega_to_temp(public_url, filename_hint=filename_hint)
+    downloaded_path = downloaded.get("path", "")
+    temp_dir = downloaded.get("temp_dir", "")
+
+    if not downloaded.get("downloaded") or not _existing_nonempty_file(downloaded_path):
+        try:
+            if temp_dir and os.path.isdir(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+        except Exception:
+            pass
+        return None
+
+    return FileResponse(
+        _DeleteOnCloseFile(downloaded_path, temp_dir=temp_dir),
+        content_type=content_type,
+    )
 
 
 def _resolve_student_example_record(student_id, session_id, example_id, date):
@@ -328,6 +383,40 @@ def get_skill(request, skill_id):
 # Get all examples for the provided skill ids
 @api_view(['GET'])
 def get_examples(request):
+    task_id = request.query_params.get('task_id')
+
+    if task_id:
+        task = get_object_or_404(
+            Task.objects.prefetch_related('example_set__answers', 'example_set__steps'),
+            id=task_id,
+        )
+
+        example_data = [
+            {
+                "id": example.id,
+                "example": example.example,
+                "input_type": example.input_type,
+                "answers": [
+                    {
+                        "id": answer.id,
+                        "answer": answer.answer
+                    }
+                    for answer in example.answers.all()
+                ],
+                "steps": [
+                    {
+                        "id": step.id,
+                        "order": step.order,
+                        "text": step.text
+                    }
+                    for step in example.steps.all().order_by('order')
+                ]
+            }
+            for example in task.example_set.all()
+        ]
+
+        random.shuffle(example_data)
+        return Response(example_data, status=status.HTTP_200_OK)
 
     skills = request.query_params.get('topics')
     
@@ -648,7 +737,7 @@ def get_my_data(request):
                 or (attempt.meta or {}).get('mega_audio_url')
                 or (attempt.meta or {}).get('mega_public_url')
             ) else "",
-            "paired_json_url": (attempt.meta or {}).get('mega_json_url', ''),
+            "paired_json_url": "",
             "paired_cloud_audio_url": (attempt.meta or {}).get('mega_audio_url', '') or (attempt.meta or {}).get('mega_public_url', ''),
             "audio_format": attempt.audio_format,
             "practiced_skills": {
@@ -657,6 +746,22 @@ def get_my_data(request):
             },
             "metadata": attempt.meta,
         }
+
+        meta = attempt.meta or {}
+        paired_json_url = meta.get('mega_json_url', '')
+        if not paired_json_url:
+            local_sidecar = meta.get('paired_json_local_path', '')
+            if not local_sidecar and attempt.audio_file_path:
+                try:
+                    local_sidecar = ensure_attempt_sidecar(attempt)
+                    meta = attempt.meta or {}
+                except Exception:
+                    local_sidecar = ''
+            if local_sidecar:
+                paired_json_url = f"/api/attempt-sidecar/{attempt.id}/"
+
+        attempt_dict["paired_json_url"] = paired_json_url
+        attempt_dict["metadata"] = meta
         attempts_data.append(attempt_dict)
 
     total_count = len(attempts_data)
@@ -710,16 +815,65 @@ def get_attempt_audio(request, attempt_id):
 
     file_path = None
     for path in candidate_paths:
-        if os.path.exists(path) and os.path.isfile(path):
+        if _existing_nonempty_file(path):
             file_path = path
             break
 
     if not file_path:
         if cloud_url:
+            response = _temporary_cloud_file_response(
+                public_url=cloud_url,
+                filename_hint=attempt.audio_file_path or f"attempt_{attempt.id}.wav",
+                content_type='audio/wav',
+            )
+            if response:
+                return response
             return redirect(cloud_url)
         return Response({"error": "Audio file not found on server"}, status=status.HTTP_404_NOT_FOUND)
 
     return FileResponse(open(file_path, 'rb'), content_type='audio/wav')
+
+
+@api_view(['GET'])
+def get_attempt_sidecar(request, attempt_id):
+    attempt = get_object_or_404(ExampleAttempt, id=attempt_id)
+
+    meta = attempt.meta or {}
+    local_sidecar = meta.get('paired_json_local_path', '')
+    cloud_url = meta.get('mega_json_url', '')
+
+    if not local_sidecar and attempt.audio_file_path:
+        try:
+            local_sidecar = ensure_attempt_sidecar(attempt)
+            meta = attempt.meta or {}
+        except Exception:
+            local_sidecar = ''
+
+    candidate_paths = []
+    if local_sidecar:
+        candidate_paths.append(local_sidecar)
+        candidate_paths.append(os.path.join(os.getcwd(), local_sidecar))
+
+    file_path = None
+    for path in candidate_paths:
+        if _existing_nonempty_file(path):
+            file_path = path
+            break
+
+    if file_path:
+        return FileResponse(open(file_path, 'rb'), content_type='application/json')
+
+    if cloud_url:
+        response = _temporary_cloud_file_response(
+            public_url=cloud_url,
+            filename_hint=local_sidecar or f"attempt_{attempt.id}.json",
+            content_type='application/json',
+        )
+        if response:
+            return response
+        return redirect(cloud_url)
+
+    return Response({"error": "JSON sidecar not available for this attempt"}, status=status.HTTP_404_NOT_FOUND)
 
 # Updates record that user practiced the example
 @api_view(['POST'])
@@ -818,7 +972,8 @@ def get_tasks(request):
     tasks = Task.objects.prefetch_related(
         'example_set__answers',         
         'example_set__exampleskill_set__skill', 
-        'example_set__steps'           
+        'example_set__steps',
+        'grade_levels',
     )
     
     data = []
@@ -845,6 +1000,13 @@ def get_tasks(request):
             "task_id": task.id,
             "task_name": task.name,
             "task_form": task.form,
+            "grade_levels": [
+                {
+                    "id": grade_level.id,
+                    "grade": grade_level.grade,
+                }
+                for grade_level in task.grade_levels.all().order_by('grade')
+            ],
             "skills": skills,  
             "examples": [
                 {
@@ -873,6 +1035,70 @@ def get_tasks(request):
         data.append(task_data)
     
     return JsonResponse(data, safe=False)
+
+
+@api_view(['GET'])
+def get_task_assignment_overview(request):
+    tasks = Task.objects.prefetch_related(
+        'skills',
+        'grade_levels',
+    ).annotate(
+        example_count=Count('example', distinct=True),
+    ).order_by('name')
+
+    data = []
+    for task in tasks:
+        task_skills = sorted(task.skills.all(), key=lambda skill: skill.name.lower())
+        task_grade_levels = sorted(task.grade_levels.all(), key=lambda grade: grade.grade)
+
+        data.append(
+            {
+                "id": task.id,
+                "name": task.name,
+                "form": task.form,
+                "example_count": task.example_count,
+                "skills": [
+                    {
+                        "id": skill.id,
+                        "name": skill.name,
+                    }
+                    for skill in task_skills
+                ],
+                "grade_levels": [
+                    {
+                        "id": grade_level.id,
+                        "grade": grade_level.grade,
+                    }
+                    for grade_level in task_grade_levels
+                ],
+            }
+        )
+
+    return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
+
+@api_view(['PATCH'])
+def update_task_grade_levels(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    grade_level_ids = request.data.get('grade_levels', [])
+
+    if not isinstance(grade_level_ids, list):
+        return Response({"error": "grade_levels must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+
+    valid_grade_ids = list(
+        GradeLevel.objects.filter(id__in=grade_level_ids).values_list('id', flat=True)
+    )
+    task.grade_levels.set(valid_grade_ids)
+
+    return Response(
+        {
+            "task_id": task.id,
+            "grade_levels": list(
+                task.grade_levels.order_by('grade').values('id', 'grade')
+            ),
+        },
+        status=status.HTTP_200_OK,
+    )
 
 # Delete an example and its related data (answers, steps)
 @api_view(['DELETE'])
@@ -1455,48 +1681,43 @@ def get_skill_related_counts(request):
 
     return Response(data)
 
-# Directory to save survey answers  
-SURVEY_DIR = "survey"
-os.makedirs(SURVEY_DIR, exist_ok=True)
-
-# Save survey answer to a JSON file
 @api_view(['POST'])
 def save_survey_answer(request):
-
-    # Survey answer data
     question_type = request.data.get('question_type')
     question_text = request.data.get('question_text')
     answer = request.data.get('answer')
     skills = request.data.get('skills')
     student_id = request.data.get('student_id')
     session_id = request.data.get('session_id')
-
-    # Skills which were practiced when question was asked
-    skill_names = get_skill_names_string_sync(skills)
+    language = (request.data.get('language') or '').strip()
 
     if not question_type or not question_text or not answer:
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    
-    student_id_str = str(student_id) if student_id else session_id if session_id else 'unknown'
-    json_filename = f"feedback_text_{timestamp}_{student_id_str}.json"
-    json_filepath = os.path.join(SURVEY_DIR, json_filename)
-        
-    survey_question_data = {
-        "question_text": question_text,
-        "answer": answer,
-        "examples_type": skill_names,
-        "student_id": student_id,
-        "session_id": session_id,
-        "timestamp": timestamp
-    }
 
-    # Save the survey answer to a JSON file
-    with open(json_filepath, "w", encoding="utf-8") as json_file:
-        json.dump(survey_question_data, json_file, indent=4, ensure_ascii=False)
-    
-    return Response(status=status.HTTP_200_OK)
+    try:
+        feedback = create_survey_feedback(
+            question_type=question_type,
+            question_text=question_text,
+            answer=answer,
+            skills=skills,
+            student_id=student_id,
+            session_id=session_id,
+            language=language,
+            source='text',
+        )
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    sync_result = sync_survey_feedback_to_mega(feedback)
+    retry_pending_survey_feedback_uploads(limit=3)
+
+    return Response(
+        {
+            "feedback_id": feedback.id,
+            "mega_uploaded": sync_result.get("uploaded", False),
+        },
+        status=status.HTTP_201_CREATED,
+    )
 
 
 @api_view(['POST'])
@@ -1595,6 +1816,83 @@ def get_example_reports(request):
 
     return Response(data, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+def get_survey_feedbacks(request):
+    limit = request.query_params.get('limit', 500)
+
+    try:
+        limit = max(1, min(int(limit), 2000))
+    except (TypeError, ValueError):
+        limit = 500
+
+    feedbacks = SurveyFeedback.objects.select_related(
+        'student',
+        'anonymous_session',
+    ).order_by('-created_at')[:limit]
+
+    data = []
+    for feedback in feedbacks:
+        meta = feedback.meta or {}
+        data.append(
+            {
+                "feedback_id": feedback.id,
+                "created_at": feedback.created_at.isoformat() if feedback.created_at else None,
+                "question_type": feedback.question_type,
+                "question_text": feedback.question_text,
+                "answer": feedback.answer,
+                "source": feedback.source,
+                "language": feedback.language,
+                "student_id": feedback.student_id,
+                "student_username": feedback.student.username if feedback.student_id else '',
+                "anonymous_session_id": feedback.anonymous_session.session_id if feedback.anonymous_session_id else '',
+                "practiced_skill_ids": feedback.practiced_skill_ids,
+                "practiced_skill_names": feedback.practiced_skill_names,
+                "audio_url": f"/api/survey-feedback-audio/{feedback.id}/" if (
+                    feedback.audio_file_path or meta.get("mega_audio_url")
+                ) else "",
+                "mega_uploaded": meta.get("mega_uploaded", False),
+                "mega_json_uploaded": meta.get("mega_json_uploaded", False),
+                "mega_audio_uploaded": meta.get("mega_audio_uploaded", False),
+                "mega_json_url": meta.get("mega_json_url", ""),
+                "mega_audio_url": meta.get("mega_audio_url", ""),
+                "mega_error": meta.get("mega_error", "") or meta.get("mega_json_error", "") or meta.get("mega_audio_error", ""),
+                "local_json_name": meta.get("local_json_name", ""),
+                "meta": meta,
+            }
+        )
+
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_survey_feedback_audio(request, feedback_id):
+    feedback = get_object_or_404(SurveyFeedback, id=feedback_id)
+    cloud_url = (feedback.meta or {}).get('mega_audio_url', '')
+
+    candidate_paths = [feedback.audio_file_path]
+    candidate_paths.append(os.path.join(os.getcwd(), feedback.audio_file_path))
+
+    file_path = None
+    for path in candidate_paths:
+        if _existing_nonempty_file(path):
+            file_path = path
+            break
+
+    if not file_path:
+        if cloud_url:
+            response = _temporary_cloud_file_response(
+                public_url=cloud_url,
+                filename_hint=feedback.audio_file_path or f"survey_feedback_{feedback.id}.wav",
+                content_type='audio/wav',
+            )
+            if response:
+                return response
+            return redirect(cloud_url)
+        return Response({"error": "Audio file not available for this feedback"}, status=status.HTTP_404_NOT_FOUND)
+
+    return FileResponse(open(file_path, 'rb'), content_type='audio/wav')
+
 # Get all grade levels (1-9)
 @api_view(['GET'])
 def get_grade_levels(request):
@@ -1648,6 +1946,32 @@ def get_skills_by_grade(request, grade_id):
         
         return JsonResponse(skills_data, safe=False, status=status.HTTP_200_OK)
         
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_tasks_by_grade(request, grade_id):
+    try:
+        grade = get_object_or_404(GradeLevel, id=grade_id)
+
+        tasks = Task.objects.filter(
+            grade_levels=grade,
+            example__isnull=False,
+        ).distinct().order_by('name')
+
+        data = [
+            {
+                "id": task.id,
+                "name": task.name,
+                "form": task.form,
+                "example_count": task.example_set.count(),
+            }
+            for task in tasks
+        ]
+
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -2034,6 +2358,8 @@ def get_all_students_stats(request):
         for student in students:
             records = StudentExample.objects.filter(student=student)
             total_examples = records.count()
+            if total_examples == 0:
+                continue
             solved = records.filter(solved=True).count()
             skipped = records.filter(skipped=True).count()
             total_attempts = records.aggregate(Sum('attempts'))['attempts__sum'] or 0
@@ -2099,3 +2425,200 @@ def get_all_anonymous_sessions_stats(request):
         return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Bulk task/example import
+# ──────────────────────────────────────────────────────────────────────────────
+
+@api_view(['POST'])
+def bulk_import_tasks(request):
+    """
+    Bulk-create tasks with examples from a JSON payload.
+
+    Expected format:
+    {
+      "tasks": [
+        {
+          "task_name": "Sčítanie do 10",
+          "task_form": "classic",
+          "skill_ids": [1, 3],
+          "grade_ids": [1, 2],
+          "examples": [
+            {
+              "example": "3 + 4 =",
+              "input_type": "INLINE",
+              "answer": "7"
+            }
+          ]
+        }
+      ]
+    }
+    """
+    tasks_data = request.data.get('tasks', [])
+    if not tasks_data:
+        return Response({"error": "No tasks provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+    results = []
+
+    for task_data in tasks_data:
+        task_name = task_data.get('task_name', '').strip()
+        task_form = task_data.get('task_form', 'classic')
+        skill_ids = task_data.get('skill_ids', [])
+        grade_ids = task_data.get('grade_ids', [])
+        examples_data = task_data.get('examples', [])
+
+        if not task_name:
+            results.append({"task_name": task_name, "status": "skipped", "reason": "empty name"})
+            continue
+
+        if not skill_ids:
+            results.append({"task_name": task_name, "status": "skipped", "reason": "no skill_ids"})
+            continue
+
+        skills = Skill.objects.filter(id__in=skill_ids)
+        if not skills.exists():
+            results.append({"task_name": task_name, "status": "skipped", "reason": "no valid skills found"})
+            continue
+
+        with transaction.atomic():
+            task_instance, created = Task.objects.get_or_create(
+                name=task_name,
+                defaults={'form': task_form},
+            )
+            if not created:
+                task_instance.form = task_form
+                task_instance.save()
+
+            task_instance.skills.add(*skills)
+
+            if grade_ids:
+                grades = GradeLevel.objects.filter(id__in=grade_ids)
+                task_instance.grade_levels.add(*grades)
+
+            example_count = 0
+            for ex_data in examples_data:
+                example_text = ex_data.get('example', '').strip()
+                input_type = ex_data.get('input_type', '').strip()
+                answer_text = ex_data.get('answer', '').strip()
+                steps = ex_data.get('steps', [])
+
+                if not example_text or not input_type:
+                    continue
+
+                example_instance = Example.objects.create(
+                    example=example_text,
+                    input_type=input_type,
+                    task=task_instance,
+                )
+
+                if answer_text:
+                    Answer.objects.create(example=example_instance, answer=answer_text)
+
+                for skill in skills:
+                    ExampleSkill.objects.create(example=example_instance, skill=skill)
+
+                for idx, step_text in enumerate(steps, start=1):
+                    if step_text:
+                        Step.objects.create(example=example_instance, text=step_text, order=idx)
+
+                example_count += 1
+
+            create_skill_relations(skill_ids)
+
+        results.append({
+            "task_name": task_name,
+            "task_id": task_instance.id,
+            "status": "created" if created else "updated",
+            "examples_added": example_count,
+        })
+
+    return Response({"results": results}, status=status.HTTP_201_CREATED)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Bulk CSV export – DKT-ready format
+# ──────────────────────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+def export_attempts_csv(request):
+    """
+    Export all ExampleAttempt records as CSV suitable for DKT pipelines.
+
+    Query params (all optional):
+      ?student_id=5          – filter by student
+      ?session_id=abc123     – filter by anonymous session
+      ?action=evaluated      – filter by action (default: evaluated only)
+      ?all_actions=true      – include all actions, not just evaluated
+      ?date_from=2026-01-01  – only attempts after this date
+      ?date_to=2026-12-31    – only attempts before this date
+    """
+    from django.http import HttpResponse as DjangoHttpResponse
+
+    qs = ExampleAttempt.objects.select_related(
+        'student', 'anonymous_session', 'example'
+    ).order_by('created_at')
+
+    student_id = request.query_params.get('student_id')
+    session_id = request.query_params.get('session_id')
+    action_filter = request.query_params.get('action', 'evaluated')
+    all_actions = request.query_params.get('all_actions', '').lower() == 'true'
+    date_from = request.query_params.get('date_from')
+    date_to = request.query_params.get('date_to')
+
+    if student_id:
+        qs = qs.filter(student_id=student_id)
+    if session_id:
+        qs = qs.filter(anonymous_session__session_id=session_id)
+    if not all_actions:
+        qs = qs.filter(action=action_filter)
+    if date_from:
+        qs = qs.filter(created_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(created_at__date__lte=date_to)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+
+    header = [
+        'timestamp', 'user_type', 'user_id', 'example_id', 'example_text',
+        'skill_ids', 'skill_names', 'input_type', 'is_correct', 'attempt_number',
+        'duration_ms', 'transcription', 'parsed_answer', 'correct_answer',
+        'action', 'source', 'language', 'confidence', 'audio_file_path',
+    ]
+    writer.writerow(header)
+
+    for att in qs.iterator(chunk_size=500):
+        user_type = 'student' if att.student_id else 'anonymous'
+        user_id = str(att.student_id) if att.student_id else (
+            att.anonymous_session.session_id if att.anonymous_session else ''
+        )
+        confidence = ''
+        if isinstance(att.meta, dict):
+            confidence = att.meta.get('azure_confidence', '')
+
+        writer.writerow([
+            att.created_at.isoformat(),
+            user_type,
+            user_id,
+            att.example_id,
+            att.example_text,
+            pyjson.dumps(att.practiced_skill_ids),
+            pyjson.dumps(att.practiced_skill_names, ensure_ascii=False),
+            att.input_type,
+            att.is_correct,
+            att.attempt_number,
+            att.duration,
+            att.transcription,
+            att.parsed_answer,
+            att.correct_answer,
+            att.action,
+            att.source,
+            att.language,
+            confidence,
+            att.audio_file_path,
+        ])
+
+    csv_response = DjangoHttpResponse(buf.getvalue(), content_type='text/csv')
+    csv_response['Content-Disposition'] = 'attachment; filename="attempts_export.csv"'
+    return csv_response

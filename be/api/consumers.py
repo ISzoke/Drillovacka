@@ -74,7 +74,6 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         records = StudentExample.objects.prefetch_related('practiced_skills').filter(
             example_id=example_id,
-            date=record_date,
         )
 
         if student_id and student_id != 'unknown':
@@ -84,7 +83,21 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         else:
             return None
 
-        return records.first()
+        if record_date:
+            exact_match = records.filter(date=record_date).first()
+            if exact_match:
+                return exact_match
+
+        # Fallback for races or stale frontend metadata: if the record was just
+        # created for the same example/session but the exact timestamp differs,
+        # pair the speech attempt with the most recent matching StudentExample.
+        fallback_match = records.order_by('-date', '-id').first()
+        if fallback_match and record_date:
+            print(
+                f"[WARN] StudentExample exact date miss for example={example_id}, "
+                f"record_date={record_date}; using latest id={fallback_match.id}."
+            )
+        return fallback_match
 
     def _save_attempt_audio(self, student_id, session_id, example_id, audio_bytes):
         if not audio_bytes:
@@ -264,8 +277,9 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
     def create_speech_recognizer(self):
 
-        # Azure STT configuration   
+        # Azure STT configuration
         speech_config = speechsdk.SpeechConfig(subscription=AZURE_API_KEY, region=AZURE_REGION)
+        speech_config.output_format = speechsdk.OutputFormat.Detailed
         format = speechsdk.audio.AudioStreamFormat(samples_per_second=16000, bits_per_sample=16, channels=1)
         stream = speechsdk.audio.PushAudioInputStream(stream_format=format)
         audio_config = speechsdk.audio.AudioConfig(stream=stream)
@@ -278,10 +292,24 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         def recognized_cb(evt: speechsdk.SpeechRecognitionEventArgs):
             print(f"[DEBUG] recognized_cb fired: result={evt.result.text}, reason={evt.result.reason}")
-            
+
+            # Extract Azure confidence score from detailed JSON result
+            azure_confidence = None
+            try:
+                json_result_str = evt.result.properties.get(
+                    speechsdk.PropertyId.SpeechServiceResponse_JsonResult, ''
+                )
+                if json_result_str:
+                    json_result = json.loads(json_result_str)
+                    nbest = json_result.get('NBest', [])
+                    if nbest:
+                        azure_confidence = nbest[0].get('Confidence', None)
+            except Exception as conf_err:
+                print(f"[DEBUG] Could not extract Azure confidence: {conf_err}")
+
             # Log all possible outcomes
             if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
-                print(f"[DEBUG] SUCCESS: Azure recognized: '{evt.result.text}'")
+                print(f"[DEBUG] SUCCESS: Azure recognized: '{evt.result.text}' (confidence={azure_confidence})")
             elif evt.result.reason == speechsdk.ResultReason.NoMatch:
                 print(f"[DEBUG] NO_MATCH: Azure did not understand anything")
                 print(f"[DEBUG] NoMatch details: {evt.result.no_match_details if hasattr(evt.result, 'no_match_details') else 'N/A'}")
@@ -318,7 +346,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                             correct_answer=correct_answer,
                             audio_bytes=audio_bytes,
                             audio_format=self.audio_format,
-                            meta={'azure_reason': 'NoMatch'},
+                            meta={'azure_reason': 'NoMatch', 'azure_confidence': azure_confidence},
                         )
                     except Exception as log_error:
                         print(f"[ERROR] Failed to store NO_MATCH log: {log_error}")
@@ -376,7 +404,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                             correct_answer=correct_answer,
                             audio_bytes=audio_bytes,
                             audio_format=self.audio_format,
-                            meta={'azure_reason': 'Canceled'},
+                            meta={'azure_reason': 'Canceled', 'azure_confidence': azure_confidence},
                         )
                     except Exception as log_error:
                         print(f"[ERROR] Failed to store CANCELED log: {log_error}")
@@ -713,6 +741,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                             meta={
                                 "continue_with_next": response_data.get("continue_with_next"),
                                 "evaluation": evaluation_data.get("evaluation"),
+                                "azure_confidence": azure_confidence,
                             },
                         )
                     except Exception as log_error:

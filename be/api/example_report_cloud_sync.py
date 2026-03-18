@@ -31,6 +31,7 @@ def _report_json_path(report):
 
 def _build_report_payload(report):
     return {
+        "record_kind": "example_report",
         "report_id": report.id,
         "created_at": report.created_at.isoformat() if report.created_at else datetime.utcnow().isoformat(),
         "student_id": report.student_id,
@@ -67,6 +68,7 @@ def sync_report_to_mega(report):
         meta = dict(report.meta or {})
         meta.update(
             {
+                "record_kind": "example_report",
                 "mega_uploaded": upload_result.get("uploaded", False),
                 "mega_json_url": upload_result.get("public_url", ""),
                 "mega_error": upload_result.get("error", ""),

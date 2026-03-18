@@ -65,17 +65,61 @@ def _build_sidecar_payload(attempt):
     }
 
 
+def ensure_attempt_sidecar(attempt):
+    """
+    Create or refresh a local JSON sidecar for the attempt and persist its path in meta.
+    Returns absolute local path to the sidecar, or an empty string if unavailable.
+    """
+    if not attempt.audio_file_path:
+        return ""
+
+    local_audio = _resolve_local_path(attempt.audio_file_path)
+    if local_audio:
+        sidecar_path = _sidecar_path_for_audio(local_audio)
+    else:
+        candidate_audio = (
+            attempt.audio_file_path
+            if os.path.isabs(attempt.audio_file_path)
+            else os.path.join(os.getcwd(), attempt.audio_file_path)
+        )
+        sidecar_path = _sidecar_path_for_audio(candidate_audio)
+
+    if not sidecar_path:
+        return ""
+
+    sidecar_payload = _build_sidecar_payload(attempt)
+    with open(sidecar_path, "w", encoding="utf-8") as sidecar_file:
+        json.dump(sidecar_payload, sidecar_file, indent=2, ensure_ascii=False)
+
+    meta = dict(attempt.meta or {})
+    meta.update(
+        {
+            "paired_json_local_path": sidecar_path,
+            "paired_json_name": os.path.basename(sidecar_path),
+        }
+    )
+    attempt.meta = meta
+    attempt.save(update_fields=["meta"])
+
+    return sidecar_path
+
+
 def sync_attempt_to_mega(attempt):
     """
     Uploads attempt audio and paired JSON sidecar to MEGA.
     Returns dict with upload status details.
     Skips silently if the same attempt is already being uploaded in another thread.
     """
-    if not mega_upload_enabled():
-        return {"uploaded": False, "reason": "mega_disabled"}
-
     if not attempt.audio_file_path:
         return {"uploaded": False, "reason": "no_audio_path"}
+
+    try:
+        ensure_attempt_sidecar(attempt)
+    except Exception as exc:
+        return {"uploaded": False, "reason": f"sidecar_write_failed: {exc}"}
+
+    if not mega_upload_enabled():
+        return {"uploaded": False, "reason": "mega_disabled"}
 
     # Guard against concurrent duplicate uploads of the same attempt.
     with _upload_lock:
@@ -95,14 +139,9 @@ def _do_sync(attempt):
     if not local_audio:
         return {"uploaded": False, "reason": "audio_missing_locally"}
 
-    # Build paired JSON file with same basename as audio.
-    sidecar_path = _sidecar_path_for_audio(local_audio)
-    sidecar_payload = _build_sidecar_payload(attempt)
-    try:
-        with open(sidecar_path, "w", encoding="utf-8") as sidecar_file:
-            json.dump(sidecar_payload, sidecar_file, indent=2, ensure_ascii=False)
-    except Exception as exc:
-        return {"uploaded": False, "reason": f"sidecar_write_failed: {exc}"}
+    sidecar_path = ensure_attempt_sidecar(attempt)
+    if not sidecar_path:
+        return {"uploaded": False, "reason": "sidecar_missing_locally"}
 
     audio_upload = upload_file_to_mega(local_audio)
     json_upload = upload_file_to_mega(sidecar_path)

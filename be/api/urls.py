@@ -15,6 +15,8 @@ from .consumersSurvey import SurveySpeechTranscriptionConsumer
 urlpatterns = [
 
     path('tasks/', views.get_tasks, name='get-tasks'),
+    path('tasks/assignment-overview/', views.get_task_assignment_overview, name='get-task-assignment-overview'),
+    path('tasks/<int:task_id>/grade-levels/', views.update_task_grade_levels, name='update-task-grade-levels'),
     path('create-task/', views.create_task, name='create-task'),
     path('edit-task/', views.edit_task, name='edit-task'),
     path('tasks/<int:task_id>/delete/', views.delete_task, name='delete_task'),
@@ -25,8 +27,11 @@ urlpatterns = [
     path('create-record/', views.create_example_record, name='create-example-record'),
     path('my-data/', views.get_my_data, name='get-my-data'),
     path('attempt-audio/<int:attempt_id>/', views.get_attempt_audio, name='get-attempt-audio'),
+    path('attempt-sidecar/<int:attempt_id>/', views.get_attempt_sidecar, name='get-attempt-sidecar'),
     path('attempt-logs/', views.get_attempt_logs, name='get-attempt-logs'),
     path('example-reports/', views.get_example_reports, name='get-example-reports'),
+    path('survey-feedbacks/', views.get_survey_feedbacks, name='get-survey-feedbacks'),
+    path('survey-feedback-audio/<int:feedback_id>/', views.get_survey_feedback_audio, name='get-survey-feedback-audio'),
     path('update-record/', views.update_example_record, name='update-example-record'),
     path('delete-record/', views.delete_example_record, name='delete-example-record'),
     path('skip-example/', views.skip_example, name='skip-example'),
@@ -61,6 +66,7 @@ urlpatterns = [
     path('grade-levels/', views.get_grade_levels, name='get-grade-levels'),
     path('skills/<int:skill_id>/grade-levels/', views.update_skill_grade_levels, name='update-skill-grade-levels'),
     path('skills/by-grade/<int:grade_id>/', views.get_skills_by_grade, name='get-skills-by-grade'),
+    path('tasks/by-grade/<int:grade_id>/', views.get_tasks_by_grade, name='get-tasks-by-grade'),
 
     # Analytics & Skill Tracking
     path('analytics/students/', views.get_all_students_stats, name='all-students-stats'),
@@ -70,7 +76,10 @@ urlpatterns = [
     path('analytics/progress-overview/', views.get_progress_overview, name='progress-overview'),
     path('analytics/examples/', views.get_group_example_stats, name='group-example-stats'),
     path('analytics/skills/', views.get_group_skill_stats, name='group-skill-stats'),
- 
+
+    # Bulk import & export
+    path('bulk-import-tasks/', views.bulk_import_tasks, name='bulk-import-tasks'),
+    path('export/csv/', views.export_attempts_csv, name='export-attempts-csv'),
 ]
 
 websocket_urlpatterns = [

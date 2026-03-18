@@ -26,6 +26,12 @@ class Task(models.Model):
         related_name='tasks' 
     )
 
+    grade_levels = models.ManyToManyField(
+        'GradeLevel',
+        blank=True,
+        related_name='tasks',
+    )
+
     form = models.CharField(
         max_length=20, 
         choices=FORM_CHOICES, 
@@ -241,6 +247,44 @@ class ExampleReport(models.Model):
             models.CheckConstraint(
                 check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
                 name='report_student_or_session_required'
+            )
+        ]
+
+
+class SurveyFeedback(models.Model):
+    SOURCE_CHOICES = [
+        ('text', 'Text'),
+        ('voice', 'Voice'),
+    ]
+
+    student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.CASCADE)
+    anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    question_type = models.CharField(max_length=64, blank=True, default='')
+    question_text = models.TextField(blank=True, default='')
+    answer = models.TextField(blank=True, default='')
+    source = models.CharField(max_length=16, choices=SOURCE_CHOICES, default='text')
+    language = models.CharField(max_length=10, blank=True, default='')
+
+    practiced_skill_ids = models.JSONField(default=list, blank=True)
+    practiced_skill_names = models.JSONField(default=list, blank=True)
+
+    audio_file_path = models.CharField(max_length=500, blank=True, default='')
+    audio_format = models.CharField(max_length=50, blank=True, default='')
+    meta = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['student', 'created_at']),
+            models.Index(fields=['anonymous_session', 'created_at']),
+            models.Index(fields=['question_type', 'created_at']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
+                name='survey_feedback_student_or_session_required'
             )
         ]
 

@@ -27,6 +27,8 @@ const emits = defineEmits(['hideSurvey']);
 const recorderStore = useRecorderStore();
 const langStore = useLanguageStore();
 
+const currentQuestionTypeCode = () => `survey-${questions.value[index.value].type}-q${index.value + 1}`;
+
 // Index of current question
 const storedIndex = sessionStorage.getItem("surveyIndex");
 const index = ref(storedIndex ? parseInt(storedIndex, 10) : 0);
@@ -154,7 +156,15 @@ const handleNext = () => {
 
 // Handle choice selection
 const handleChoiceSelection = async (choice) => {
-  await sendSurveyAnswer('choice', questions.value[index.value].text, choice, props.topics);
+  await sendSurveyAnswer(
+    currentQuestionTypeCode(),
+    questions.value[index.value].text[langStore.language],
+    choice,
+    props.topics,
+    null,
+    null,
+    langStore.language,
+  );
   handleNext();
 }
 
@@ -169,7 +179,15 @@ const sendScaleSelection = async () => {
     return;
 
   } else {
-    await sendSurveyAnswer('scale', questions.value[index.value].text, selectedScale.value, props.topics);
+    await sendSurveyAnswer(
+      currentQuestionTypeCode(),
+      questions.value[index.value].text[langStore.language],
+      selectedScale.value,
+      props.topics,
+      null,
+      null,
+      langStore.language,
+    );
     handleNext();
   }
 
@@ -178,7 +196,13 @@ const sendScaleSelection = async () => {
 onMounted(() => {
   if (index.value >= 0 && index.value < questions.value.length) {
     // Update the recorder store with the current question text
-    recorderStore.updateSurveyQuestionData(questions.value[index.value].text, props.topics);
+    recorderStore.updateSurveyQuestionData(
+      questions.value[index.value].text[langStore.language],
+      props.topics,
+      null,
+      null,
+      currentQuestionTypeCode(),
+    );
 
   } else {
     console.error("Invalid index value:", index.value);

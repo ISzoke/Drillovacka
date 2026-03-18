@@ -21,9 +21,38 @@ const langStore = useLanguageStore();
 const gradeLevels = ref([]);
 const loading = ref(true);
 
+function normalizeGradeLevels(items) {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item, index) => {
+      if (item && typeof item === 'object') {
+        const rawId = item.id ?? item.grade_id ?? item.pk ?? item.grade;
+        const rawGrade = item.grade ?? item.grade_number ?? item.number ?? item.id;
+        const id = Number(rawId);
+        const grade = Number(rawGrade);
+
+        if (Number.isFinite(id) && Number.isFinite(grade)) {
+          return { id, grade };
+        }
+      }
+
+      const numeric = Number(item);
+      if (Number.isFinite(numeric)) {
+        return { id: numeric, grade: numeric };
+      }
+
+      const fallback = index + 1;
+      return { id: fallback, grade: fallback };
+    })
+    .filter((item) => Number.isFinite(item.id) && Number.isFinite(item.grade))
+    .sort((a, b) => a.grade - b.grade);
+}
+
 onMounted(async () => {
   try {
-    gradeLevels.value = await getGradeLevels();
+    const fetchedGradeLevels = await getGradeLevels();
+    gradeLevels.value = normalizeGradeLevels(fetchedGradeLevels);
   } catch (error) {
     console.error('Error fetching grade levels:', error);
   } finally {
@@ -33,15 +62,32 @@ onMounted(async () => {
 
 // Navigate to topic view for specific grade
 const selectGrade = (gradeId, gradeNumber) => {
+  if (!Number.isFinite(Number(gradeId))) {
+    console.error('Missing or invalid gradeId:', gradeId, gradeNumber);
+    return;
+  }
+
   // Store grade info in sessionStorage for TopicView to use
-  sessionStorage.setItem('selectedGrade', JSON.stringify({ id: gradeId, grade: gradeNumber }));
-  router.push({ name: 'gradeTopics', params: { gradeId: gradeId } });
+  sessionStorage.setItem('selectedGrade', JSON.stringify({
+    id: Number(gradeId),
+    grade: Number.isFinite(Number(gradeNumber)) ? Number(gradeNumber) : Number(gradeId),
+  }));
+  router.push({ name: 'gradeTopics', params: { gradeId: String(gradeId) } });
 };
 </script>
 
 <template>
   <div>
     <Spinner v-if="loading" class="pt-48" />
+
+    <div v-else-if="gradeLevels.length === 0" class="flex justify-center py-16 px-4">
+      <div class="w-full max-w-xl rounded-2xl border border-gray-200 bg-white/90 p-8 text-center shadow-lg">
+        <h2 class="text-2xl font-bold text-primary">Ročníky zatiaľ nie sú nastavené</h2>
+        <p class="mt-3 text-gray-600">
+          Databáza je v čistom stave po migráciách. Keď budú ročníky znovu pripravené, zobrazia sa tu automaticky.
+        </p>
+      </div>
+    </div>
 
     <!-- Grade Levels Grid -->
     <div v-else class="flex justify-center py-8 md:py-12 px-4">
