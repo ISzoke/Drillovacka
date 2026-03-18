@@ -9,15 +9,19 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { deleteExample } from '@/api/apiClient';
+import { useToastStore } from '@/stores/useToastStore';
 
 const props = defineProps({
   number: {
     type: Number,
   },
-  
 });
-const exampleId = ref('');  
+
+const toastStore = useToastStore();
+const exampleId = ref('');
 const focused = ref(false);
+const deleting = ref(false);
 
 // Input fields
 const exampleInput = ref('');
@@ -124,6 +128,25 @@ const clearInput = () => {
   stepInputs.value = [];
 }
 
+// Delete this example from the DB and clear the slot
+const handleDelete = async () => {
+  if (!exampleId.value) {
+    clearInput();
+    return;
+  }
+  deleting.value = true;
+  try {
+    await deleteExample(exampleId.value);
+    exampleId.value = '';
+    clearInput();
+    toastStore.addToast({ message: 'Príklad bol odstránený', type: 'success', visible: true });
+  } catch {
+    toastStore.addToast({ message: 'Príklad sa nepodarilo odstrániť', type: 'error', visible: true });
+  } finally {
+    deleting.value = false;
+  }
+};
+
 defineExpose({ getData, importExample, clearInput });
 
 onMounted(() => {
@@ -139,9 +162,20 @@ onMounted(() => {
     @focusout="focused = false"
     tabindex="0"
   >
-    <!-- Example number -->
-    <div class="flex justify-center items-center text-white bg-secondary rounded-full w-8 h-8">
-      {{ number }}
+    <!-- Header row: number + delete button -->
+    <div class="flex justify-between items-center mb-1">
+      <div class="flex justify-center items-center text-white bg-secondary rounded-full w-8 h-8">
+        {{ number }}
+      </div>
+      <button
+        v-if="exampleId"
+        @click="handleDelete"
+        :disabled="deleting"
+        class="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white text-xs font-bold px-2 py-1 rounded transition"
+        title="Odstrániť príklad"
+      >
+        <i class="fa-solid fa-trash"></i>
+      </button>
     </div>
 
     <!-- Example inputs -->
