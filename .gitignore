@@ -1,2 +1,17 @@
 .venv/
 be/.venv/
+
+# Secrets — never commit
+be/.env
+.env
+
+# Generated at runtime
+be/db_backups/
+be/attempt_audio/
+be/audioprompts/
+be/survey/
+be/staticfiles/
+
+# Python cache
+**/__pycache__/
+**/*.pyc

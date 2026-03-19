@@ -26,7 +26,7 @@ AZURE_REGION = os.getenv('AZURE_REGION')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3zibbwj&l%j)_dh%+*tr*xvx^uun)z3=bcq35ps#d7p%ktvzgz'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-3zibbwj&l%j)_dh%+*tr*xvx^uun)z3=bcq35ps#d7p%ktvzgz')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False 
