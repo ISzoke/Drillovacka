@@ -19,8 +19,8 @@ services:
       - CSRF_TRUSTED_ORIGINS=http://192.168.54.198,http://superlectures.net,http://www.superlectures.net,http://57.128.223.205
     volumes:
       - .:/code
-    expose:
-      - "8000"
+    ports:
+      - "127.0.0.1:8000:8000"
     depends_on:
       - db
 
