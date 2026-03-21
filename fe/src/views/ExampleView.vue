@@ -11,7 +11,7 @@
 <script setup>
 import Example from '@/components/Example.vue';
 import ProgressBar from '@/components/Example/ProgressBar.vue';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { getExamples, getTaskExamples } from '@/api/apiClient';
 import correctIcon from '@/assets/img/correct.png';
@@ -65,6 +65,32 @@ const langStore = useLanguageStore();
 const gamStore = useGamificationStore();
 const authStore = useAuthStore();
 const route = useRoute();
+
+// Fire streak — 3 fast correct answers in a row
+const fireActive = ref(false)
+let fastCorrectStreak = 0
+let lastCorrectTime = 0
+let fireTimer = null
+
+function trackFastCorrect() {
+  const now = Date.now()
+  if (lastCorrectTime && (now - lastCorrectTime) < 6000) {
+    fastCorrectStreak++
+  } else {
+    fastCorrectStreak = 1
+  }
+  lastCorrectTime = now
+  if (fastCorrectStreak >= 3) {
+    fireActive.value = true
+    clearTimeout(fireTimer)
+    fireTimer = setTimeout(() => { fireActive.value = false }, 4000)
+  }
+}
+
+function resetFireStreak() {
+  fastCorrectStreak = 0
+  lastCorrectTime = 0
+}
 
 // XP toast
 const xpToast = ref(null)
@@ -139,14 +165,16 @@ const displayNext = async (data) => {
     } else if (data.isCorrect) {
       correctSound.play();
       displayIcon(true);
+      trackFastCorrect();
       if (authStore.id) showXpToast({ xp_awarded: gamStore.lastXpAwarded, xp_breakdown: gamStore.xpBreakdown });
-    
+
     // User answered incorrectly for 3 times
     } else if (!data.isCorrect && data.nextExample) {
       wrongSound.play();
       displayIcon(false);
       exampleComponent.value.triggerShake();
       mistakes.value++;
+      resetFireStreak();
 
     // User answered incorrectly once or twice
     } else {
@@ -154,6 +182,7 @@ const displayNext = async (data) => {
       displayIcon(false);
       exampleComponent.value.triggerShake();
       mistakes.value++;
+      resetFireStreak();
       exampleComponent.value.getStep(mistakes.value)
       return;
     }
@@ -259,6 +288,11 @@ const fetchTaskExamples = async (taskId) => {
   }
 };
 
+onUnmounted(() => {
+  clearTimeout(fireTimer);
+  clearTimeout(xpToastTimer);
+});
+
 </script>
 
 <template>
@@ -267,10 +301,10 @@ const fetchTaskExamples = async (taskId) => {
 
     <!-- Fallback if no examples were fetched -->
     <div v-if="examples.length === 0 && !loading" class="flex flex-col justify-center items-center">
-      <h1 class="text-xl md:text-3xl font-bold text-center pt-20 text-primary mb-8">Pro tuto kombinaci dovedností zatím neexistují příklady :(</h1>
+      <h1 class="text-xl md:text-3xl font-bold text-center pt-20 text-slate-700 dark:text-slate-200 mb-8">Pro tuto kombinaci dovedností zatím neexistují příklady :(</h1>
 
       <RouterLink to="/"
-                class="text-center text-xl md:text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-3 py-2 md:px-4 md:py-2 cursor-pointer transition">
+                class="text-center text-xl md:text-2xl font-black text-white bg-violet-500 border-[3px] border-violet-600 border-b-[8px] border-b-violet-700 rounded-2xl px-6 py-3 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all">
                 {{ dictionary[langStore.language].backtoMainMenu }}
       </RouterLink>
     </div>
@@ -279,6 +313,11 @@ const fetchTaskExamples = async (taskId) => {
     <div v-if="examples.length > curr_index && !showSummary" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
     </div>
+
+    <!-- Fire animation — 3 fast correct answers in a row -->
+    <Transition name="fire-bg">
+      <div v-if="fireActive && !showSummary" class="fixed inset-0 pointer-events-none z-5 fire-overlay" />
+    </Transition>
 
     <!-- Red screen overlay — intensifies with each wrong attempt -->
     <div
@@ -297,7 +336,7 @@ const fetchTaskExamples = async (taskId) => {
         <img
           v-if="showIcon && examples.length > curr_index"
           :src="isCorrect ? images.correct.src : images.wrong.src"
-          class="w-48 h-48 absolute top-64 z-50 pointer-events-none"
+          class="w-28 h-28 md:w-48 md:h-48 absolute top-40 md:top-64 z-50 pointer-events-none"
         >
       </Transition>
 
@@ -310,9 +349,9 @@ const fetchTaskExamples = async (taskId) => {
     <Transition name="xp-toast">
       <div
         v-if="xpToast && authStore.id"
-        class="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none select-none"
+        class="fixed top-20 md:top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none select-none"
       >
-        <div class="flex flex-col items-center bg-violet-700 text-white rounded-2xl shadow-xl px-5 py-3 min-w-[160px]">
+        <div class="flex flex-col items-center bg-violet-600 text-white rounded-2xl shadow-xl px-5 py-3 min-w-[160px]">
           <span class="text-2xl font-black tracking-tight">+{{ xpToast.xp_awarded }} XP</span>
           <div v-if="xpToast.xp_breakdown" class="text-xs text-violet-200 mt-1 text-center space-y-0.5">
             <div v-if="xpMultiplierLabel(xpToast.xp_breakdown.grade_comparison)">
@@ -348,4 +387,26 @@ const fetchTaskExamples = async (taskId) => {
 @keyframes answerFade {
   to { opacity: 0; transform: scale(1.3); }
 }
+
+/* Fire overlay */
+.fire-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(255, 80, 0, 0.25) 0%,
+    rgba(255, 160, 0, 0.12) 30%,
+    rgba(255, 200, 0, 0.05) 60%,
+    transparent 100%
+  );
+  animation: fireFlicker 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes fireFlicker {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+.fire-bg-enter-active { animation: fireIn 0.4s ease-out; }
+.fire-bg-leave-active { animation: fireOut 0.6s ease-in forwards; }
+@keyframes fireIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fireOut { to   { opacity: 0; } }
 </style>

@@ -45,21 +45,23 @@ onMounted(() => {
       {{ dictionary[langStore.language].adminHomeTitle }}
     </p>
 
-    <div class="flex flex-col items-center justify-center gap-8 pt-16">
+    <div class="flex flex-col items-center justify-center gap-5 pt-16">
 
-      <!-- Task list and creator -->
-      <RouterLink to="/tasks" class="w-96 cursor-pointer border border-gray-300 rounded-lg shadow-lg max-w-md bg-white 
-           transition transform  hover:shadow-xl 
-           hover:bg-secondary hover:border-secondary flex items-center justify-center text-3xl text-center font-bold text-primary p-4 
-              duration-300 ease-in-out hover:text-white">
+      <RouterLink to="/tasks"
+        class="w-80 cursor-pointer rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+               border-b-[8px] border-b-slate-300 dark:border-b-slate-600
+               bg-white dark:bg-slate-800 flex items-center justify-center
+               text-2xl text-center font-black text-slate-800 dark:text-slate-100 p-6
+               hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm">
         {{ dictionary[langStore.language].tasks }}
       </RouterLink>
 
-      <!-- Skill list and creator -->
-      <RouterLink to="/skill-creator" class="w-96 cursor-pointer border border-gray-300 rounded-lg shadow-lg max-w-md bg-white 
-           transition transform  hover:shadow-xl 
-           hover:bg-secondary hover:border-secondary flex items-center justify-center text-3xl text-center font-bold text-primary p-4 
-              duration-300 ease-in-out hover:text-white"> 
+      <RouterLink to="/skill-creator"
+        class="w-80 cursor-pointer rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+               border-b-[8px] border-b-slate-300 dark:border-b-slate-600
+               bg-white dark:bg-slate-800 flex items-center justify-center
+               text-2xl text-center font-black text-slate-800 dark:text-slate-100 p-6
+               hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm">
         {{ dictionary[langStore.language].skills }}
       </RouterLink>
       

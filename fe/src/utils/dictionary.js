@@ -244,7 +244,7 @@ export const dictionary = {
         usernameError: "Prosím, zadaj prezývku.",
         usernameForgot: "Zabudol si si vytvoriť prezývku",
         passphraseError: "Prosím, zadaj všetky časti prístupového kódu.",
-        passphraseForgot: "Najprv si musíš vygenerovať prístupový kód",
+        passphraseForgot: "Najskôr si musíš vygenerovať prístupový kód",
         loginSuccess: "Prihlásenie prebehlo úspešne",
         registrationSuccess: "Registrácia prebehla úspešne",
         invalidCredentials: "Neplatné prihlasovacie údaje",
@@ -291,7 +291,7 @@ export const dictionary = {
         searchPlaceholderText: "Napíš názov cvičenia, ktoré hľadáš",
         gradeLevel: "Ročník",
         gradeLevels: "Ročníky",
-        selectGrades: "Vyber ročníky",
+        selectGrades: "Vyber si ročník",
         editGrades: "Upraviť ročníky",
         saveGrades: "Uložiť ročníky",
         gradesUpdated: "Ročníky boli úspešne aktualizované",
@@ -329,11 +329,11 @@ export const dictionary = {
         days: "dní",
         topStudents: "Top žiaci",
         noBadgesYet: "Zatiaľ žiadne odznaky",
-        startPracticing: "Začni cvičiť a získaj odznaky!",
+        startPracticing: "Začni počítať a získaj odznaky!",
         earnedBadges: "Získané odznaky",
-        lockedBadges: "Nezískané odznaky",
+        lockedBadges: "Zatiaľ nezískané odznaky",
         xp: "XP",
-        practiceNow: "Cvičiť teraz",
+        practiceNow: "Začať počítat",
     }
 };
 
@@ -376,7 +376,7 @@ export const getSkillName = (czechName, lang) => {
         "Dělení": "Delenie",
         "Druhá mocnina": "Druhá mocnina",
         "Druhá odmocnina": "Druhá odmocnina",
-        "Krácení": "Krátanie",
+        "Krácení": "Krátenie",
         "Celá čísla": "Celé čísla",
         "Desetinná čísla": "Desatinné čísla",
         "Zlomky": "Zlomky",
@@ -390,7 +390,7 @@ export const getSkillName = (czechName, lang) => {
         "Přes 10": "Nad 10",
         "Do 10": "Do 10",
         "Desetiny": "Desatiny",
-        "Poměry": "Pomer"
+        "Poměry": "Pomery"
     };
 
     if (lang === "en") return mapEn[czechName] || czechName;

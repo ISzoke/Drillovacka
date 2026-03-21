@@ -88,7 +88,7 @@ watch(
             <input
                 type="text"
                 v-model="variable.answer"
-                class="text-start w-64 text-6xl md:text-8xl border-none self-end p-0"
+                class="text-start w-64 text-6xl md:text-8xl border-none self-end p-0 bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none"
                 placeholder="?"
                 inputmode="numeric"
                 autofocus

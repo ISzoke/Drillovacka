@@ -17,7 +17,7 @@ const ICON_MAP = {
   star: '🌟', ten: '🔢', hundred: '💯', rocket: '🚀', map: '🗺️', compass: '🧭',
   target: '🎯', bolt: '⚡', bow: '🏹', grad: '🎓', muscle: '💪',
   wind: '💨', car: '🏎️', fire: '🔥', trophy: '🏆', star2: '⭐', crown: '👑', medal: '🥇',
-  gem: '💎', books: '📚', calendar: '📅',
+  gem: '💎', books: '📚', calendar: '📅', mic: '🎤',
 }
 
 const BADGE_META = {
@@ -48,6 +48,11 @@ const BADGE_META = {
   level_5:              { name: 'Level 5',            icon: 'star2',    xp: 40  },
   level_10:             { name: 'Dvojciferný',        icon: 'crown',    xp: 120 },
   level_20:             { name: 'Veterán',            icon: 'gem',      xp: 300 },
+  voice_first:          { name: 'Prvý hlas',           icon: 'mic',      xp: 15  },
+  voice_10:             { name: 'Hlasitý žiak',       icon: 'mic',      xp: 35  },
+  voice_50:             { name: 'Rečník',              icon: 'mic',      xp: 90  },
+  voice_100:            { name: 'Hlasový majster',     icon: 'mic',      xp: 200 },
+  voice_250:            { name: 'Virtuóz reči',        icon: 'mic',      xp: 450 },
   top10_leaderboard:    { name: 'Top 10',             icon: 'medal',    xp: 70  },
   top3_leaderboard:     { name: 'Stupne víťazov',     icon: 'trophy',   xp: 160 },
 }
@@ -98,13 +103,13 @@ function dismiss() {
       class="fixed bottom-6 right-4 z-[9999] max-w-[280px] w-full cursor-pointer select-none"
       @click="dismiss"
     >
-      <div class="flex items-center gap-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white
-                  rounded-2xl shadow-2xl px-4 py-3 ring-2 ring-yellow-300">
+      <div class="flex items-center gap-3 bg-secondary text-white
+                  rounded-2xl shadow-2xl px-4 py-3 border-2 border-tertiary">
         <div class="text-4xl shrink-0 badge-icon">{{ ICON_MAP[current.icon] || '🏅' }}</div>
         <div class="min-w-0">
-          <p class="text-[10px] font-bold uppercase tracking-widest text-violet-200 leading-none mb-0.5">Nový odznak!</p>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-tertiary leading-none mb-0.5">Nový odznak!</p>
           <p class="font-extrabold text-sm leading-tight truncate">{{ current.name }}</p>
-          <p class="text-xs text-violet-200 mt-0.5">+{{ current.xp }} XP</p>
+          <p class="text-xs text-tertiary mt-0.5">+{{ current.xp }} XP</p>
         </div>
         <span class="text-yellow-300 text-xl shrink-0">🎉</span>
       </div>

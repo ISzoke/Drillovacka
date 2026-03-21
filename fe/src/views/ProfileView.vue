@@ -16,45 +16,37 @@ import { useLanguageStore } from '@/stores/useLanguageStore'
 import { dictionary } from '@/utils/dictionary'
 import { RouterLink } from 'vue-router'
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { updateStudentGrade } from '@/api/apiClient'
 
 const authStore = useAuthStore()
 const gamStore = useGamificationStore()
 const langStore = useLanguageStore()
-const showLogin = ref(true)
+const route = useRoute()
+const showLogin = ref(route.query.register !== '1')
 
 const ICON_MAP = {
   star: '🌟', ten: '🔢', hundred: '💯', rocket: '🚀', map: '🗺️', compass: '🧭',
   target: '🎯', bolt: '⚡', bow: '🏹', grad: '🎓', muscle: '💪',
   wind: '💨', car: '🏎️', fire: '🔥', trophy: '🏆', star2: '⭐', crown: '👑', medal: '🥇',
-  gem: '💎', books: '📚', calendar: '📅',
+  gem: '💎', books: '📚', calendar: '📅', mic: '🎤',
 }
 function iconEmoji(key) { return ICON_MAP[key] || '🏅' }
 
-const categories = [
-  { key: 'activity', label: 'Aktivita', icon: '📚' },
-  { key: 'accuracy', label: 'Presnosť', icon: '🎯' },
-  { key: 'speed', label: 'Rýchlosť', icon: '⚡' },
-  { key: 'streak', label: 'Séria', icon: '🔥' },
-  { key: 'milestone', label: 'Míľniky', icon: '🏆' },
-]
-
-const allBadges = ref([])
-const loadingBadges = ref(false)
-
-const earnedBadges = computed(() => allBadges.value.filter(b => b.earned))
-const unearnedBadges = computed(() => allBadges.value.filter(b => !b.earned))
-
-// Simple deterministic color from username for the avatar circle
-function avatarColor(name) {
-  const colors = ['bg-violet-500', 'bg-indigo-500', 'bg-blue-500', 'bg-teal-500', 'bg-green-500', 'bg-amber-500', 'bg-orange-500', 'bg-pink-500']
-  let hash = 0
-  for (const c of (name || '')) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff
-  return colors[hash % colors.length]
+const CATEGORY_COLORS = {
+  activity:  { card: 'bg-violet-500',  border: 'border-violet-700' },
+  accuracy:  { card: 'bg-emerald-500', border: 'border-emerald-700' },
+  speed:     { card: 'bg-sky-500',     border: 'border-sky-700' },
+  streak:    { card: 'bg-orange-500',  border: 'border-orange-700' },
+  milestone: { card: 'bg-amber-500',   border: 'border-amber-700' },
+  voice:     { card: 'bg-teal-500',    border: 'border-teal-700' },
+}
+const FALLBACK_COLORS = ['bg-violet-500', 'bg-emerald-500', 'bg-sky-500', 'bg-orange-500', 'bg-amber-500']
+function badgeColor(badge, idx) {
+  return CATEGORY_COLORS[badge.category] || { card: FALLBACK_COLORS[idx % FALLBACK_COLORS.length], border: 'border-black/30' }
 }
 
-// Grade change
 const gradeChanging = ref(false)
 const gradeChangeError = ref('')
 const selectedGrade = ref(null)
@@ -76,6 +68,12 @@ async function saveGrade() {
   gradeChanging.value = false
 }
 
+const allBadges = ref([])
+const loadingBadges = ref(false)
+
+const earnedBadges = computed(() => allBadges.value.filter(b => b.earned))
+const unearnedBadges = computed(() => allBadges.value.filter(b => !b.earned))
+
 onMounted(async () => {
   if (!authStore.isAuthenticated || authStore.role === 'admin') return
   if (authStore.id) gamStore.fetchStats(authStore.id)
@@ -91,143 +89,182 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- ── Logged in: student profile ── -->
-  <div v-if="authStore.isAuthenticated && authStore.role !== 'admin'" class="min-h-screen bg-gradient-to-b from-violet-50 to-white p-4 md:p-8">
-    <div class="max-w-2xl mx-auto">
+  <!-- Logged in: student profile -->
+  <div v-if="authStore.isAuthenticated && authStore.role !== 'admin'" class="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
+    <div class="max-w-2xl mx-auto space-y-5">
 
-      <!-- Avatar + username -->
-      <div class="flex flex-col items-center mb-8">
-        <div
-          class="w-24 h-24 rounded-full flex items-center justify-center text-white text-4xl font-black shadow-lg mb-3"
-          :class="avatarColor(authStore.name)">
-          {{ (authStore.name || '?')[0].toUpperCase() }}
-        </div>
-        <h1 class="text-3xl font-black text-gray-800">{{ authStore.name }}</h1>
-      </div>
+      <!-- ── Profile card ── -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8 relative overflow-hidden">
+        <!-- Decorative blur -->
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-violet-100 rounded-full blur-3xl opacity-50 pointer-events-none" />
 
-      <!-- Level / XP / Streak / Rank cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <!-- Level + XP bar -->
-        <div class="col-span-2 bg-gradient-to-br from-violet-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg">
-          <div class="flex justify-between items-center mb-1">
-            <span class="font-bold text-lg">⭐ Level {{ gamStore.level }}</span>
-            <span class="text-sm text-violet-200">{{ gamStore.xp }} XP</span>
-          </div>
-          <div class="w-full bg-violet-800/40 rounded-full h-3 overflow-hidden">
-            <div
-              class="h-3 rounded-full bg-yellow-400 transition-all duration-700"
-              :style="{ width: gamStore.levelPercent() + '%' }">
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
+          <!-- Avatar -->
+          <div class="relative flex-shrink-0">
+            <div class="w-28 h-28 rounded-3xl bg-violet-100 flex items-center justify-center
+                        border-4 border-violet-200 shadow-inner">
+              <div class="w-20 h-20 rounded-2xl bg-violet-500 flex items-center justify-center
+                          text-white text-5xl font-black shadow-sm select-none">
+                {{ (authStore.name || '?')[0].toUpperCase() }}
+              </div>
+            </div>
+            <div class="absolute -bottom-3 -right-3 bg-emerald-500 text-white px-3 py-1.5 rounded-xl
+                        text-sm font-black border-4 border-white shadow-sm rotate-[-6deg]">
+              Lvl {{ gamStore.level }}
             </div>
           </div>
-          <div class="text-xs text-violet-200 mt-1">
-            {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP do ďalšieho levelu
+
+          <!-- User info -->
+          <div class="flex-1 text-center sm:text-left">
+            <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-2">{{ authStore.name }}</h2>
+            <p class="text-slate-500 font-bold mb-4 bg-slate-100 inline-block px-3 py-1 rounded-xl">
+              {{ authStore.grade ? authStore.grade + '. ročník' : 'ročník nenastavený' }}
+            </p>
+
+            <div class="flex flex-wrap justify-center sm:justify-start gap-2">
+              <div class="bg-amber-100 border-2 border-amber-300 text-amber-700 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
+                ⭐ {{ gamStore.xp }} XP
+              </div>
+              <div class="bg-blue-100 border-2 border-blue-300 text-blue-700 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
+                <span v-if="gamStore.rank"># {{ gamStore.rank }}</span>
+                <span v-else>–</span>
+              </div>
+              <div class="bg-orange-100 border-2 border-orange-300 text-orange-700 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
+                🔥 {{ gamStore.streak }} deň
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Streak -->
-        <div class="bg-gradient-to-br from-orange-400 to-red-500 text-white p-5 rounded-2xl shadow-lg flex flex-col justify-center">
-          <div class="text-4xl">🔥</div>
-          <div class="text-3xl font-black mt-1">{{ gamStore.streak }}</div>
-          <div class="text-sm text-orange-100">dní za sebou</div>
-        </div>
-
-        <!-- Rank -->
-        <div class="bg-gradient-to-br from-amber-400 to-yellow-500 text-white p-5 rounded-2xl shadow-lg flex flex-col justify-center">
-          <div class="text-4xl">🏅</div>
-          <div class="text-3xl font-black mt-1">
-            <span v-if="gamStore.rank">#{{ gamStore.rank }}</span>
-            <span v-else>–</span>
+        <!-- XP bar -->
+        <div class="mt-8 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-600">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-sm font-black text-slate-500 uppercase tracking-wider">
+              Cesta k Levelu {{ gamStore.level + 1 }}
+            </span>
+            <span class="text-sm font-black text-violet-600">
+              {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP
+            </span>
           </div>
-          <div class="text-sm text-yellow-100">na rebríčku</div>
+          <div class="h-5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden shadow-inner border border-slate-300 dark:border-slate-500">
+            <div
+              class="h-full bg-violet-500 rounded-full relative transition-all duration-700"
+              :style="{ width: gamStore.levelPercent() + '%' }">
+              <div class="absolute top-1 left-2 right-2 h-2 bg-white/20 rounded-full"></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Grade card + one-time change -->
-      <div class="bg-white rounded-2xl shadow p-5 mb-6">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-bold text-gray-700">🎓 Môj ročník</h2>
-          <span v-if="authStore.grade" class="text-2xl font-black text-indigo-600">{{ authStore.grade }}. ročník</span>
-          <span v-else class="text-sm text-gray-400 italic">nenastavený</span>
-        </div>
+      <!-- ── Grade card ── -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
+        <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-2">Môj ročník 🎒</h3>
+        <p class="text-slate-500 font-medium mb-6">Prispôsob si obtiažnosť podľa svojho ročníka.</p>
 
-        <!-- Change allowed once -->
         <div v-if="!authStore.grade_change_used">
-          <p class="text-xs text-gray-400 mb-3">
-            {{ authStore.grade ? 'Raz môžeš zmeniť svoj ročník:' : 'Nastav svoj ročník:' }}
-          </p>
-          <div class="grid grid-cols-9 gap-1 mb-3">
+          <div class="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-3 mb-6">
             <button
               v-for="g in 9"
               :key="g"
               @click="selectedGrade = selectedGrade === g ? null : g"
-              class="py-2 rounded-lg text-sm font-bold border-2 transition"
+              class="aspect-square rounded-2xl font-black text-xl transition-all"
               :class="selectedGrade === g
-                ? 'bg-indigo-600 border-indigo-700 text-white'
-                : 'bg-gray-100 border-gray-300 text-gray-500 hover:bg-indigo-50 hover:border-indigo-300'">
+                ? 'bg-blue-500 text-white border-b-[4px] border-blue-700 translate-y-1 shadow-sm'
+                : (authStore.grade === g
+                    ? 'bg-violet-100 text-violet-700 border-b-[4px] border-violet-300'
+                    : 'bg-slate-100 text-slate-600 border-b-[4px] border-slate-300 hover:bg-slate-200 active:border-b-0 active:translate-y-1')">
               {{ g }}
             </button>
           </div>
+
           <button
             :disabled="!selectedGrade || gradeChanging"
             @click="saveGrade"
-            class="w-full py-2 rounded-xl font-bold text-sm transition"
+            class="w-full py-4 rounded-2xl font-black text-lg transition-all"
             :class="selectedGrade && !gradeChanging
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'">
-            {{ gradeChanging ? 'Ukladám...' : (authStore.grade ? 'Zmeniť ročník' : 'Nastaviť ročník') }}
+              ? 'bg-emerald-500 hover:bg-emerald-400 text-white border-b-[6px] border-emerald-700 active:border-b-0 active:translate-y-[6px]'
+              : 'bg-slate-100 text-slate-400 border-b-[4px] border-slate-200 cursor-not-allowed'">
+            {{ gradeChanging ? 'Ukladám...' : (authStore.grade ? 'ZMENIŤ ROČNÍK' : 'NASTAVIŤ ROČNÍK') }}
           </button>
-          <p v-if="gradeChangeError" class="text-red-500 text-xs mt-2">{{ gradeChangeError }}</p>
-          <p v-if="authStore.grade" class="text-xs text-amber-600 mt-2">⚠️ Túto zmenu môžeš urobiť len raz.</p>
+
+          <p v-if="gradeChangeError" class="text-red-500 text-sm mt-3 font-semibold">{{ gradeChangeError }}</p>
+          <p v-if="authStore.grade" class="text-xs text-amber-600 mt-3 font-semibold bg-amber-50 p-3 rounded-xl border border-amber-200">
+            ⚠️ Túto zmenu môžeš urobiť len raz.
+          </p>
         </div>
-        <div v-else class="text-xs text-gray-400 italic mt-1">Ročník bol už zmenený a viac ho nie je možné meniť.</div>
+
+        <div v-else class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-semibold text-sm">
+          Ročník bol už zmenený a viac ho nie je možné meniť.
+        </div>
       </div>
 
-      <!-- Badges -->
-      <div class="bg-white rounded-2xl shadow p-6">
-        <div class="flex items-center justify-between mb-1">
-          <h2 class="text-xl font-bold text-gray-700">🎖️ Odznaky</h2>
-          <span class="text-sm font-semibold text-violet-600 bg-violet-50 px-3 py-1 rounded-full">
+      <!-- ── Badges ── -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100">Tvoje odznaky 🏆</h3>
+          <span class="bg-amber-100 text-amber-700 font-black px-4 py-1.5 rounded-xl border-2 border-amber-200">
             {{ earnedBadges.length }} / {{ allBadges.length }}
           </span>
         </div>
 
-        <div v-if="loadingBadges" class="text-center py-8 text-gray-400">
+        <div v-if="loadingBadges" class="text-center py-8 text-slate-400">
           <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
         </div>
 
         <div v-else>
-          <!-- Earned badges — prominent flex grid -->
-          <div v-if="earnedBadges.length > 0" class="mb-6">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Získané odznaky</p>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- Earned badges -->
+          <div v-if="earnedBadges.length > 0" class="mb-8">
+            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Získané</h4>
+            <div class="grid sm:grid-cols-2 gap-4">
               <div
-                v-for="badge in earnedBadges"
+                v-for="(badge, idx) in earnedBadges"
                 :key="badge.key"
-                class="rounded-2xl p-4 flex flex-col items-center text-center bg-gradient-to-br from-violet-50 to-indigo-50 border-2 border-violet-400 shadow-md ring-2 ring-violet-200 transition-transform hover:scale-105">
-                <div class="text-5xl mb-2 drop-shadow">{{ iconEmoji(badge.icon) }}</div>
-                <div class="font-extrabold text-gray-800 text-sm leading-tight">{{ badge.name }}</div>
-                <div class="text-xs text-gray-500 mt-1 leading-snug">{{ badge.description }}</div>
-                <div class="mt-2 text-xs font-bold text-violet-600">+{{ badge.xp_reward }} XP</div>
+                class="rounded-2xl p-5 text-white border-b-[6px] hover:-translate-y-1 transition-transform"
+                :class="[badgeColor(badge, idx).card, badgeColor(badge, idx).border]">
+                <div class="flex items-start gap-4">
+                  <div class="bg-white/20 p-2.5 rounded-xl text-3xl leading-none flex-shrink-0">
+                    {{ iconEmoji(badge.icon) }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h5 class="font-black text-xl mb-1">{{ badge.name }}</h5>
+                    <p class="text-sm font-medium opacity-90 mb-3 leading-tight">{{ badge.description }}</p>
+                    <span class="inline-block bg-black/20 px-3 py-1 rounded-full text-xs font-black">
+                      +{{ badge.xp_reward }} XP
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div v-else class="text-center py-6 text-gray-400 text-sm mb-4">
-            Zatiaľ žiadne odznaky. Riešte príklady a získajte prvý! 💪
+          <div v-else class="text-center py-8 text-slate-400 mb-4">
+            <p class="text-lg font-bold mb-1">Zatiaľ žiadne odznaky.</p>
+            <p class="text-sm">Rieš príklady a získaj prvý! 💪</p>
           </div>
 
-          <!-- Unearned badges — always visible with description -->
-          <div v-if="unearnedBadges.length > 0" class="border-t border-gray-100 mt-4 pt-4">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">🔒 Ešte neodomknuté ({{ unearnedBadges.length }})</p>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <!-- Locked badges -->
+          <div v-if="unearnedBadges.length > 0">
+            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+              Ešte zamknuté ({{ unearnedBadges.length }})
+            </h4>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div
                 v-for="badge in unearnedBadges"
                 :key="badge.key"
-                class="rounded-2xl p-3 flex flex-col items-center text-center bg-gray-50 border-2 border-dashed border-gray-300 opacity-70">
-                <div class="text-3xl mb-1 grayscale">{{ iconEmoji(badge.icon) }}</div>
-                <div class="font-bold text-gray-500 text-xs leading-tight">{{ badge.name }}</div>
-                <div class="text-xs text-gray-400 mt-1 leading-snug italic">{{ badge.description }}</div>
-                <div class="mt-1 text-xs font-semibold text-gray-400">+{{ badge.xp_reward }} XP</div>
+                class="bg-slate-50 border-2 border-slate-200 border-dashed rounded-2xl p-4
+                       grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+                <div class="flex flex-col items-center text-center gap-2">
+                  <div class="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-2xl">
+                    {{ iconEmoji(badge.icon) }}
+                  </div>
+                  <div>
+                    <h5 class="font-black text-slate-700 text-sm mb-1">{{ badge.name }}</h5>
+                    <p class="text-xs font-medium text-slate-500 mb-2 leading-tight">{{ badge.description }}</p>
+                    <span class="inline-block bg-slate-200 px-2 py-1 rounded-lg text-xs font-black text-slate-600">
+                      +{{ badge.xp_reward }} XP
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -237,16 +274,16 @@ onMounted(async () => {
     </div>
   </div>
 
-  <!-- ── Logged out: login / signup ── -->
+  <!-- Logged out: login / signup -->
   <div v-else class="pt-12">
     <Login v-if="showLogin" />
     <Signup v-else />
 
-    <button @click="showLogin = !showLogin" class="underline w-full text-secondary text-lg">
+    <button @click="showLogin = !showLogin" class="underline w-full text-slate-500 text-lg mt-4">
       {{ showLogin ? dictionary[langStore.language].registerText : dictionary[langStore.language].loginText }}
     </button>
 
-    <RouterLink to="/admin" class="underline w-full text-secondary text-lg mt-12 flex justify-center">
+    <RouterLink to="/admin" class="underline w-full text-slate-400 text-lg mt-12 flex justify-center">
       {{ dictionary[langStore.language].adminText }}
     </RouterLink>
   </div>

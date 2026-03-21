@@ -2,9 +2,8 @@
 ================================================================================
  Component: TopicView.vue
  Description:
-      Displays selected skill related skills and children to allow user to specify all 
-      skills he wants to practice.
- Author: Dominik Horut (xhorut01)
+      Displays selected skill, related skills and children to allow user to
+      specify all skills they want to practice.
 ================================================================================
 -->
 
@@ -12,56 +11,35 @@
 import { ref, defineProps, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Spinner from '@/components/Spinner.vue';
-import OperationButton from '@/components//TopicSelector/OperationButton.vue';
+import OperationButton from '@/components/TopicSelector/OperationButton.vue';
 import SubTopic from '@/components/TopicSelector/SubTopic.vue';
 import { dictionary, getSkillName } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useSkillStore } from '@/stores/useSkillStore';
 
-const props = defineProps({
-  id: {
-    required: true
-  }
-});
+const props = defineProps({ id: { required: true } });
 
 const topic = ref(null);
 const subtopics = ref([]);
 const operations = ref([]);
-
 const selectedSubtopics = ref([]);
 const loading = ref(true);
-
-// Dictionary to support both czech and english version
 const langStore = useLanguageStore();
-
-// Used for caching skills
 const skillStore = useSkillStore();
-
 const router = useRouter();
 
 onMounted(async () => {
   try {
-    
-    // Fetch main skill
     topic.value = await skillStore.fetchSkill(props.id);
-
-    // Fetch subskills based on the type of the main skill
     if (topic.value.skill_type === 'OPERATION') {
-      // Fetch associated skills
       subtopics.value = await skillStore.fetchRelatedSkillsTree(props.id);
-
     } else if (topic.value.skill_type === 'NUMBER_DOMAIN') {
-      // Fetch both subskills and associated operations skills
       subtopics.value = await skillStore.fetchChildrenSkillsTree(props.id, false);
       operations.value = await skillStore.fetchOperationSkills(props.id);
-
     } else if (topic.value.skill_type === 'EQUATION') {
-      // Fetch subskills
       subtopics.value = await skillStore.fetchChildrenSkillsTree(props.id, true);
     }
-
     selectedSubtopics.value.push(topic.value);
-
   } catch (error) {
     console.error("Failed to fetch skill data:", error);
   } finally {
@@ -69,71 +47,82 @@ onMounted(async () => {
   }
 });
 
-// Pass selected skills to retrieve examples and start practice
 function startPractice() {
   if (selectedSubtopics.value.length > 0) {
     router.push({
       name: 'examples',
-      query: {
-        topics: JSON.stringify(selectedSubtopics.value.map(subtopic => subtopic.id)),
-      }
+      query: { topics: JSON.stringify(selectedSubtopics.value.map(s => s.id)) }
     });
-
   }
 }
 
-// Update example counts of subskills
 const updateExampleCount = ({ relatedSkills, isSelected }) => {
   relatedSkills.forEach(({ related_id, examples }) => {
     const subtopic = subtopics.value.find(sub => sub.id === related_id);
-
-    if (subtopic) {
-      // Increment or decrement the example count based on selection
-      subtopic.examples += isSelected ? examples : -examples;
-    }
+    if (subtopic) subtopic.examples += isSelected ? examples : -examples;
   });
 };
 </script>
 
 <template>
+  <div class="min-h-screen pb-16">
+    <div class="max-w-3xl mx-auto px-4 pt-8 flex flex-col items-center">
 
-  <div class="flex flex-col items-center md:pt-20">
+      <!-- Main skill title -->
+      <div v-if="topic"
+        class="w-full bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+               border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-6 mb-8 text-center shadow-sm">
+        <h1 class="text-2xl md:text-4xl font-black text-slate-800 dark:text-slate-100">
+          {{ getSkillName(topic.name, langStore.language) }}
+        </h1>
+      </div>
 
-    <!-- Main skill name -->
-    <h1 class="text-5xl font-bold text-primary my-8 text-center" v-if="topic">
-      {{ getSkillName(topic.name, langStore.language) }}
-    </h1>
+      <Spinner v-if="loading" class="mt-24" />
 
+      <template v-else>
+        <!-- Operations section -->
+        <div v-if="operations.length > 0" class="w-full mb-8">
+          <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
+            {{ dictionary[langStore.language].chooseOperation }}
+          </p>
+          <div class="flex flex-wrap justify-center gap-3">
+            <OperationButton
+              v-for="operation in operations"
+              :key="operation.id"
+              :operation="operation"
+              :selectedSubtopics="selectedSubtopics"
+              @updateExampleCount="updateExampleCount"
+            />
+          </div>
+        </div>
 
-    <Spinner v-if="loading" class="mt-24" />
+        <!-- Subtopics section -->
+        <div v-if="subtopics.length > 0" class="w-full mb-8">
+          <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
+            {{ dictionary[langStore.language].chooseTopic }}
+          </p>
+          <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+                      border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-5 shadow-sm">
+            <SubTopic
+              v-for="subtopic in subtopics"
+              :key="subtopic.id"
+              :subtopic="subtopic"
+              :selectedSubtopics="selectedSubtopics"
+            />
+          </div>
+        </div>
 
-    <p v-if="operations.length > 0" class="text-secondary font-semibold text-xl text-center mt-8 mb-4">
-      {{ dictionary[langStore.language].chooseOperation }}
-    </p>
-
-    <!-- Operations skills -->  
-    <div v-if="operations.length > 0"
-      class="grid grid-cols-2 gap-4 mb-4 md:flex md:flex-row md:flex-wrap md:space-x-4 md:justify-start justify-center">
-      <OperationButton v-for="operation in operations" :key="operation.id" :operation="operation"
-        :selectedSubtopics="selectedSubtopics" @updateExampleCount="updateExampleCount" class="md:w-auto w-full" />
+        <!-- Start practice button -->
+        <button
+          @click="startPractice"
+          class="w-full py-4 md:py-5 rounded-3xl font-black text-xl md:text-2xl text-white
+                 bg-violet-500 border-[3px] border-violet-600 border-b-[8px] border-b-violet-700
+                 hover:-translate-y-1 active:translate-y-1 active:border-b-[3px]
+                 transition-all shadow-sm"
+        >
+          {{ dictionary[langStore.language].startPractice }}
+        </button>
+      </template>
     </div>
-
-    <p v-if="subtopics.length > 0" class="text-secondary font-semibold text-xl text-center mt-8 mb-4">
-      {{dictionary[langStore.language].chooseTopic }}
-    </p>
-
-    <!-- Subskills -->
-    <div v-if="subtopics.length > 0" class="flex flex-wrap justify-center gap-4">
-      <SubTopic v-for="subtopic in subtopics" :key="subtopic.id" :subtopic="subtopic"
-        :selectedSubtopics="selectedSubtopics" />
-    </div>
-
-    <!-- Button to start practice --> 
-    <div @click="startPractice"
-      class="my-20 px-6 py-3 bg-secondary text-4xl md:text-3xl font-bold text-white rounded-lg cursor-pointer hover:bg-primary transition">
-      {{ dictionary[langStore.language].startPractice }}
-    </div>
-
   </div>
-
 </template>

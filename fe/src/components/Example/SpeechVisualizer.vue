@@ -10,6 +10,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRecorderStore } from "@/stores/useRecorderStore";
+import { useDarkStore } from "@/stores/useDarkStore";
 
 const props = defineProps({
   backgroundColor: {
@@ -43,7 +44,10 @@ const props = defineProps({
 });
 
 const recorderStore = useRecorderStore();
+const darkStore = useDarkStore();
 const canvasRef = ref(null);
+
+const bgColor = () => darkStore.isDark ? '#1e293b' : '#f8fafc';
 const analyser = ref(null);
 const dataArray = ref(null);
 const animationId = ref(null);
@@ -54,6 +58,13 @@ watch(() => recorderStore.isRecording, (isRecording) => {
     setupAnalyser();
   } else {
     stopVisualization();
+  }
+});
+
+// Redraw idle state when dark mode toggles
+watch(() => darkStore.isDark, () => {
+  if (!recorderStore.isRecording) {
+    drawEmptyState();
   }
 });
 
@@ -81,9 +92,9 @@ const drawEmptyState = () => {
   const width = canvas.width;
   const height = canvas.height;
   
-  ctx.fillStyle = props.backgroundColor;
+  ctx.fillStyle = bgColor();
   ctx.fillRect(0, 0, width, height);
-  
+
   const totalWidth = props.barCount * (props.barWidth + props.barGap);
   const startX = (width - totalWidth) / 2;
   
@@ -150,7 +161,7 @@ const startVisualization = () => {
     // Get current frequency data from the analyser
     analyser.value.getByteFrequencyData(dataArray.value);
     
-    ctx.fillStyle = props.backgroundColor;
+    ctx.fillStyle = bgColor();
     ctx.fillRect(0, 0, width, height);
     
     // Draw threshold line

@@ -60,6 +60,7 @@ const ICON_MAP = {
   star: '🌟', ten: '🔢', hundred: '💯', rocket: '🚀', map: '🗺️', compass: '🧭',
   target: '🎯', bolt: '⚡', bow: '🏹', grad: '🎓', muscle: '💪',
   wind: '💨', car: '🏎️', fire: '🔥', trophy: '🏆', star2: '⭐', crown: '👑', medal: '🥇',
+  gem: '💎', books: '📚', calendar: '📅', mic: '🎤',
 }
 function iconEmoji(key) { return ICON_MAP[key] || '🏅' }
 
@@ -74,6 +75,7 @@ const categories = [
   { key: 'activity', label: 'Aktivita', icon: '📚' },
   { key: 'accuracy', label: 'Presnosť', icon: '🎯' },
   { key: 'speed', label: 'Rýchlosť', icon: '⚡' },
+  { key: 'voice', label: 'Hlas', icon: '🎤' },
   { key: 'streak', label: 'Séria', icon: '🔥' },
   { key: 'milestone', label: 'Míľniky', icon: '🏆' },
 ]

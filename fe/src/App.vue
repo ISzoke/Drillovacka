@@ -13,8 +13,10 @@ import Footer from '@/components/Footer.vue';
 import { RouterView } from 'vue-router';
 import ToastManager from '@/components/Toast/ToastManager.vue';
 import BadgePopup from '@/components/BadgePopup.vue';
+import LevelUpToast from '@/components/LevelUpToast.vue';
 import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useDarkStore } from '@/stores/useDarkStore';
 import { useRouter } from 'vue-router';
 import { useLanguageStore } from './stores/useLanguageStore';
 import { getSessionId } from '@/utils/sessionManager';
@@ -23,6 +25,7 @@ import { initSession, updateSessionLanguage } from '@/api/apiClient';
 
 // Initialize stores and router instances
 const authStore = useAuthStore();
+useDarkStore(); // initialize dark mode (applies class to <html> immediately)
 const langStore = useLanguageStore();
 const router = useRouter();
 
@@ -87,8 +90,9 @@ watch(
 
   <ToastManager />
   <BadgePopup />
+  <LevelUpToast />
 
-  <div class="bg-white min-h-screen">
+  <div class="bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors duration-200">
     <RouterView />
   </div>
 

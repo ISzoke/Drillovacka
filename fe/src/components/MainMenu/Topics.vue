@@ -3,7 +3,6 @@
  Component: Topics.vue
  Description:
         Displays landing page skills and search bar to filter them by name.
- Author: Dominik Horut (xhorut01)
 ================================================================================
 -->
 
@@ -18,31 +17,23 @@ import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { dictionary } from '@/utils/dictionary';
 
-// Load topics from cache
 const topicStore = useTopicStore();
 const langStore = useLanguageStore();
 const authStore = useAuthStore();
-
 const searchQuery = ref('');
 
-// Show only skills that match the search query
 const filteredTopics = computed(() => {
   if (!searchQuery.value) return topicStore.topics;
-  
-  return topicStore.topics.filter(topic => 
+  return topicStore.topics.filter(topic =>
     topic.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
 
-// Get landing page skills
-onMounted(() => {
-  topicStore.fetchTopics();
-});
+onMounted(() => { topicStore.fetchTopics(); });
 </script>
 
 <template>
   <div>
-    
     <Spinner v-if="topicStore.loading" class="pt-48" />
 
     <div v-else>
@@ -52,62 +43,63 @@ onMounted(() => {
       <!-- Generic grade grid for guests / students without a grade -->
       <template v-else>
         <div class="flex justify-center pt-10 px-4">
-          <h2 class="text-2xl md:text-4xl font-bold text-primary text-center">
+          <h2 class="text-3xl md:text-4xl font-black text-slate-800 dark:text-slate-100 text-center">
             {{ dictionary[langStore.language].selectGrades }}
           </h2>
         </div>
-
         <GradeView />
       </template>
 
-      <div v-if="!(authStore.isAuthenticated && authStore.role !== 'admin' && authStore.grade)" class="max-w-6xl mx-auto px-4 pb-16">
-        <details class="rounded-xl border border-gray-300 bg-white shadow-sm">
-          <summary class="cursor-pointer list-none px-6 py-4 flex items-center justify-between text-lg md:text-xl font-semibold text-primary">
+      <!-- Legacy topics (collapsible) -->
+      <div v-if="!(authStore.isAuthenticated && authStore.role !== 'admin' && authStore.grade)"
+           class="max-w-5xl mx-auto px-4 pb-16">
+        <details class="rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+                        border-b-[6px] border-b-slate-300 dark:border-b-slate-600
+                        bg-white dark:bg-slate-800 shadow-sm">
+          <summary class="cursor-pointer list-none px-6 py-5 flex items-center justify-between
+                          text-lg md:text-xl font-black text-slate-600 dark:text-slate-300
+                          hover:text-slate-800 dark:hover:text-slate-100 transition">
             <span>
-              <i class="fa-solid fa-clock-rotate-left mr-2"></i>
+              <i class="fa-solid fa-clock-rotate-left mr-2 text-slate-400 dark:text-slate-500"></i>
               {{ dictionary[langStore.language].legacyOperations }}
             </span>
-            <i class="fa-solid fa-chevron-down"></i>
+            <i class="fa-solid fa-chevron-down text-slate-400 dark:text-slate-500"></i>
           </summary>
 
-          <div class="px-6 pb-6">
-            <div class="flex justify-center pt-4">
-              <h3 class="text-lg md:text-xl font-semibold text-primary text-center">
-                {{ dictionary[langStore.language].chooseTopic }}
-              </h3>
-            </div>
+          <div class="px-6 pb-6 border-t border-slate-100 dark:border-slate-700 pt-4">
+            <h3 class="text-lg font-black text-slate-600 dark:text-slate-300 text-center mb-4">
+              {{ dictionary[langStore.language].chooseTopic }}
+            </h3>
 
-            <div class="flex justify-center px-4 pt-6">
+            <!-- Search bar -->
+            <div class="flex justify-center mb-6">
               <div class="relative w-full max-w-lg">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-xl">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400 dark:text-slate-500">
                   <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
                 <input
                   v-model="searchQuery"
                   type="text"
                   :placeholder="dictionary[langStore.language].searchPlaceholderText"
-                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200
-                        shadow-sm focus:outline-none focus:ring-4 focus:ring-primary
-                        focus:border-transparent transition duration-200 ease-in-out
-                        text-gray-700 placeholder-gray-400"
-                >
+                  class="w-full pl-11 pr-4 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
+                         bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                         placeholder-slate-400 dark:placeholder-slate-500
+                         focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 transition font-semibold"
+                />
               </div>
             </div>
 
-            <div class="flex justify-center py-10">
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-20 gap-y-10">
-                <TopicCard
-                  v-for="(topic, index) in filteredTopics"
-                  :key="index"
-                  :topic="topic.name"
-                  :id="Number(topic.id)"
-                />
-              </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <TopicCard
+                v-for="(topic, index) in filteredTopics"
+                :key="index"
+                :topic="topic.name"
+                :id="Number(topic.id)"
+              />
             </div>
           </div>
         </details>
       </div>
     </div>
-
   </div>
 </template>

@@ -44,36 +44,36 @@ onBeforeUnmount(() => {
             @click="isMobile ? toggleShowTips() : null" 
             @mouseenter="!isMobile ? showTips = true : null" 
             @mouseleave="!isMobile ? showTips = false : null"
-            class="text-3xl font-bold text-gray-700 bg-gray-200 w-12 h-12 
-            flex items-center justify-center rounded-full border-4 border-gray-500
-            transition ease-in-out hover:bg-gray-300 hover:border-gray-700 hover:scale-105 shadow-md relative md:z-50">
+            class="text-3xl font-black text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 w-12 h-12
+            flex items-center justify-center rounded-full border-[3px] border-slate-300 dark:border-slate-500 border-b-[5px] border-b-slate-400 dark:border-b-slate-600
+            transition-all hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] shadow-md relative md:z-50">
             ?
         </button>
 
-        <div v-if="showTips" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-            w-11/12 md:w-1/2 bg-white border border-gray-300 shadow-2xl rounded-xl p-6 text-lg 
-            text-gray-800  transition-all duration-300 ease-in-out">
+        <div v-if="showTips" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
+            w-11/12 md:w-1/2 bg-white dark:bg-slate-800 border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] border-b-slate-300 dark:border-b-slate-600
+            shadow-2xl rounded-3xl p-6 text-lg text-slate-800 dark:text-slate-100 transition-all duration-300 ease-in-out z-50">
 
-            <h3 class="text-xl font-bold text-center mb-4 text-primary">Tipy pro zadávání hlasem</h3>
+            <h3 class="text-xl font-black text-center mb-4 text-violet-600 dark:text-violet-400">Tipy pro zadávání hlasem</h3>
 
             <!-- Close button for mobiles which cant use hover -->
-            <button v-if="isMobile" @click="showTips = false" class="absolute top-4 right-4 text-4xl text-gray-500 hover:text-gray-700">
+            <button v-if="isMobile" @click="showTips = false" class="absolute top-4 right-4 text-4xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <i class="fas fa-times"></i>
             </button>
 
             <!-- Tips -->
             <ul class="list-disc pl-6 space-y-8">
 
-                <li class="flex flex-col space-y-2 pb-2 border-b border-gray-300 text-[15px] md:text-lg">
+                <li class="flex flex-col space-y-2 pb-2 border-b border-slate-200 dark:border-slate-700 text-[15px] md:text-lg">
                     <span class="flex items-center font-semibold">
                         Pro zadávání hlasem stiskni
-                        <div class="w-8 h-8 rounded-full bg-green-500 flex justify-center items-center ml-2 shadow-md">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500 flex justify-center items-center ml-2 shadow-md">
                             <i class="fas fa-microphone text-white"></i>
                         </div>
                     </span>
                 </li>
 
-                <li class="flex flex-col space-y-2 pb-2 border-b border-gray-300 text-[15px] md:text-lg">
+                <li class="flex flex-col space-y-2 pb-2 border-b border-slate-200 dark:border-slate-700 text-[15px] md:text-lg">
                     <span class="flex items-center font-semibold">
                         Pro ukončení zadávání hlasem stiskni
                         <div class="w-8 h-8 rounded-full bg-red-500 flex justify-center items-center ml-2 shadow-md">

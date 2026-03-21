@@ -3,7 +3,6 @@
  Component: Login.vue
  Description:
         Displays user login form.
- Author: Dominik Horut (xhorut01)
 ================================================================================
 -->
 
@@ -18,7 +17,6 @@ const username = ref('');
 const passphrasePart1 = ref('');
 const passphrasePart2 = ref('');
 const passphrasePart3 = ref('');
-
 const usernameError = ref('');
 const passphraseError = ref('');
 
@@ -26,105 +24,110 @@ const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
 
-// Handle login form submission
 const handleLogin = async () => {
-    // Reset errors
-    usernameError.value = '';
-    passphraseError.value = '';
-    authStore.errorMessage = '';
+  usernameError.value = '';
+  passphraseError.value = '';
+  authStore.errorMessage = '';
 
-    // Passphrase assembly
-    const passphrase = `${passphrasePart1.value}-${passphrasePart2.value}-${passphrasePart3.value}`;
+  const passphrase = `${passphrasePart1.value}-${passphrasePart2.value}-${passphrasePart3.value}`;
 
-    // Validation
-    if (username.value.trim() === '') {
-      usernameError.value = dictionary[langStore.language].usernameError;
-    }
+  if (username.value.trim() === '') usernameError.value = dictionary[langStore.language].usernameError;
+  if (!passphrasePart1.value.trim() || !passphrasePart2.value.trim() || !passphrasePart3.value.trim()) {
+    passphraseError.value = dictionary[langStore.language].passphraseError;
+  }
+  if (usernameError.value || passphraseError.value) return;
 
-    if (
-      passphrasePart1.value.trim() === '' ||
-      passphrasePart2.value.trim() === '' ||
-      passphrasePart3.value.trim() === ''
-    ) {
-      passphraseError.value = dictionary[langStore.language].passphraseError;
-    }
-
-    if (usernameError.value || passphraseError.value) {
-      return;
-    }
-
-    // Handle login with auth store
-    await authStore.login(username.value, passphrase, router, true, false);
+  await authStore.login(username.value, passphrase, router, true, false);
 };
 </script>
 
 <template>
-  <div class="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg mt-12 mb-4 ">
+  <div class="max-w-lg mx-auto px-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+                border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-8 shadow-sm">
 
-    <h2 class="text-4xl font-bold text-primary mb-16 text-center">{{ dictionary[langStore.language].login }}</h2>
-    <!-- Login form -->
-    <form @submit.prevent="handleLogin">
+      <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-8 text-center">
+        {{ dictionary[langStore.language].login }}
+      </h2>
 
-      <!-- Username field -->
-      <div class="mb-4">
-        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">{{ dictionary[langStore.language].nickname }}</label>
-        <input 
-          type="text" 
-          id="username" 
-          v-model="username" 
-          :placeholder="dictionary[langStore.language].nicknamePlaceholder" 
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
-        />
-        <span class="text-red-600 ml-1">{{ usernameError ? usernameError : '' }}</span>
-      </div>
+      <form @submit.prevent="handleLogin" class="space-y-5">
 
-      <!-- Passphrase field (split into 3 inputs) -->
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">{{ dictionary[langStore.language].accessCode }}</label>
-        <div class="flex justify-between space-x-2">
-
-          <!-- Part 1 -->
-          <input 
-            type="text" 
-            v-model="passphrasePart1" 
-            maxlength="20"
-            :placeholder="dictionary[langStore.language].part1" 
-            class="w-1/3 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center" 
+        <!-- Username -->
+        <div>
+          <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+            {{ dictionary[langStore.language].nickname }}
+          </label>
+          <input
+            type="text"
+            v-model="username"
+            :placeholder="dictionary[langStore.language].nicknamePlaceholder"
+            class="w-full px-4 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
+                   bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                   placeholder-slate-400 dark:placeholder-slate-500
+                   focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 transition font-semibold"
           />
-
-          <span class="self-center text-gray-500">-</span>
-
-          <!-- Part 2 -->
-          <input 
-            type="text" 
-            v-model="passphrasePart2" 
-            maxlength="20"
-            :placeholder="dictionary[langStore.language].part2" 
-            class="w-1/3 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center" 
-          />
-
-          <span class="self-center text-gray-500">-</span>
-
-          <!-- Part 3 -->
-          <input 
-            type="text" 
-            v-model="passphrasePart3" 
-            maxlength="20"
-            :placeholder="dictionary[langStore.language].part3"  
-            class="w-1/3 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center" 
-          />
+          <p v-if="usernameError" class="text-red-500 text-sm mt-1.5 font-semibold">{{ usernameError }}</p>
         </div>
-        <span class="text-red-600 ml-1">{{ passphraseError ? passphraseError : '' }}</span>
-      </div>
 
-      <!-- Error from auth store -->
-      <p v-if="authStore.errorMessage" class="bg-red-600 text-white w-full rounded-md font-medium text-lg text-center my-4">{{ authStore.errorMessage }}</p>
+        <!-- Passphrase (3 parts) -->
+        <div>
+          <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+            {{ dictionary[langStore.language].accessCode }}
+          </label>
+          <div class="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-1.5">
+            <input
+              type="text"
+              v-model="passphrasePart1"
+              maxlength="20"
+              :placeholder="dictionary[langStore.language].part1"
+              class="min-w-0 w-full px-2 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
+                     bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                     placeholder-slate-400 dark:placeholder-slate-500 text-sm
+                     focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 transition text-center font-semibold"
+            />
+            <span class="font-black text-slate-400 dark:text-slate-500 text-lg px-0.5">-</span>
+            <input
+              type="text"
+              v-model="passphrasePart2"
+              maxlength="20"
+              :placeholder="dictionary[langStore.language].part2"
+              class="min-w-0 w-full px-2 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
+                     bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                     placeholder-slate-400 dark:placeholder-slate-500 text-sm
+                     focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 transition text-center font-semibold"
+            />
+            <span class="font-black text-slate-400 dark:text-slate-500 text-lg px-0.5">-</span>
+            <input
+              type="text"
+              v-model="passphrasePart3"
+              maxlength="20"
+              :placeholder="dictionary[langStore.language].part3"
+              class="min-w-0 w-full px-2 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
+                     bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                     placeholder-slate-400 dark:placeholder-slate-500 text-sm
+                     focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 transition text-center font-semibold"
+            />
+          </div>
+          <p v-if="passphraseError" class="text-red-500 text-sm mt-1.5 font-semibold">{{ passphraseError }}</p>
+        </div>
 
-      <!-- Submit Button -->
-      <button type="submit" 
-              class="w-full py-2 bg-secondary text-white font-semibold rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        {{dictionary[langStore.language].login}}
-      </button>
-    </form>
+        <!-- Auth error -->
+        <p v-if="authStore.errorMessage"
+           class="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-700 text-red-600 dark:text-red-400
+                  rounded-2xl px-4 py-3 font-semibold text-center">
+          {{ authStore.errorMessage }}
+        </p>
+
+        <!-- Submit -->
+        <button
+          type="submit"
+          class="w-full py-4 rounded-2xl font-black text-lg text-white
+                 bg-violet-500 border-[3px] border-violet-600 border-b-[8px] border-b-violet-700
+                 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
+        >
+          {{ dictionary[langStore.language].login }}
+        </button>
+      </form>
+    </div>
   </div>
 </template>

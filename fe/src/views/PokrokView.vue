@@ -1,213 +1,266 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
+  <div class="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-8">
 
-    <div v-if="!authStore.isAuthenticated || authStore.role === 'admin'" class="text-gray-500 text-center py-12">
+    <!-- Not logged in -->
+    <div v-if="!authStore.isAuthenticated || authStore.role === 'admin'"
+         class="text-center py-16 text-slate-400">
       <i class="fa-solid fa-user-lock text-4xl mb-4"></i>
       <p>Prihlás sa ako študent, aby si videl svoj pokrok.</p>
     </div>
 
-    <div v-else>
-      <!-- Gamification banner -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <!-- Level & XP bar -->
-        <div class="col-span-2 bg-gradient-to-br from-violet-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg">
-          <div class="flex justify-between items-center mb-1">
-            <span class="font-bold text-lg">⭐ Level {{ gamStore.level }}</span>
-            <span class="text-sm text-violet-200">{{ gamStore.xp }} XP</span>
+    <div v-else class="max-w-2xl mx-auto space-y-5">
+
+      <!-- ── Level / XP card ── -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
+        <div class="mb-6">
+          <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight mb-1">Tvoj pokrok 📈</h2>
+          <p class="text-slate-500 font-medium">Pozri sa, ako sa ti darí a čo si už dosiahol!</p>
+        </div>
+
+        <div class="bg-violet-50 dark:bg-violet-900/30 rounded-3xl p-5 border-[3px] border-violet-200 dark:border-violet-800 border-b-[6px]">
+          <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-violet-500 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-sm">
+                {{ gamStore.level }}
+              </div>
+              <span class="font-black text-violet-900 dark:text-violet-200 text-lg uppercase tracking-wider">Level {{ gamStore.level }}</span>
+            </div>
+            <span class="font-black text-violet-700 dark:text-violet-300 bg-white dark:bg-slate-700 px-3 py-1 rounded-xl shadow-sm text-sm">
+              {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP
+            </span>
           </div>
-          <div class="w-full bg-violet-800/40 rounded-full h-3 overflow-hidden">
+          <div class="h-6 bg-white dark:bg-slate-700 rounded-full overflow-hidden border-2 border-violet-100 dark:border-violet-800 shadow-inner">
             <div
-              class="h-3 rounded-full bg-yellow-400 transition-all duration-700"
+              class="h-full bg-violet-500 rounded-full relative transition-all duration-700"
               :style="{ width: gamStore.levelPercent() + '%' }">
+              <div class="absolute top-1 left-2 right-2 h-2 bg-white/20 rounded-full"></div>
             </div>
           </div>
-          <div class="text-xs text-violet-200 mt-1">
-            {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP do ďalšieho levelu
-          </div>
-        </div>
-
-        <!-- Streak -->
-        <div class="bg-gradient-to-br from-orange-400 to-red-500 text-white p-5 rounded-2xl shadow-lg flex flex-col justify-center">
-          <div class="text-4xl">🔥</div>
-          <div class="text-3xl font-black mt-1">{{ gamStore.streak }}</div>
-          <div class="text-sm text-orange-100">dní za sebou</div>
-        </div>
-
-        <!-- Rank -->
-        <div class="bg-gradient-to-br from-amber-400 to-yellow-500 text-white p-5 rounded-2xl shadow-lg flex flex-col justify-center">
-          <div class="text-4xl">🏅</div>
-          <div class="text-3xl font-black mt-1">
-            <span v-if="gamStore.rank">#{{ gamStore.rank }}</span>
-            <span v-else>–</span>
-          </div>
-          <div class="text-sm text-yellow-100">na rebríčku</div>
         </div>
       </div>
 
-      <div v-if="loadingCombinations && combinations.length === 0" class="text-gray-500 text-center py-12">
-        <i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
-        <p>Načítavam tvoj pokrok...</p>
+      <!-- Loading -->
+      <div v-if="loadingCombinations && combinations.length === 0" class="text-center py-16 text-slate-400">
+        <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
       </div>
 
-      <div v-else-if="errorCombinations" class="text-red-600 bg-red-50 p-4 rounded border border-red-200 mb-6">
-        <i class="fa-solid fa-exclamation-triangle mr-2"></i>Chyba: {{ errorCombinations }}
+      <div v-else-if="errorCombinations"
+           class="bg-red-50 text-red-600 p-4 rounded-2xl border-2 border-red-200 font-semibold">
+        {{ errorCombinations }}
       </div>
 
-      <div v-else>
-        <!-- No data yet -->
-        <div v-if="combinations.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 mb-6">
-          <i class="fa-solid fa-book-open text-6xl text-gray-400 mb-4"></i>
-          <h3 class="text-xl font-semibold text-gray-700 mb-2">Začni svoju cestu učenia!</h3>
-          <p class="text-gray-600 mb-6">Zatiaľ si neriešil žiadne príklady. Vyber si tému a začni cvičiť!</p>
-          <router-link to="/" class="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold">
+      <template v-else>
+        <!-- ── No data ── -->
+        <div v-if="combinations.length === 0"
+             class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-8 text-center">
+          <p class="text-2xl font-black text-slate-800 mb-2">Začni svoju cestu! 🚀</p>
+          <p class="text-slate-500 font-medium mb-6">Zatiaľ si neriešil žiadne príklady. Vyber si tému a začni cvičiť!</p>
+          <router-link to="/"
+            class="inline-block px-8 py-4 bg-violet-500 text-white rounded-2xl font-black text-lg
+                   border-b-[6px] border-violet-700 hover:-translate-y-0.5 transition-transform">
             Vybrať témy
           </router-link>
         </div>
 
-        <div v-else>
-          <!-- Overall Stats Cards -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
-              <p class="text-blue-100 text-sm font-medium">Cvičených príkladov</p>
-              <p class="text-3xl font-bold mt-2">{{ totalExamples }}</p>
+        <template v-else>
+          <!-- ── Stats grid ── -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-violet-50 dark:bg-violet-900/30 rounded-3xl border-[3px] border-violet-200 dark:border-violet-800 border-b-[6px] p-5 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+              <div class="inline-flex bg-violet-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-violet-700">
+                🎯
+              </div>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Cvičených</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ totalExamples }}</p>
             </div>
-            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
-              <p class="text-green-100 text-sm font-medium">Správne vyriešené</p>
-              <p class="text-3xl font-bold mt-2">{{ totalSolved }}</p>
+            <div class="bg-emerald-50 dark:bg-emerald-900/30 rounded-3xl border-[3px] border-emerald-200 dark:border-emerald-800 border-b-[6px] p-5 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+              <div class="inline-flex bg-emerald-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-emerald-700">
+                ✅
+              </div>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Správne</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ totalSolved }}</p>
             </div>
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
-              <p class="text-purple-100 text-sm font-medium">Celková presnosť</p>
-              <p class="text-3xl font-bold mt-2">{{ (overallAccuracy * 100).toFixed(0) }}%</p>
+            <div class="bg-sky-50 dark:bg-sky-900/30 rounded-3xl border-[3px] border-sky-200 dark:border-sky-800 border-b-[6px] p-5 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+              <div class="inline-flex bg-sky-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-sky-700">
+                ⚡
+              </div>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Presnosť</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ (overallAccuracy * 100).toFixed(0) }}%</p>
             </div>
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-lg shadow-lg">
-              <p class="text-orange-100 text-sm font-medium">Priem. zvládnutie</p>
-              <p class="text-3xl font-bold mt-2">{{ (overallMastery * 100).toFixed(0) }}%</p>
+            <div class="bg-amber-50 dark:bg-amber-900/30 rounded-3xl border-[3px] border-amber-200 dark:border-amber-800 border-b-[6px] p-5 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+              <div class="inline-flex bg-amber-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-amber-700">
+                🧠
+              </div>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Zvládnutie</p>
+              <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ (overallMastery * 100).toFixed(0) }}%</p>
             </div>
           </div>
 
-          <!-- Recommended Skills -->
-          <div v-if="recommendedSkills.length > 0" class="mb-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
-            <div class="flex items-center gap-3 mb-4">
-              <i class="fa-solid fa-lightbulb text-3xl text-yellow-600"></i>
-              <div>
-                <h2 class="text-2xl font-bold text-yellow-900">Odporúčame na precvičenie</h2>
-                <p class="text-yellow-700 text-sm">Tieto témy by si mal precvičiť – sú slabšie alebo si ich dlho necvičil</p>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- ── Recommended skills ── -->
+          <div v-if="recommendedSkills.length > 0"
+               class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
+            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6">Odporúčame precvičiť 🎯</h3>
+            <div class="space-y-4">
               <div
-                v-for="(skill, idx) in recommendedSkills"
+                v-for="skill in recommendedSkills"
                 :key="skill.skill_id"
-                class="bg-white border-2 border-yellow-400 rounded-lg p-4 hover:shadow-lg transition-shadow">
-                <div class="flex justify-between items-start mb-3">
-                  <h3 class="font-bold text-lg text-gray-800">{{ skill.combination_display }}</h3>
-                  <span class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold">#{{ idx + 1 }}</span>
+                class="bg-orange-50 dark:bg-orange-900/20 border-[3px] border-orange-200 dark:border-orange-800 border-b-[6px] rounded-3xl p-5 hover:-translate-y-1 transition-transform">
+                <div class="flex flex-col sm:flex-row items-start gap-4">
+                  <div class="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center flex-shrink-0
+                              shadow-sm border-b-4 border-orange-700 text-2xl">
+                    📖
+                  </div>
+                  <div class="flex-1">
+                    <h4 class="font-black text-xl text-slate-800 dark:text-slate-100 mb-1">{{ skill.combination_display }}</h4>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">
+                      Zvládnutie:
+                      <span class="font-black px-2 py-0.5 rounded-lg"
+                            :class="valueColor(skill.mastery_mean) + ' bg-orange-100 dark:bg-orange-900/40'">
+                        {{ (skill.mastery_mean * 100).toFixed(0) }}%
+                      </span>
+                      · {{ formatDate(skill.last_practiced) }}
+                    </p>
+                    <button
+                      @click="startPractice(skill.skill_ids)"
+                      class="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white
+                             px-6 py-3 rounded-2xl font-black text-base border-b-[4px] border-orange-700
+                             active:border-b-0 active:translate-y-1 transition-all">
+                      POĎ CVIČIŤ
+                    </button>
+                  </div>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Zvládnutie:</span>
-                    <span :class="valueColor(skill.mastery_mean)" class="font-semibold">{{ (skill.mastery_mean * 100).toFixed(0) }}%</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Presnosť:</span>
-                    <span :class="valueColor(skill.accuracy)" class="font-semibold">{{ (skill.accuracy * 100).toFixed(0) }}%</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-600">Naposledy:</span>
-                    <span class="text-gray-800 font-medium">{{ formatDate(skill.last_practiced) }}</span>
-                  </div>
-                </div>
-                <button
-                  @click="startPractice(skill.skill_ids)"
-                  class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded transition-colors">
-                  <i class="fa-solid fa-play mr-2"></i>Začať cvičiť
-                </button>
               </div>
             </div>
           </div>
 
-          <!-- Skills Progress Bars -->
-          <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">
-              <i class="fa-solid fa-chart-line mr-2 text-blue-500"></i>Tvoje zručnosti
-            </h2>
+          <!-- ── Skills overview ── -->
+          <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
+            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6">Tvoje zručnosti 🧠</h3>
             <div class="space-y-4">
               <div
                 v-for="skill in sortedCombinations"
                 :key="skill.skill_id"
-                class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all">
+                class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-600">
                 <div class="flex justify-between items-center mb-3">
-                  <h3 class="font-bold text-lg text-gray-800">{{ skill.skill_name }}</h3>
-                  <div class="flex items-center gap-4 text-sm">
-                    <span class="text-gray-600"><i class="fa-solid fa-list-check mr-1"></i>{{ skill.examples_practiced }} príkladov</span>
-                    <span class="text-green-600 font-semibold"><i class="fa-solid fa-check mr-1"></i>{{ skill.solved_count }} správne</span>
+                  <span class="font-black text-lg text-slate-700 dark:text-slate-200 truncate pr-2">{{ skill.skill_name }}</span>
+                  <div class="flex items-center gap-3 flex-shrink-0">
+                    <span class="text-sm font-bold text-slate-400 hidden sm:block">
+                      {{ skill.examples_practiced }} príkl. · {{ skill.solved_count }} správne
+                    </span>
+                    <span class="font-black text-xl text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-600 px-3 py-1 rounded-xl shadow-sm">
+                      {{ (skill.mastery_mean * 100).toFixed(0) }}%
+                    </span>
                   </div>
                 </div>
-                <div class="mb-3">
-                  <div class="flex justify-between text-sm mb-1">
-                    <span class="text-gray-600 font-medium">Zvládnutie</span>
-                    <span :class="valueColor(skill.mastery_mean)" class="font-bold">{{ (skill.mastery_mean * 100).toFixed(1) }}%</span>
+                <!-- Mastery bar -->
+                <div class="mb-2">
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span class="font-bold">Zvládnutie</span>
+                    <span class="font-black" :class="valueColor(skill.mastery_mean)">{{ (skill.mastery_mean * 100).toFixed(0) }}%</span>
                   </div>
-                  <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div class="h-3 rounded-full transition-all duration-500" :class="valueBarColor(skill.mastery_mean)" :style="{ width: (skill.mastery_mean * 100) + '%' }"></div>
-                  </div>
-                </div>
-                <div class="mb-3">
-                  <div class="flex justify-between text-sm mb-1">
-                    <span class="text-gray-600 font-medium">Presnosť</span>
-                    <span :class="valueColor(skill.accuracy)" class="font-bold">{{ (skill.accuracy * 100).toFixed(1) }}%</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div class="h-3 rounded-full transition-all duration-500" :class="valueBarColor(skill.accuracy)" :style="{ width: (skill.accuracy * 100) + '%' }"></div>
+                  <div class="h-5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden shadow-inner">
+                    <div class="h-full rounded-full relative transition-all duration-500"
+                         :class="barColor(skill.mastery_mean)"
+                         :style="{ width: (skill.mastery_mean * 100) + '%' }">
+                      <div class="absolute top-1 left-2 right-2 h-1.5 bg-white/20 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
-                <div class="flex justify-between items-center text-sm text-gray-600">
-                  <span><i class="fa-solid fa-clock mr-1"></i>Priem. čas: {{ (skill.avg_duration_ms / 1000).toFixed(1) }}s</span>
-                  <span><i class="fa-solid fa-calendar mr-1"></i>{{ formatDate(skill.last_practiced) }}</span>
+                <!-- Accuracy bar -->
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span class="font-bold">Presnosť</span>
+                    <span class="font-black" :class="valueColor(skill.accuracy)">{{ (skill.accuracy * 100).toFixed(0) }}%</span>
+                  </div>
+                  <div class="h-5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden shadow-inner">
+                    <div class="h-full rounded-full relative transition-all duration-500"
+                         :class="barColor(skill.accuracy)"
+                         :style="{ width: (skill.accuracy * 100) + '%' }">
+                      <div class="absolute top-1 left-2 right-2 h-1.5 bg-white/20 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 mt-2">
+                  <span>Priem. čas: {{ (skill.avg_duration_ms / 1000).toFixed(1) }}s</span>
+                  <span>{{ formatDate(skill.last_practiced) }}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Detail table (collapsible) -->
-          <div class="bg-white rounded-lg shadow p-4">
+          <!-- ── Streak cards ── -->
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="bg-orange-500 rounded-3xl p-6 text-white border-b-[8px] border-orange-700 hover:-translate-y-1 transition-transform">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center border-2 border-white/20 text-3xl">
+                  🔥
+                </div>
+                <div>
+                  <p class="text-sm font-black text-orange-200 uppercase tracking-wider">Aktuálna séria</p>
+                  <p class="text-4xl font-black">{{ gamStore.streak }} <span class="text-2xl">deň</span></p>
+                </div>
+              </div>
+              <p class="text-sm font-bold text-orange-100 bg-black/10 p-3 rounded-xl">
+                Pokračuj každý deň a udržuj si sériu! 🔥
+              </p>
+            </div>
+
+            <div class="bg-amber-400 rounded-3xl p-6 text-white border-b-[8px] border-amber-600 hover:-translate-y-1 transition-transform">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center border-2 border-white/20 text-3xl">
+                  🏆
+                </div>
+                <div>
+                  <p class="text-sm font-black text-amber-100 uppercase tracking-wider">Najlepšia séria</p>
+                  <p class="text-4xl font-black">{{ gamStore.longestStreak ?? gamStore.streak }} <span class="text-2xl">deň</span></p>
+                </div>
+              </div>
+              <p class="text-sm font-bold text-amber-100 bg-black/10 p-3 rounded-xl">
+                Skús prekonať svoj vlastný rekord! ⭐
+              </p>
+            </div>
+          </div>
+
+          <!-- ── Detail table (collapsible) ── -->
+          <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8 mb-4">
             <button
               @click="showTable = !showTable"
-              class="flex items-center gap-2 text-lg font-semibold text-gray-700 w-full text-left">
-              <i class="fa-solid fa-table mr-1 text-gray-400"></i>
-              Detailný prehľad
-              <i class="fa-solid ml-auto text-gray-400" :class="showTable ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              class="flex items-center justify-between w-full font-black text-slate-700 text-lg">
+              <span>📊 Detailný prehľad</span>
+              <i class="fa-solid text-slate-400" :class="showTable ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             </button>
-            <div v-if="showTable" class="mt-4 overflow-x-auto">
-              <div v-if="loadingStats" class="text-gray-400 text-sm py-4 text-center">Načítavam...</div>
-              <table v-else class="min-w-full border text-sm">
+            <div v-if="showTable" class="mt-5 overflow-x-auto">
+              <div v-if="loadingStats" class="text-slate-400 text-sm py-4 text-center">Načítavam...</div>
+              <table v-else class="min-w-full text-sm">
                 <thead>
-                  <tr class="bg-gray-100">
-                    <th class="p-2 border text-left">Zručnosť</th>
-                    <th class="p-2 border">Príklady</th>
-                    <th class="p-2 border">Správne</th>
-                    <th class="p-2 border">Presnosť</th>
-                    <th class="p-2 border">Mastery</th>
-                    <th class="p-2 border">Priem. čas (s)</th>
-                    <th class="p-2 border">Posledné cvičenie</th>
+                  <tr class="border-b-2 border-slate-100">
+                    <th class="p-2 text-left text-slate-400 font-black text-xs uppercase tracking-wider">Zručnosť</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Príkl.</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Správne</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Presnosť</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Zvládnutie</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Čas (s)</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Posledné</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in skillStats" :key="row.skill_id" class="hover:bg-gray-50">
-                    <td class="border p-2">{{ row.skill_name }}</td>
-                    <td class="border p-2 text-center">{{ row.examples_practiced }}</td>
-                    <td class="border p-2 text-center">{{ row.solved_count }}</td>
-                    <td class="border p-2 text-center"><span :class="valueColor(row.accuracy)">{{ (row.accuracy * 100).toFixed(1) }}%</span></td>
-                    <td class="border p-2 text-center"><span :class="valueColor(row.mastery_mean)">{{ (row.mastery_mean * 100).toFixed(1) }}%</span></td>
-                    <td class="border p-2 text-center">{{ (row.avg_duration_ms / 1000).toFixed(1) }}</td>
-                    <td class="border p-2 text-center">{{ formatDate(row.last_practiced) }}</td>
+                  <tr v-for="row in skillStats" :key="row.skill_id"
+                      class="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td class="p-2 text-slate-700 dark:text-slate-200 font-bold">{{ row.skill_name }}</td>
+                    <td class="p-2 text-center text-slate-600">{{ row.examples_practiced }}</td>
+                    <td class="p-2 text-center text-slate-600">{{ row.solved_count }}</td>
+                    <td class="p-2 text-center font-bold" :class="valueColor(row.accuracy)">{{ (row.accuracy * 100).toFixed(1) }}%</td>
+                    <td class="p-2 text-center font-bold" :class="valueColor(row.mastery_mean)">{{ (row.mastery_mean * 100).toFixed(1) }}%</td>
+                    <td class="p-2 text-center text-slate-600">{{ (row.avg_duration_ms / 1000).toFixed(1) }}</td>
+                    <td class="p-2 text-center text-slate-400">{{ formatDate(row.last_practiced) }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
-      </div>
+
+        </template>
+      </template>
+
     </div>
   </div>
 </template>
@@ -269,26 +322,25 @@ function startPractice(skillIds) {
 }
 
 function valueColor(val) {
-  if (val >= 0.85) return 'text-green-700 font-semibold'
-  if (val >= 0.6) return 'text-yellow-700 font-semibold'
-  return 'text-red-700 font-semibold'
+  if (val >= 0.85) return 'text-emerald-600'
+  if (val >= 0.6)  return 'text-amber-600'
+  return 'text-red-500'
 }
-function valueBarColor(val) {
-  if (val >= 0.85) return 'bg-green-500'
-  if (val >= 0.6) return 'bg-yellow-500'
-  return 'bg-red-500'
+function barColor(val) {
+  if (val >= 0.85) return 'bg-emerald-500'
+  if (val >= 0.6)  return 'bg-amber-400'
+  return 'bg-red-400'
 }
 function formatDate(dt) {
   if (!dt) return 'Nikdy'
   const diffDays = Math.floor((new Date() - new Date(dt)) / 86400000)
   if (diffDays === 0) return 'Dnes'
   if (diffDays === 1) return 'Včera'
-  if (diffDays < 7) return `Pred ${diffDays} dňami`
+  if (diffDays < 7)  return `Pred ${diffDays} dňami`
   if (diffDays < 30) return `Pred ${Math.floor(diffDays / 7)} týždňami`
   return new Date(dt).toLocaleDateString('sk-SK')
 }
 
-// Load stats table lazily when user expands it
 watch(showTable, (opened) => {
   if (opened && skillStats.value.length === 0) fetchStats()
 })
@@ -302,7 +354,3 @@ onMounted(() => {
   if (authStore.id) gamStore.fetchStats(authStore.id)
 })
 </script>
-
-<style scoped>
-table { border-collapse: collapse; }
-</style>

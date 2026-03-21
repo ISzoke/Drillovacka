@@ -18,6 +18,7 @@ export const useGamificationStore = defineStore('gamification', () => {
   const lastXpAwarded = ref(0)
   const recentBadges = ref([])  // keys of badges just earned
   const xpBreakdown = ref(null) // { base, multiplier, voice_bonus, grade_comparison, example_grade, student_grade }
+  const leveledUp = ref(false)  // true when a level-up just happened
 
   async function fetchStats(studentId) {
     if (!studentId) return
@@ -48,12 +49,14 @@ export const useGamificationStore = defineStore('gamification', () => {
 
   function handleXPUpdate(data) {
     if (data.xp_awarded === undefined) return
+    const oldLevel = level.value
     xp.value = data.total_xp
     level.value = data.level
     streak.value = data.streak
     lastXpAwarded.value = data.xp_awarded
     recentBadges.value = data.new_badges || []
     xpBreakdown.value = data.xp_breakdown || null
+    if (data.level > oldLevel) leveledUp.value = true
 
     // Recalculate level thresholds
     const lvl = data.level
@@ -65,6 +68,7 @@ export const useGamificationStore = defineStore('gamification', () => {
     lastXpAwarded.value = 0
     recentBadges.value = []
     xpBreakdown.value = null
+    leveledUp.value = false
   }
 
   // Percentage progress within current level (0-100)
@@ -76,7 +80,7 @@ export const useGamificationStore = defineStore('gamification', () => {
 
   return {
     xp, level, streak, longestStreak, badges, rank, leaderboard,
-    solvedCount, levelXpStart, levelXpEnd, lastXpAwarded, recentBadges, xpBreakdown,
+    solvedCount, levelXpStart, levelXpEnd, lastXpAwarded, recentBadges, xpBreakdown, leveledUp,
     fetchStats, fetchLeaderboard, handleXPUpdate, clearTransient, levelPercent,
   }
 })

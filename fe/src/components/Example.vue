@@ -288,9 +288,10 @@ defineExpose({ getStep, displayAnswer, triggerShake });
 
         <Timer ref="timer" class="md:mb-4" />
 
-        <div @click="finish" class="text-center text-lg md:text-xl font-extrabold  mr-2 md:mr-0 text-white bg-red-600 
-         border-4 border-red-700 p-2 md:p-3 rounded-2xl cursor-pointer transition 
-         shadow-lg hover:bg-red-700 hover:border-red-700 hover:scale-105"
+        <div @click="finish" class="text-center text-lg md:text-xl font-black mr-2 md:mr-0 text-white
+         bg-red-500 border-[3px] border-red-600 border-b-[6px] border-b-red-700
+         p-2 md:p-3 rounded-2xl cursor-pointer transition-all
+         hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px]"
           :class="showAnswer ? 'pointer-events-none' : ''">
           {{ dictionary[langStore.language].quit.toUpperCase() }}
         </div>
@@ -307,12 +308,12 @@ defineExpose({ getStep, displayAnswer, triggerShake });
           props.example.input_type == 'FRAC' ? 'text-5xl' : 'text-4xl']">
 
           <!-- Latex example text or plain text for word problem -->
-          <div class="flex items-center justify-center" :class="isWordProblem ? 'w-2/3 ' : 'w-full'">
+          <div class="flex items-center justify-center" :class="isWordProblem ? 'w-full md:w-2/3' : 'w-full'">
             {{ isWordProblem ? example.example : renderedExample }}
           </div>
 
           <!-- Input components -->
-          <div class="flex flex-col md:flex-row mt-10 items-center justify-between md:ml-80">
+          <div class="flex flex-col md:flex-row mt-10 items-center justify-center gap-6 md:gap-10">
 
             <div class="flex justify-start items-center" :class="{ 'shake-wrong': shaking }">
 
@@ -346,8 +347,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
 
           <!-- Example hint -->
           <div v-if="step" class="mt-8">
-            <p class="text-4xl text-center text-gray-600">Nápověda: <span class="font-semibold text-black">{{ step
-                }}</span></p>
+            <p class="text-xl md:text-4xl text-center text-slate-500 dark:text-slate-400">Nápověda: <span class="font-semibold text-slate-800 dark:text-slate-100">{{ step }}</span></p>
           </div>
 
         </div>
@@ -363,9 +363,10 @@ defineExpose({ getStep, displayAnswer, triggerShake });
         <Tips class="invisible" />
 
         <!-- Button to send answer to be evaluated -->
-        <div @click="getAnswer" class=" text-center text-4xl font-extrabold text-white bg-green-500 
-             border-4 border-green-600 p-5 rounded-3xl cursor-pointer my-6 
-             transition ease-in-out hover:bg-green-600 hover:scale-105 shadow-lg"
+        <div @click="getAnswer" class="text-center text-2xl md:text-4xl font-black text-white
+             bg-emerald-500 border-[3px] border-emerald-600 border-b-[8px] border-b-emerald-700
+             px-6 py-4 md:p-5 rounded-3xl cursor-pointer my-6 transition-all
+             hover:-translate-y-1 active:translate-y-1 active:border-b-[3px]"
           :class="showAnswer ? 'pointer-events-none' : ''">
           {{ dictionary[langStore.language].done.toUpperCase() }}
         </div>
@@ -378,9 +379,10 @@ defineExpose({ getStep, displayAnswer, triggerShake });
       </div>
 
       <!-- Skip example button -->
-      <div @click="skip" class="text-center text-2xl font-extrabold text-gray-700 bg-gray-200 
-           border-4 border-gray-500 px-8 py-2 rounded-2xl cursor-pointer
-           transition ease-in-out hover:bg-gray-300 hover:border-gray-700 hover:scale-105 shadow-md"
+      <div @click="skip" class="text-center text-lg md:text-2xl font-black text-slate-600 dark:text-slate-300
+           bg-slate-100 dark:bg-slate-700 border-[3px] border-slate-300 dark:border-slate-500 border-b-[6px] border-b-slate-400 dark:border-b-slate-600
+           px-6 md:px-8 py-2 rounded-2xl cursor-pointer transition-all
+           hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px]"
         :class="showAnswer ? 'pointer-events-none' : ''">
         {{ dictionary[langStore.language].skip.toUpperCase() }}
       </div>
@@ -388,20 +390,20 @@ defineExpose({ getStep, displayAnswer, triggerShake });
       <div class="mt-4 w-full max-w-md px-4 flex flex-col items-center">
         <button
           @click="toggleReportForm"
-          class="w-full text-center text-lg font-bold text-amber-900 bg-amber-100 border-2 border-amber-300 px-5 py-2 rounded-2xl transition hover:bg-amber-200"
+          class="w-full text-center text-lg font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 px-5 py-2 rounded-2xl transition hover:bg-amber-100 dark:hover:bg-amber-900/40"
           :class="showAnswer ? 'pointer-events-none opacity-60' : ''"
         >
           {{ dictionary[langStore.language].reportExample }}
         </button>
 
-        <div v-if="showReportForm" class="mt-4 w-full bg-white border-2 border-amber-200 rounded-2xl shadow-md p-4 text-left">
+        <div v-if="showReportForm" class="mt-4 w-full bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-slate-700 rounded-2xl shadow-md p-4 text-left">
           <div class="mb-3">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
               {{ dictionary[langStore.language].reportReason }}
             </label>
             <select
               v-model="reportType"
-              class="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white"
+              class="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100"
               :disabled="reportSubmitting || reportSubmitted"
             >
               <option v-for="option in reportOptions" :key="option.value" :value="option.value">
@@ -411,13 +413,13 @@ defineExpose({ getStep, displayAnswer, triggerShake });
           </div>
 
           <div class="mb-3">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
               {{ dictionary[langStore.language].reportNote }}
             </label>
             <textarea
               v-model="reportNote"
               rows="3"
-              class="w-full border border-gray-300 rounded-xl px-3 py-2"
+              class="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               :placeholder="dictionary[langStore.language].reportPlaceholder"
               :disabled="reportSubmitting || reportSubmitted"
             />
@@ -448,7 +450,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
   </div>
 
   <!-- Correct answer -->
-  <Answer v-if="showAnswer" class="absolute top-96 md:top-auto right-auto z-50"
+  <Answer v-if="showAnswer" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
     :answer="props.example.answers[0].answer">
   </Answer>
 

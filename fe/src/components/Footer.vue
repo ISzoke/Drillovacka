@@ -3,23 +3,20 @@
  Component: Footer.vue
  Description:
         Displays footer of the application.
- Author: Dominik Horut (xhorut01)
 ================================================================================
 -->
 
 <script setup>
 import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
-
 const langStore = useLanguageStore();
 </script>
 
 <template>
-
-    <footer class="flex items-center justify-center bg-primary text-center py-4 h-24">
-        
-        <p class="text-white text-xl font-semibold"><i class="fa-regular fa-copyright"></i> 2025 {{ dictionary[langStore.language].logo }}</p>
-
-    </footer>
-
+  <footer class="flex items-center justify-center bg-primary dark:bg-slate-900 text-center py-4 h-20
+                 border-t border-white/10 dark:border-slate-700">
+    <p class="text-white/80 dark:text-slate-400 text-base font-semibold">
+      <i class="fa-regular fa-copyright"></i> 2025 {{ dictionary[langStore.language].logo }}
+    </p>
+  </footer>
 </template>

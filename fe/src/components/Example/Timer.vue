@@ -54,7 +54,7 @@ defineExpose({
 <template>
   
   <div class="p-4">
-    <p v-if="timeElapsed !== null" class="text-2xl md:text-3xl font-semibold text-center">
+    <p v-if="timeElapsed !== null" class="text-2xl md:text-3xl font-semibold text-center text-slate-700 dark:text-slate-200">
       {{formattedTime}}
     </p>
   </div>

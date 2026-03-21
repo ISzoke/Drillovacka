@@ -3,7 +3,6 @@
  Component: GradeTopicsView.vue
  Description:
       Displays skills available for a specific grade level.
- Author: Martin Eugen Minarčík (xminarm00)
 ================================================================================
 -->
 
@@ -14,6 +13,7 @@ import { getGradeLevels, getTasksByGrade } from '@/api/apiClient';
 import apiClient from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TopicCard from '@/components/MainMenu/TopicCard.vue';
+import ExampleRequestSheet from '@/components/ExampleRequestSheet.vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { dictionary } from '@/utils/dictionary';
 
@@ -25,56 +25,37 @@ const gradeInfo = ref(null);
 const skills = ref([]);
 const manualTasks = ref([]);
 const loading = ref(true);
+const requestSheetOpen = ref(false);
 
 const gradeItems = computed(() => {
-  const skillItems = (skills.value || []).map((skill) => ({
-    ...skill,
-    itemType: 'skill',
-  }));
-
-  const taskItems = (manualTasks.value || []).map((task) => ({
-    ...task,
-    itemType: 'task',
-  }));
-
+  const skillItems = (skills.value || []).map(skill => ({ ...skill, itemType: 'skill' }));
+  const taskItems  = (manualTasks.value || []).map(task => ({ ...task, itemType: 'task' }));
   return [...skillItems, ...taskItems].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
 onMounted(async () => {
   try {
-    // Get grade info from sessionStorage
     const storedGrade = sessionStorage.getItem('selectedGrade');
     if (storedGrade) {
       const parsedGrade = JSON.parse(storedGrade);
-      if (parsedGrade && parsedGrade.id != null) {
-        gradeInfo.value = parsedGrade;
-      }
+      if (parsedGrade && parsedGrade.id != null) gradeInfo.value = parsedGrade;
     }
 
     if (!gradeInfo.value) {
-      // Fallback: fetch from params
       const gradeId = Number(route.params.gradeId);
       const allGrades = await getGradeLevels();
-      const normalizedGrades = Array.isArray(allGrades)
-        ? allGrades.map((grade) => ({
-            id: Number(grade?.id ?? grade?.grade ?? grade),
-            grade: Number(grade?.grade ?? grade?.id ?? grade),
-          }))
+      const normalized = Array.isArray(allGrades)
+        ? allGrades.map(g => ({ id: Number(g?.id ?? g?.grade ?? g), grade: Number(g?.grade ?? g?.id ?? g) }))
         : [];
-      gradeInfo.value = normalizedGrades.find((grade) => grade.id === gradeId) || {
-        id: gradeId,
-        grade: gradeId,
-      };
+      gradeInfo.value = normalized.find(g => g.id === gradeId) || { id: gradeId, grade: gradeId };
     }
 
-    // Fetch skills for this grade
     const [skillsResponse, taskResponse] = await Promise.all([
       apiClient.get(`skills/by-grade/${gradeInfo.value.id}/`),
       getTasksByGrade(gradeInfo.value.id),
     ]);
     skills.value = skillsResponse.data;
     manualTasks.value = taskResponse;
-
   } catch (error) {
     console.error('Error fetching grade skills:', error);
   } finally {
@@ -82,79 +63,83 @@ onMounted(async () => {
   }
 });
 
-const goBack = () => {
-  router.push({ name: 'home' });
-};
+const goBack = () => router.push({ name: 'home' });
 
 const openTaskExamples = (task) => {
-  router.push({
-    name: 'examples',
-    query: {
-      task_id: String(task.id),
-      task_name: task.name,
-    },
-  });
+  router.push({ name: 'examples', query: { task_id: String(task.id), task_name: task.name } });
 };
 </script>
 
 <template>
-  <div class="flex flex-col items-center min-h-screen">
-    
+  <div class="min-h-screen">
     <Spinner v-if="loading" class="pt-48" />
 
-    <div v-else class="w-full max-w-6xl px-4">
-      
-      <!-- Header with back button -->
-      <div class="flex items-center justify-between pt-10 pb-6">
-        <button 
+    <div v-else class="max-w-5xl mx-auto px-4 pt-8 pb-16">
+
+      <!-- Header -->
+      <div class="flex items-center mb-8">
+        <button
           @click="goBack"
-          class="flex items-center gap-2 text-primary hover:text-secondary transition font-semibold"
+          class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400
+                 transition font-black text-sm bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-2xl
+                 border-2 border-slate-200 dark:border-slate-700 border-b-[4px] border-b-slate-300 dark:border-b-slate-600
+                 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[2px] flex-shrink-0"
         >
           <i class="fa-solid fa-arrow-left"></i>
           {{ dictionary[langStore.language].back }}
         </button>
 
-        <h1 class="text-4xl font-bold text-primary text-center flex-grow">
-          {{ gradeInfo?.grade }}. 
-          {{ dictionary[langStore.language].grade }}
+        <h1 class="flex-1 text-2xl md:text-4xl font-black text-slate-800 dark:text-slate-100 text-center">
+          {{ gradeInfo?.grade }}. {{ dictionary[langStore.language].grade }}
         </h1>
 
-        <div class="w-20"></div> <!-- Spacer for centering -->
+        <div class="w-16 md:w-20 flex-shrink-0"></div>
       </div>
 
       <!-- Grade content grid -->
-      <div v-if="gradeItems.length > 0" class="flex justify-center py-10">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-20 gap-y-10">
-          <template v-for="item in gradeItems" :key="`${item.itemType}-${item.id}`">
-            <TopicCard
-              v-if="item.itemType === 'skill'"
-              :topic="item.name"
-              :id="Number(item.id)"
-            />
-            <button
-              v-else
-              @click="openTaskExamples(item)"
-              class="text-left cursor-pointer border border-gray-300 rounded-lg shadow-lg bg-white p-5 transition transform hover:shadow-xl hover:bg-secondary hover:border-secondary group"
-            >
-              <div class="text-2xl font-bold text-primary transition duration-300 group-hover:text-white break-words">
-                {{ item.name }}
-              </div>
-              <div class="mt-3 text-sm text-slate-600 group-hover:text-slate-100">
-                {{ item.example_count }} príkladov
-              </div>
-            </button>
-          </template>
-        </div>
+      <div v-if="gradeItems.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <template v-for="item in gradeItems" :key="`${item.itemType}-${item.id}`">
+          <TopicCard
+            v-if="item.itemType === 'skill'"
+            :topic="item.name"
+            :id="Number(item.id)"
+          />
+          <button
+            v-else
+            @click="openTaskExamples(item)"
+            class="text-left cursor-pointer rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+                   border-b-[8px] border-b-slate-300 dark:border-b-slate-600
+                   bg-white dark:bg-slate-800 p-5
+                   hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm"
+          >
+            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ item.name }}</div>
+            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ item.example_count }} príkladov</div>
+          </button>
+        </template>
       </div>
 
-      <!-- No skills/tasks message -->
-      <div v-if="gradeItems.length === 0" class="text-center py-20">
-        <p class="text-xl text-gray-600">
+      <div v-else class="text-center py-20">
+        <p class="text-xl font-bold text-slate-400 dark:text-slate-500">
           {{ dictionary[langStore.language].noSkillsForGrade }}
         </p>
       </div>
 
-    </div>
+      <!-- "Want more examples?" text link -->
+      <div class="text-center mt-8">
+        <button
+          @click="requestSheetOpen = true"
+          class="text-sm font-semibold text-slate-400 dark:text-slate-500 hover:text-violet-500 transition underline underline-offset-2"
+        >
+          💡 Málo príkladov? Klikni sem.
+        </button>
+      </div>
 
+    </div>
   </div>
+
+  <ExampleRequestSheet
+    :open="requestSheetOpen"
+    :grade="gradeInfo?.grade ?? null"
+    @close="requestSheetOpen = false"
+  />
 </template>

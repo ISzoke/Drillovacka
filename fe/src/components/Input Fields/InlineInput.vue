@@ -60,7 +60,7 @@ watch(
 <template>
     <div class="flex items-center justify-center">
 
-        <input v-model="answer" class="text-start w-64 md:w-96 text-6xl md:text-8xl border-none self-end p-0"
+        <input v-model="answer" class="text-start w-64 md:w-96 text-6xl md:text-8xl border-none self-end p-0 bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none"
             ref="answerInput" @mouseover="handleMouseOver" placeholder="?" inputmode="numeric" />
     </div>
 </template>

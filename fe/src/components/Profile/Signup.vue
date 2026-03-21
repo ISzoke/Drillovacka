@@ -3,14 +3,13 @@
  Component: Signup.vue
  Description:
         Displays user signup form.
- Author: Dominik Horut (xhorut01)
 ================================================================================
 -->
 
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import generatePassphrase from '@/utils/passphraseGenerator';  
+import generatePassphrase from '@/utils/passphraseGenerator';
 import { registerStudent } from '@/api/apiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { dictionary } from '@/utils/dictionary';
@@ -19,174 +18,154 @@ import { useLanguageStore } from '@/stores/useLanguageStore';
 const username = ref('');
 const passphrase = ref('');
 const grade = ref(null);
-
 const usernameError = ref('');
 const passphraseError = ref('');
 const showPassphrase = ref(false);
 const errorMessage = ref('');
-
 const copied = ref(false);
 
 const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
 
-// Handle signup form submission 
 const handleSubmit = async () => {
-
-  // Reset errors
   usernameError.value = '';
   passphraseError.value = '';
   errorMessage.value = '';
 
-  // Validation 
-  if(username.value.trim() === '' || passphrase.value.trim() === ''){
+  if (username.value.trim() === '') usernameError.value = dictionary[langStore.language].usernameForgot;
+  if (passphrase.value.trim() === '') passphraseError.value = dictionary[langStore.language].passphraseForgot;
+  if (usernameError.value || passphraseError.value) return;
 
-    if (username.value.trim() === '') {
-      usernameError.value = dictionary[langStore.language].usernameForgot;
-    }
-
-    if (passphrase.value.trim() === '') {
-      passphraseError.value = dictionary[langStore.language].passphraseForgot;
-    }
-    return;
-  } 
-
-  // Signup
   const result = await registerStudent(username.value, passphrase.value, grade.value);
-  
-  // Successful signup -> login user with auth store
-  if (result.status === 201) {  
+  if (result.status === 201) {
     await authStore.login(username.value, passphrase.value, router, false, false);
-
   } else {
     usernameError.value = result.error;
   }
 };
 
-// Generate passphrase
 const getPassphrase = () => {
   try {
     passphrase.value = generatePassphrase(langStore.language);
     showPassphrase.value = true;
-    copied.value = false; 
-    
+    copied.value = false;
   } catch (error) {
-    console.error("Passphrase generation error:", error); 
+    console.error("Passphrase generation error:", error);
   }
 };
 
-// Copy passphrase to clipboard
 const copyToClipboard = () => {
-
   navigator.clipboard.writeText(passphrase.value)
-    .then(() => {
-      copied.value = true;
-      setTimeout(() => {
-        copied.value = false;
-      }, 1500); 
-    })
-    .catch(err => {
-      console.error('Failed to copy:', err);
-    });
+    .then(() => { copied.value = true; setTimeout(() => { copied.value = false; }, 1500); })
+    .catch(err => console.error('Failed to copy:', err));
 };
 </script>
 
-
 <template>
-  <div class="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg mt-12 mb-4">
+  <div class="max-w-lg mx-auto px-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+                border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-8 shadow-sm">
 
-    <h2 class="text-4xl font-bold text-primary mb-16 text-center">{{dictionary[langStore.language].register}}</h2>
+      <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-8 text-center">
+        {{ dictionary[langStore.language].register }}
+      </h2>
 
-    <!-- Signup form -->
-    <form @submit.prevent="handleSubmit">
+      <form @submit.prevent="handleSubmit" class="space-y-5">
 
-      <!-- Username field -->
-      <div class="mb-4">
-        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">{{dictionary[langStore.language].nickname}}</label>
-        <input 
-          type="text" 
-          id="username" 
-          v-model="username" 
-          :placeholder="dictionary[langStore.language].nicknamePlaceholder" 
-          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
-        />
-        <span class="text-red-600 ml-1">{{ usernameError }}</span>
-      </div>
-
-      <!-- Passphrase -->
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">{{dictionary[langStore.language].accessCode}}</label>
-        <div 
-          class="w-full text-gray-700 font-bold text-center flex items-center justify-between space-x-2 h-6 text-lg">
-
-          <div></div> <!--Placeholder used to center -->
-
-          <!-- Generated passphrase -->
-          <span :class="[passphrase ? '' : 'text-gray-500']">{{ passphrase ? passphrase : dictionary[langStore.language].generatePassphrasePlaceholder}}</span>
-
-          <!-- Copy button -->
-          <button 
-            @click="copyToClipboard" 
-            type="button"
-            class="text-gray-500 hover:text-gray-700 focus:outline-none transition duration-200 ease-in-out transform hover:scale-110"
-            :class="[showPassphrase ? 'visible' : 'invisible']">
-            <i class="fa-solid fa-copy ml-2" style="color: #1d3557;"></i>
-          </button>
-
+        <!-- Username -->
+        <div>
+          <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+            {{ dictionary[langStore.language].nickname }}
+          </label>
+          <input
+            type="text"
+            v-model="username"
+            :placeholder="dictionary[langStore.language].nicknamePlaceholder"
+            class="w-full px-4 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
+                   bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                   placeholder-slate-400 dark:placeholder-slate-500
+                   focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 transition font-semibold"
+          />
+          <p v-if="usernameError" class="text-red-500 text-sm mt-1.5 font-semibold">{{ usernameError }}</p>
         </div>
 
-        <span
-          class="text-primary text-sm text-center flex justify-center"
-          :class="[copied ? 'visible' : 'invisible']">
-          {{ dictionary[langStore.language].copied }}
-        </span>
+        <!-- Passphrase -->
+        <div>
+          <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+            {{ dictionary[langStore.language].accessCode }}
+          </label>
 
-        <span class="text-red-600 flex">{{ passphraseError }}</span>
+          <!-- Passphrase display area -->
+          <div class="w-full bg-slate-50 dark:bg-slate-700 border-[3px] border-slate-200 dark:border-slate-600
+                      rounded-2xl px-4 py-3 flex items-center justify-between min-h-[52px]">
+            <span class="font-black text-slate-800 dark:text-slate-100 text-center flex-1"
+                  :class="passphrase ? '' : 'text-slate-400 dark:text-slate-500 font-semibold'">
+              {{ passphrase || dictionary[langStore.language].generatePassphrasePlaceholder }}
+            </span>
+            <button
+              @click="copyToClipboard"
+              type="button"
+              class="text-slate-400 hover:text-violet-500 transition ml-2 focus:outline-none"
+              :class="showPassphrase ? 'visible' : 'invisible'">
+              <i class="fa-solid fa-copy text-lg"></i>
+            </button>
+          </div>
 
-      </div>
+          <p class="text-xs font-bold text-violet-500 dark:text-violet-400 text-center mt-1.5 h-4">
+            {{ copied ? dictionary[langStore.language].copied : '' }}
+          </p>
+          <p v-if="passphraseError" class="text-red-500 text-sm font-semibold">{{ passphraseError }}</p>
+        </div>
 
-      <div class="mb-4 text-center">
-        <!-- Button to generate passphrase -->
+        <!-- Generate passphrase button -->
         <button
           type="button"
           @click="getPassphrase"
-          class="w-4/6 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">
+          class="w-full py-3 rounded-2xl font-black text-base text-white
+                 bg-emerald-500 border-[3px] border-emerald-600 border-b-[6px] border-b-emerald-700
+                 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
+        >
           {{ dictionary[langStore.language].generatePassphrase }}
         </button>
-      </div>
 
-      <!-- Grade selector -->
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          {{ dictionary[langStore.language].gradeLevel }} <span class="text-gray-400 text-xs">(nepovinné)</span>
-        </label>
-        <div class="grid grid-cols-9 gap-1">
-          <button
-            v-for="g in 9"
-            :key="g"
-            type="button"
-            @click="grade = grade === g ? null : g"
-            class="py-2 rounded-lg text-sm font-bold border-2 transition"
-            :class="grade === g
-              ? 'bg-indigo-600 border-indigo-700 text-white'
-              : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-indigo-50 hover:border-indigo-300'">
-            {{ g }}
-          </button>
+        <!-- Grade selector -->
+        <div>
+          <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+            {{ dictionary[langStore.language].gradeLevel }}
+            <span class="normal-case font-semibold text-slate-400">(nepovinné)</span>
+          </label>
+          <div class="grid grid-cols-5 sm:grid-cols-9 gap-1.5">
+            <button
+              v-for="g in 9"
+              :key="g"
+              type="button"
+              @click="grade = grade === g ? null : g"
+              class="py-2.5 rounded-2xl text-sm font-black border-[3px] border-b-[4px] transition-all
+                     hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px]"
+              :class="grade === g
+                ? 'bg-violet-500 border-violet-600 border-b-violet-700 text-white'
+                : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 border-b-slate-300 dark:border-b-slate-500 text-slate-600 dark:text-slate-300'"
+            >
+              {{ g }}
+            </button>
+          </div>
+          <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mt-2 text-center">V ktorom ročníku si?</p>
         </div>
-        <p class="text-xs text-gray-400 mt-1 text-center">V ktorom ročníku si?</p>
-      </div>
 
-      <!-- Submit Button -->
-      <button type="submit" 
-              class="w-full py-2 bg-secondary text-white font-semibold rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        {{ dictionary[langStore.language].register }}
-      </button>
+        <!-- Error message -->
+        <p v-if="errorMessage" class="text-red-500 text-sm font-semibold text-center">{{ errorMessage }}</p>
 
-    </form>
-
-    <p v-if="errorMessage" class="text-red-600 text-sm text-center mt-4">{{ errorMessage }}</p>
-    
+        <!-- Submit -->
+        <button
+          type="submit"
+          class="w-full py-4 rounded-2xl font-black text-lg text-white
+                 bg-violet-500 border-[3px] border-violet-600 border-b-[8px] border-b-violet-700
+                 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
+        >
+          {{ dictionary[langStore.language].register }}
+        </button>
+      </form>
+    </div>
   </div>
 </template>
-

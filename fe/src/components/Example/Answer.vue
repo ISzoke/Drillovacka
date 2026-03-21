@@ -41,9 +41,9 @@ watch(() => props.answer, () => {
 </script>
 
 <template>
-    <div class="flex flex-col items-center justify-center bg-white border-4 border-gray-300 p-8 md:p-12 rounded-2xl shadow-lg">
+    <div class="flex flex-col items-center justify-center bg-white dark:bg-slate-800 border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-8 md:p-12 rounded-3xl shadow-lg">
 
-        <h1 class="text-4xl md:text-5xl font-semibold text-primary mb-8">{{dictionary[langStore.language].correctAnswer}}</h1>
+        <h1 class="text-4xl md:text-5xl font-black text-violet-600 dark:text-violet-400 mb-8">{{dictionary[langStore.language].correctAnswer}}</h1>
 
         <div class="flex items-center justify-center">
             <!--Just placeholder for answer to be centered -->

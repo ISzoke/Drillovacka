@@ -70,19 +70,19 @@ defineExpose({
 
     <!-- Agreement dialog that user agrees that his voice will be recorded -->
     <div v-if="showConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40">
-      <div class="bg-white p-12 rounded-lg shadow-xl w-2/3  md:w-1/2 text-center">
+      <div class="bg-white dark:bg-slate-800 p-6 md:p-12 rounded-3xl shadow-xl w-11/12 md:w-2/3 lg:w-1/2 text-center border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] border-b-slate-300 dark:border-b-slate-600">
 
-        <p class=" text-lg font-semibold mb-10 md:mb-20 md:text-2xl">
+        <p class="text-base md:text-lg font-semibold mb-6 md:mb-16 text-slate-700 dark:text-slate-200">
           Během zadávání výsledků hlasem budou pro zlepšení této aplikace Vaše hlasové odpovědi ukládány.
         </p>
-        
-        <div class="flex flex-col md:flex-row justify-center">
+
+        <div class="flex flex-col md:flex-row justify-center gap-3">
           <button @click="confirmRecording"
-            class="text-xl px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition md:mr-6 mb-2 md:mb-0">
+            class="text-xl px-6 py-2 font-black text-white bg-emerald-500 border-[3px] border-emerald-600 border-b-[6px] border-b-emerald-700 rounded-2xl hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all">
             Souhlasím
           </button>
           <button @click="closeDialog"
-            class="text-xl px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition">
+            class="text-xl px-6 py-2 font-black text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 border-[3px] border-slate-300 dark:border-slate-500 border-b-[6px] border-b-slate-400 dark:border-b-slate-600 rounded-2xl hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all">
             Nesouhlasím
           </button>
         </div>

@@ -115,6 +115,8 @@ const BADGE_NAMES = {
     speed_demon: 'Šíp', speed_session: 'Na plné obrátky',
     streak_3: 'Tri dni v rade', streak_7: 'Celý týždeň', streak_14: 'Dvojtýždenník', streak_30: 'Mesiac v rade',
     level_5: 'Level 5', level_10: 'Dvojciferný', level_20: 'Veterán',
+    voice_first: 'Prvý hlas', voice_10: 'Hlasitý žiak', voice_50: 'Rečník',
+    voice_100: 'Hlasový majster', voice_250: 'Virtuóz reči',
     top10_leaderboard: 'Top 10', top3_leaderboard: 'Stupne víťazov',
 }
 
@@ -169,12 +171,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col items-center justify-center mt-12 md:mt-24 md:border-4 md:border-secondary rounded-xl px-12 md:px-24 py-4 max-w-full">
+    <div class="flex flex-col items-center justify-center mt-8 md:mt-16 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] border-b-slate-300 dark:border-b-slate-600 bg-white dark:bg-slate-800 px-4 md:px-8 lg:px-16 py-8 max-w-full mx-4 shadow-sm">
 
-        <h1 class="text-5xl md:text-6xl font-bold text-primary">{{ dictionary[langStore.language].finish }}</h1>
+        <h1 class="text-3xl md:text-5xl lg:text-6xl font-black text-slate-800 dark:text-slate-100">{{ dictionary[langStore.language].finish }}</h1>
 
         <!-- Total number of practiced examples -->
-        <h2 class="text-lg md:text-2xl font-semibold text-primary text-center mt-4">
+        <h2 class="text-lg md:text-2xl font-bold text-slate-600 dark:text-slate-300 text-center mt-4">
             {{dictionary[langStore.language].exampleCountText}} {{ total }} {{ getCorrectForm }}
         </h2>
 
@@ -202,7 +204,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Legend -->
-        <div class="grid grid-cols-1 md:flex md:justify-center md:space-x-4 mt-4 text-lg font-medium md:text-base">
+        <div class="grid grid-cols-1 md:flex md:justify-center md:space-x-4 mt-4 text-base font-medium md:text-sm">
             <div v-if="props.skipped > 0" class="flex items-center space-x-2">
                 <span class="block w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-full"></span>
                 <span>{{ dictionary[langStore.language].skipped }} ({{ props.skipped }})</span>
@@ -228,7 +230,7 @@ onUnmounted(() => {
         <!-- Gamification: XP & badges earned this session -->
         <div v-if="authStore.isAuthenticated && authStore.role !== 'admin'" class="mt-6 mb-2 flex flex-col items-center gap-3 w-full">
             <!-- XP earned -->
-            <div v-if="gamStore.xp > 0" class="flex items-center gap-3 bg-violet-50 border border-violet-300 rounded-2xl px-6 py-3">
+            <div v-if="gamStore.xp > 0" class="flex items-center gap-3 bg-violet-50 dark:bg-violet-900/30 border border-violet-300 dark:border-violet-700 rounded-2xl px-6 py-3">
                 <span class="text-3xl">⭐</span>
                 <div>
                     <div class="font-bold text-violet-700 text-lg">Level {{ gamStore.level }}</div>
@@ -240,7 +242,7 @@ onUnmounted(() => {
                 <div
                     v-for="bkey in gamStore.recentBadges"
                     :key="bkey"
-                    class="flex items-center gap-1 bg-yellow-50 border border-yellow-300 rounded-xl px-3 py-1 text-sm font-semibold text-yellow-700">
+                    class="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-xl px-3 py-1 text-sm font-semibold text-amber-700 dark:text-amber-300">
                     🎖️ {{ BADGE_NAMES[bkey] || bkey }}
                 </div>
             </div>
@@ -255,7 +257,7 @@ onUnmounted(() => {
                 :placeholder="feedbackPlaceholder[langStore.language]"
                 :disabled="isSubmitting || feedbackSubmitted"
                 rows="4"
-                class="w-full md:w-[700px] max-w-full border-2 border-primary/40 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full md:w-[700px] max-w-full border-[3px] border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-3 text-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
             />
 
             <div v-if="feedbackSubmitted" class="mt-4 text-green-600 font-semibold text-lg flex items-center justify-center">
@@ -303,7 +305,10 @@ onUnmounted(() => {
         <div class="flex justify-center mt-12 md:mt-16 mb-6 w-full">
             <button
                 @click="backToMenu"
-                class="text-center text-xl md:text-3xl bg-secondary hover:bg-white text-white hover:text-secondary border-4 border-secondary rounded-xl font-semibold px-3 py-2 md:px-4 md:py-2 transition"
+                class="text-center text-xl md:text-2xl font-black text-white
+                       bg-violet-500 border-[3px] border-violet-600 border-b-[8px] border-b-violet-700
+                       rounded-2xl px-8 py-4
+                       hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all"
             >
                 {{ dictionary[langStore.language].backtoMainMenu }}
             </button>

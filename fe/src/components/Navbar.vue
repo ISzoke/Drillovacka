@@ -17,8 +17,8 @@ import { useRecorderStore } from '@/stores/useRecorderStore';
 import { dictionary } from '@/utils/dictionary';
 import csFlag from '@/assets/img/cs-flag.png';
 import enFlag from '@/assets/img/en-flag.png';
-
 import skFlag from '@/assets/img/sk-flag.png';
+import { useDarkStore } from '@/stores/useDarkStore';
 
 // Stores
 const authStore = useAuthStore();
@@ -26,6 +26,7 @@ const langStore = useLanguageStore();
 const recorderStore = useRecorderStore();
 
 const router = useRouter();
+const darkStore = useDarkStore();
 
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
@@ -78,6 +79,12 @@ const handleLogoClick = () => {
 
         </div>
 
+        <!-- Dark mode toggle (mobile) -->
+        <button @click="darkStore.toggle()"
+          class="md:hidden text-white hover:text-yellow-300 transition text-2xl mr-2 focus:outline-none">
+          <i :class="darkStore.isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
+        </button>
+
         <!-- Button to open menu on smaller screensizes -->
         <button @click="isMenuOpen = !isMenuOpen"
           class="md:hidden text-white text-5xl focus:outline-none transition-transform duration-300"
@@ -92,15 +99,25 @@ const handleLogoClick = () => {
         <!-- Desktop Menu -->
         <div class="hidden md:flex items-center space-x-8 text-2xl font-semibold">
 
+          <!-- Dark mode toggle (desktop) -->
+          <button @click="darkStore.toggle()"
+            class="text-white hover:text-yellow-300 transition focus:outline-none"
+            :title="darkStore.isDark ? 'Svetlý režim' : 'Tmavý režim'">
+            <i :class="darkStore.isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
+          </button>
+
           <!-- Unauthenticated user menu -->
           <template v-if="!isAuthenticated">
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].login }}
             </RouterLink>
+            <RouterLink to="/profile?register=1" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].register }}
+            </RouterLink>
             <div class="flex items-center gap-2">
               <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
               <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 
@@ -134,7 +151,7 @@ const handleLogoClick = () => {
             <div class="flex items-center gap-2">
               <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
               <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 
@@ -151,44 +168,47 @@ const handleLogoClick = () => {
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].login }}
             </RouterLink>
+            <RouterLink to="/profile?register=1" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].register }}
+            </RouterLink>
             <div class="flex items-center gap-2">
               <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
               <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 
           <!-- Admin menu -->
           <template v-else-if="authStore.role == 'admin'">
-            <RouterLink to="/tasks" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasks }}</RouterLink>
-            <RouterLink to="/tasks/grades" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasksByGrade }}</RouterLink>
-            <RouterLink to="/skill-creator" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skills }}</RouterLink>
-            <RouterLink to="/analytics/skills" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
-            <RouterLink to="/analytics/my-data" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].myData }}</RouterLink>
-            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">{{ dictionary[langStore.language].logout }}</button> 
+            <RouterLink to="/tasks" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasks }}</RouterLink>
+            <RouterLink to="/tasks/grades" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasksByGrade }}</RouterLink>
+            <RouterLink to="/skill-creator" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skills }}</RouterLink>
+            <RouterLink to="/analytics/skills" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
+            <RouterLink to="/analytics/my-data" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].myData }}</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>
           </template>
 
           <!-- Logged in user -->
           <template v-else>
-            <RouterLink to="/" class="text-white text-3xl font-semibold" @click="handleLogoClick; isMenuOpen = false">
+            <RouterLink to="/" class="text-white text-xl font-semibold" @click="handleLogoClick; isMenuOpen = false">
               📚 {{ dictionary[langStore.language].examples }}
             </RouterLink>
-            <RouterLink to="/progress" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
+            <RouterLink to="/progress" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               <i class="fa-solid fa-chart-line mr-2"></i>{{ dictionary[langStore.language].progress }}
             </RouterLink>
-            <RouterLink to="/leaderboard" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
+            <RouterLink to="/leaderboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               🏆 {{ dictionary[langStore.language].leaderboard }}
             </RouterLink>
-            <RouterLink to="/profile" class="text-white text-3xl font-semibold" @click="isMenuOpen = false">
+            <RouterLink to="/profile" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               👤 {{ dictionary[langStore.language].profile }}
             </RouterLink>
-            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-3xl font-semibold">
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">
               {{ dictionary[langStore.language].logout }}
             </button>
             <div class="flex items-center gap-2">
               <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
               <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 
