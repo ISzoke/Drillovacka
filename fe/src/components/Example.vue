@@ -21,6 +21,7 @@ import { createRecord, skipExample, deleteRecord, checkAnswer, sendExampleReport
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useGamificationStore } from '@/stores/useGamificationStore';
 import { dictionary } from '@/utils/dictionary';
 import { getSessionId } from '@/utils/sessionManager';
 
@@ -52,6 +53,7 @@ const timer = ref(null);
 const speechRecorder = ref(null);
 const step = ref('');
 const showReportForm = ref(false);
+const shaking = ref(false);
 const reportType = ref('wrong_answer');
 const reportNote = ref('');
 const reportSubmitting = ref(false);
@@ -62,6 +64,7 @@ const reportError = ref('');
 const authStore = useAuthStore();
 const recorderStore = useRecorderStore();
 const langStore = useLanguageStore();
+const gamStore = useGamificationStore();
 
 // Record that user practiced example data
 const student_id = authStore.id || 0;
@@ -80,13 +83,20 @@ const reportOptions = computed(() => ([
   { value: 'other', label: dictionary[langStore.language].reportOther },
 ]));
 
+const triggerShake = () => {
+  shaking.value = true;
+  setTimeout(() => { shaking.value = false; }, 500);
+};
+
 // Sends answer to be evaluated for inline answers and emits evaluation result
 const checkInline = async (answer) => {
 
   const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "inline");
+  if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
   emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
 
   if (!result.isCorrect) {
+    triggerShake();
     clearInput();
   }
 };
@@ -96,9 +106,11 @@ const checkFraction = async (numerator, denominator) => {
 
   const answer = [numerator, denominator];
   const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "fraction");
+  if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
   emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
 
   if (!result.isCorrect) {
+    triggerShake();
     clearInput();
   }
 }
@@ -108,9 +120,11 @@ const checkVariables = async (variables) => {
 
   const answers = variables.map(variable => variable.answer);
   const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answers, "variable");
+  if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
   emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
 
   if (!result.isCorrect) {
+    triggerShake();
     clearInput();
   }
 }
@@ -260,7 +274,7 @@ const displayAnswer = () => {
   });
 }
 
-defineExpose({ getStep, displayAnswer });
+defineExpose({ getStep, displayAnswer, triggerShake });
 </script>
 
 <template>
@@ -300,7 +314,7 @@ defineExpose({ getStep, displayAnswer });
           <!-- Input components -->
           <div class="flex flex-col md:flex-row mt-10 items-center justify-between md:ml-80">
 
-            <div class="flex justify-start items-center">
+            <div class="flex justify-start items-center" :class="{ 'shake-wrong': shaking }">
 
               <!-- Equal sign for inline and fraction examples -->
               <p v-if="props.example.input_type == 'INLINE' || props.example.input_type == 'FRAC'" class="mr-2">=</p>
@@ -439,3 +453,19 @@ defineExpose({ getStep, displayAnswer });
   </Answer>
 
 </template>
+
+<style scoped>
+@keyframes shakeWrong {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-10px) rotate(-2deg); }
+  30%       { transform: translateX(10px) rotate(2deg); }
+  45%       { transform: translateX(-8px); }
+  60%       { transform: translateX(8px); }
+  75%       { transform: translateX(-4px); }
+  90%       { transform: translateX(4px); }
+}
+
+.shake-wrong {
+  animation: shakeWrong 0.5s ease-in-out;
+}
+</style>

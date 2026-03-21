@@ -163,13 +163,7 @@ def _do_sync(attempt):
     attempt.save(update_fields=["meta"])
 
     # If both files are uploaded and cleanup is enabled, remove local copies.
-    delete_local = str(os.getenv("MEGA_DELETE_LOCAL_AFTER_UPLOAD", "false")).strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
-    if delete_local and audio_upload.get("uploaded") and json_upload.get("uploaded"):
+    if _should_delete_local() and audio_upload.get("uploaded") and json_upload.get("uploaded"):
         cleanup_error = ""
         try:
             os.remove(local_audio)
@@ -198,6 +192,13 @@ def _do_sync(attempt):
 
 
 WRITE_ATTEMPT_DIR = "write_attempts"
+os.makedirs(WRITE_ATTEMPT_DIR, exist_ok=True)
+
+
+def _should_delete_local():
+    return str(os.getenv("MEGA_DELETE_LOCAL_AFTER_UPLOAD", "false")).strip().lower() in {
+        "1", "true", "yes", "on",
+    }
 
 
 def sync_write_attempt_to_mega(attempt):
@@ -221,7 +222,6 @@ def sync_write_attempt_to_mega(attempt):
 
 
 def _do_write_sync(attempt):
-    os.makedirs(WRITE_ATTEMPT_DIR, exist_ok=True)
     local_path = os.path.join(WRITE_ATTEMPT_DIR, f"attempt_{attempt.id}.json")
 
     try:
@@ -242,32 +242,31 @@ def _do_write_sync(attempt):
     attempt.meta = meta
     attempt.save(update_fields=["meta"])
 
-    delete_local = str(os.getenv("MEGA_DELETE_LOCAL_AFTER_UPLOAD", "false")).strip().lower() in {
-        "1", "true", "yes", "on",
-    }
-    if delete_local and upload_result.get("uploaded"):
+    if _should_delete_local() and upload_result.get("uploaded"):
         try:
             os.remove(local_path)
         except Exception:
             pass
 
+    uploaded = upload_result.get("uploaded", False)
     return {
-        "uploaded": upload_result.get("uploaded", False),
-        "json_uploaded": upload_result.get("uploaded", False),
+        "uploaded": uploaded,
+        "json_uploaded": uploaded,
         "json_error": upload_result.get("error", ""),
     }
 
 
-def retry_pending_write_uploads(limit=10):
+def _retry_pending(source, sync_fn, done_check, limit):
     """
-    Retry pending MEGA uploads for recent write/text attempts.
-    Trigger this opportunistically after each new write attempt.
+    Shared retry loop: fetches recent attempts of the given source, skips already-uploaded
+    ones via done_check, and calls sync_fn on the rest until limit is reached.
+    Over-fetches by 10x so that already-completed records can be skipped cheaply in Python.
     """
     if not mega_upload_enabled():
         return {"processed": 0, "uploaded": 0, "reason": "mega_disabled"}
 
     candidates = ExampleAttempt.objects.filter(
-        source='text',
+        source=source,
     ).order_by('-created_at')[:max(limit * 10, 50)]
 
     processed = 0
@@ -277,20 +276,32 @@ def retry_pending_write_uploads(limit=10):
         if processed >= limit:
             break
 
-        meta = attempt.meta or {}
-        if meta.get("mega_json_uploaded"):
+        if done_check(attempt.meta or {}):
             continue
 
         with _upload_lock:
             if attempt.id in _uploading_ids:
                 continue
 
-        result = sync_write_attempt_to_mega(attempt)
+        result = sync_fn(attempt)
         processed += 1
         if result.get("uploaded"):
             uploaded += 1
 
     return {"processed": processed, "uploaded": uploaded}
+
+
+def retry_pending_write_uploads(limit=10):
+    """
+    Retry pending MEGA uploads for recent write/text attempts.
+    Trigger this opportunistically after each new write attempt.
+    """
+    return _retry_pending(
+        source='text',
+        sync_fn=sync_write_attempt_to_mega,
+        done_check=lambda meta: bool(meta.get("mega_json_uploaded")),
+        limit=limit,
+    )
 
 
 def retry_pending_attempt_uploads(limit=10):
@@ -298,32 +309,9 @@ def retry_pending_attempt_uploads(limit=10):
     Retry pending MEGA uploads for recent speech attempts.
     Trigger this opportunistically after each new speech attempt.
     """
-    if not mega_upload_enabled():
-        return {"processed": 0, "uploaded": 0, "reason": "mega_disabled"}
-
-    candidates = ExampleAttempt.objects.filter(
+    return _retry_pending(
         source='speech',
-    ).order_by('-created_at')[: max(limit * 10, 50)]
-
-    processed = 0
-    uploaded = 0
-
-    for attempt in candidates:
-        if processed >= limit:
-            break
-
-        meta = attempt.meta or {}
-        if meta.get("mega_uploaded") and meta.get("mega_json_uploaded"):
-            continue
-
-        # Skip attempts currently being uploaded in another thread.
-        with _upload_lock:
-            if attempt.id in _uploading_ids:
-                continue
-
-        result = sync_attempt_to_mega(attempt)
-        processed += 1
-        if result.get("uploaded"):
-            uploaded += 1
-
-    return {"processed": processed, "uploaded": uploaded}
+        sync_fn=sync_attempt_to_mega,
+        done_check=lambda meta: bool(meta.get("mega_uploaded") and meta.get("mega_json_uploaded")),
+        limit=limit,
+    )

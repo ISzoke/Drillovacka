@@ -22,6 +22,8 @@ import Spinner from '@/components/Spinner.vue';
 import Summary from '@/components/Example/Summary.vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useGamificationStore } from '@/stores/useGamificationStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import {dictionary} from '@/utils/dictionary';
 
 const examples = ref([]); 
@@ -60,7 +62,26 @@ const showAnswer = ref(false);
 // Stores
 const recorderStore = useRecorderStore();
 const langStore = useLanguageStore();
+const gamStore = useGamificationStore();
+const authStore = useAuthStore();
 const route = useRoute();
+
+// XP toast
+const xpToast = ref(null)
+let xpToastTimer = null
+
+function showXpToast(data) {
+  if (!data || data.xp_awarded === undefined) return
+  xpToast.value = data
+  clearTimeout(xpToastTimer)
+  xpToastTimer = setTimeout(() => { xpToast.value = null }, 2200)
+}
+
+function xpMultiplierLabel(comparison) {
+  if (comparison === 'higher') return '📈 +50% (ťažší ročník)'
+  if (comparison === 'lower')  return '📉 ×0.5 (ľahší ročník)'
+  return null
+}
 
 // SFX when user answers correctly or incorrectly
 const correctSound = new Audio(correctSoundSrc);
@@ -118,17 +139,20 @@ const displayNext = async (data) => {
     } else if (data.isCorrect) {
       correctSound.play();
       displayIcon(true);
+      if (authStore.id) showXpToast({ xp_awarded: gamStore.lastXpAwarded, xp_breakdown: gamStore.xpBreakdown });
     
     // User answered incorrectly for 3 times
     } else if (!data.isCorrect && data.nextExample) {
-      wrongSound.play();  
+      wrongSound.play();
       displayIcon(false);
+      exampleComponent.value.triggerShake();
       mistakes.value++;
-    
+
     // User answered incorrectly once or twice
     } else {
       wrongSound.play();
       displayIcon(false);
+      exampleComponent.value.triggerShake();
       mistakes.value++;
       exampleComponent.value.getStep(mistakes.value)
       return;
@@ -199,8 +223,8 @@ const displayIcon = async (correct) => {
   showIcon.value = true;
 
   setTimeout(() => {
-    showIcon.value = false; 
-  }, 400);
+    showIcon.value = false;
+  }, 600);
 };
 
 // Display summary after practice ended
@@ -256,18 +280,72 @@ const fetchTaskExamples = async (taskId) => {
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
     </div>
 
+    <!-- Red screen overlay — intensifies with each wrong attempt -->
+    <div
+      v-if="!showSummary && mistakes > 0"
+      class="fixed inset-0 bg-red-500 pointer-events-none z-10 transition-all duration-500"
+      :style="{ opacity: mistakes * 0.07 }"
+    />
+
     <div class="flex items-center justify-center">
-      
+
       <!-- Example component -->
       <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" :topics="topics" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
-      
+
       <!-- Correct or incorrect icon -->
-      <img v-if="examples.length > curr_index"   :src="isCorrect ? images.correct.src : images.wrong.src" 
-      class="w-48 h-48 absolute top-64 z-50" :class="showIcon ? '' : 'hidden'" >
+      <Transition name="answer-flash">
+        <img
+          v-if="showIcon && examples.length > curr_index"
+          :src="isCorrect ? images.correct.src : images.wrong.src"
+          class="w-48 h-48 absolute top-64 z-50 pointer-events-none"
+        >
+      </Transition>
 
       <!-- Practice summary-->
       <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes" :topics="topics"></Summary>
-    
+
     </div>
 
+    <!-- XP breakdown toast -->
+    <Transition name="xp-toast">
+      <div
+        v-if="xpToast && authStore.id"
+        class="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none select-none"
+      >
+        <div class="flex flex-col items-center bg-violet-700 text-white rounded-2xl shadow-xl px-5 py-3 min-w-[160px]">
+          <span class="text-2xl font-black tracking-tight">+{{ xpToast.xp_awarded }} XP</span>
+          <div v-if="xpToast.xp_breakdown" class="text-xs text-violet-200 mt-1 text-center space-y-0.5">
+            <div v-if="xpMultiplierLabel(xpToast.xp_breakdown.grade_comparison)">
+              {{ xpMultiplierLabel(xpToast.xp_breakdown.grade_comparison) }}
+            </div>
+            <div v-if="xpToast.xp_breakdown.voice_bonus > 0">🎤 +{{ xpToast.xp_breakdown.voice_bonus }} hlas</div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
 </template>
+
+<style scoped>
+.xp-toast-enter-active { animation: xpPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.xp-toast-leave-active { animation: xpFade 0.3s ease-in forwards; }
+@keyframes xpPop  { from { opacity:0; transform: translateX(-50%) scale(0.5) translateY(20px); } to { opacity:1; transform: translateX(-50%) scale(1) translateY(0); } }
+@keyframes xpFade { to   { opacity:0; transform: translateX(-50%) translateY(-20px); } }
+
+.answer-flash-enter-active {
+  animation: answerPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.answer-flash-leave-active {
+  animation: answerFade 0.2s ease-in forwards;
+}
+
+@keyframes answerPop {
+  0%   { opacity: 0; transform: scale(0.3); }
+  60%  { transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes answerFade {
+  to { opacity: 0; transform: scale(1.3); }
+}
+</style>

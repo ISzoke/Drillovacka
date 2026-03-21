@@ -12,13 +12,16 @@ import { onMounted, ref, computed } from 'vue';
 import { useTopicStore } from '@/stores/useMainpageTopicStore';
 import TopicCard from '@/components/MainMenu/TopicCard.vue';
 import GradeView from '@/components/MainMenu/GradeView.vue';
+import PersonalizedGradeHome from '@/components/MainMenu/PersonalizedGradeHome.vue';
 import Spinner from '../Spinner.vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { dictionary } from '@/utils/dictionary';
 
 // Load topics from cache
 const topicStore = useTopicStore();
 const langStore = useLanguageStore();
+const authStore = useAuthStore();
 
 const searchQuery = ref('');
 
@@ -43,15 +46,21 @@ onMounted(() => {
     <Spinner v-if="topicStore.loading" class="pt-48" />
 
     <div v-else>
-      <div class="flex justify-center pt-10 px-4">
-        <h2 class="text-2xl md:text-4xl font-bold text-primary text-center">
-          {{ dictionary[langStore.language].selectGrades }}
-        </h2>
-      </div>
+      <!-- Personalized view for students with a grade set -->
+      <PersonalizedGradeHome v-if="authStore.isAuthenticated && authStore.role !== 'admin' && authStore.grade" />
 
-      <GradeView />
+      <!-- Generic grade grid for guests / students without a grade -->
+      <template v-else>
+        <div class="flex justify-center pt-10 px-4">
+          <h2 class="text-2xl md:text-4xl font-bold text-primary text-center">
+            {{ dictionary[langStore.language].selectGrades }}
+          </h2>
+        </div>
 
-      <div class="max-w-6xl mx-auto px-4 pb-16">
+        <GradeView />
+      </template>
+
+      <div v-if="!(authStore.isAuthenticated && authStore.role !== 'admin' && authStore.grade)" class="max-w-6xl mx-auto px-4 pb-16">
         <details class="rounded-xl border border-gray-300 bg-white shadow-sm">
           <summary class="cursor-pointer list-none px-6 py-4 flex items-center justify-between text-lg md:text-xl font-semibold text-primary">
             <span>

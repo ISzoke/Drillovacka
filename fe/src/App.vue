@@ -12,6 +12,7 @@ import Navbar from '@/components/Navbar.vue';
 import Footer from '@/components/Footer.vue';
 import { RouterView } from 'vue-router';
 import ToastManager from '@/components/Toast/ToastManager.vue';
+import BadgePopup from '@/components/BadgePopup.vue';
 import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
@@ -85,6 +86,7 @@ watch(
   <Navbar />
 
   <ToastManager />
+  <BadgePopup />
 
   <div class="bg-white min-h-screen">
     <RouterView />

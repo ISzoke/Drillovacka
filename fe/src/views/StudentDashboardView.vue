@@ -31,6 +31,54 @@
     </div>
     
     <div v-else>
+    <!-- Gamification banner -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <!-- Level & XP bar -->
+      <div class="col-span-2 bg-gradient-to-br from-violet-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-bold text-lg">⭐ Level {{ gamStore.level }}</span>
+          <span class="text-sm text-violet-200">{{ gamStore.xp }} XP</span>
+        </div>
+        <div class="w-full bg-violet-800/40 rounded-full h-3 overflow-hidden">
+          <div
+            class="h-3 rounded-full bg-yellow-400 transition-all duration-700"
+            :style="{ width: gamStore.levelPercent() + '%' }">
+          </div>
+        </div>
+        <div class="text-xs text-violet-200 mt-1">
+          {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP do ďalšieho levelu
+        </div>
+      </div>
+
+      <!-- Streak -->
+      <div class="bg-gradient-to-br from-orange-400 to-red-500 text-white p-5 rounded-2xl shadow-lg flex flex-col justify-center">
+        <div class="text-4xl">🔥</div>
+        <div class="text-3xl font-black mt-1">{{ gamStore.streak }}</div>
+        <div class="text-sm text-orange-100">dní za sebou</div>
+      </div>
+
+      <!-- Rank -->
+      <div class="bg-gradient-to-br from-amber-400 to-yellow-500 text-white p-5 rounded-2xl shadow-lg flex flex-col justify-center">
+        <div class="text-4xl">🏅</div>
+        <div class="text-3xl font-black mt-1">
+          <span v-if="gamStore.rank">#{{ gamStore.rank }}</span>
+          <span v-else>–</span>
+        </div>
+        <div class="text-sm text-yellow-100">na rebríčku</div>
+      </div>
+    </div>
+
+    <!-- Recent badges (last 3) -->
+    <div v-if="recentEarnedBadges.length > 0" class="mb-6 bg-white rounded-2xl shadow p-4 flex items-center gap-4 flex-wrap">
+      <span class="font-semibold text-gray-700 text-sm">Posledné odznaky:</span>
+      <div v-for="badge in recentEarnedBadges" :key="badge.key" class="flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-xl px-3 py-1">
+        <span class="text-xl">{{ badge.icon }}</span>
+        <span class="text-sm font-semibold text-violet-700">{{ badge.name }}</span>
+      </div>
+      <router-link to="/achievements" class="ml-auto text-xs text-indigo-500 hover:underline">Všetky odznaky →</router-link>
+    </div>
+
+
       <!-- No data yet -->
       <div v-if="skills.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
         <i class="fa-solid fa-book-open text-6xl text-gray-400 mb-4"></i>
@@ -219,12 +267,17 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useGamificationStore } from '@/stores/useGamificationStore'
 import { useRoute, useRouter } from 'vue-router'
 import { getStudentSkillCombinations } from '../api/apiClient'
 
 const authStore = useAuthStore()
+const gamStore = useGamificationStore()
 const route = useRoute()
 const router = useRouter()
+
+// Last 3 earned badges for quick display
+const recentEarnedBadges = computed(() => gamStore.badges.slice(0, 3))
 const skills = ref([])
 const loading = ref(false)
 const error = ref('')
@@ -328,6 +381,9 @@ function formatDate(dt) {
 
 onMounted(() => {
   fetchData()
+  if (authStore.id) {
+    gamStore.fetchStats(authStore.id)
+  }
 })
 
 // Auto-refresh when returning to this page

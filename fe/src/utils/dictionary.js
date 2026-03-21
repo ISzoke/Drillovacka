@@ -95,6 +95,27 @@ export const dictionary = {
         reportUnclear: "Nejasné zadanie",
         reportOther: "Iný problém",
 
+        examples: "Příklady",
+        progress: "Pokrok",
+
+        // Gamification (cs)
+        leaderboard: "Žebříček",
+        achievements: "Odznaky",
+        myLevel: "Můj level",
+        myStreak: "Série",
+        myRank: "Moje umístění",
+        xpEarned: "Získané XP",
+        newBadge: "Nový odznak",
+        level: "Level",
+        streak: "Série",
+        days: "dní",
+        topStudents: "Top žáci",
+        noBadgesYet: "Zatím žádné odznaky",
+        startPracticing: "Začni cvičit a získej odznaky!",
+        earnedBadges: "Získané odznaky",
+        lockedBadges: "Nezískané odznaky",
+        xp: "XP",
+        practiceNow: "Cvičit teď",
     },
 
     en: {
@@ -182,6 +203,28 @@ export const dictionary = {
         reportWrongGrade: "Nepasuje k ročníku",
         reportUnclear: "Nejasné zadanie",
         reportOther: "Iný problém",
+
+        examples: "Examples",
+        progress: "Progress",
+
+        // Gamification (en)
+        leaderboard: "Leaderboard",
+        achievements: "Badges",
+        myLevel: "My level",
+        myStreak: "Streak",
+        myRank: "My rank",
+        xpEarned: "XP earned",
+        newBadge: "New badge",
+        level: "Level",
+        streak: "Streak",
+        days: "days",
+        topStudents: "Top students",
+        noBadgesYet: "No badges yet",
+        startPracticing: "Start practicing to earn badges!",
+        earnedBadges: "Earned badges",
+        lockedBadges: "Locked badges",
+        xp: "XP",
+        practiceNow: "Practice now",
     },
 
     sk: {
@@ -269,6 +312,28 @@ export const dictionary = {
         reportWrongGrade: "Nepasuje k ročníku",
         reportUnclear: "Nejasné zadanie",
         reportOther: "Iný problém",
+
+        examples: "Príklady",
+        progress: "Pokrok",
+
+        // Gamification
+        leaderboard: "Rebríček",
+        achievements: "Odznaky",
+        myLevel: "Môj level",
+        myStreak: "Séria",
+        myRank: "Moje umiestnenie",
+        xpEarned: "Získané XP",
+        newBadge: "Nový odznak",
+        level: "Level",
+        streak: "Séria",
+        days: "dní",
+        topStudents: "Top žiaci",
+        noBadgesYet: "Zatiaľ žiadne odznaky",
+        startPracticing: "Začni cvičiť a získaj odznaky!",
+        earnedBadges: "Získané odznaky",
+        lockedBadges: "Nezískané odznaky",
+        xp: "XP",
+        practiceNow: "Cvičiť teraz",
     }
 };
 

@@ -59,6 +59,7 @@ urlpatterns = [
     path('session/init/', views.init_session, name='init-session'),
     path('session/update-language/', views.update_session_language, name='update-session-language'),
     path('student/update-language/', views.update_student_language, name='update-student-language'),
+    path('student/<int:student_id>/grade/', views.update_student_grade, name='update-student-grade'),
 
     path('survey-answer/', views.save_survey_answer, name='save-survey-answer'),
     path('example-report/', views.save_example_report, name='save-example-report'),
@@ -80,6 +81,12 @@ urlpatterns = [
     # Bulk import & export
     path('bulk-import-tasks/', views.bulk_import_tasks, name='bulk-import-tasks'),
     path('export/csv/', views.export_attempts_csv, name='export-attempts-csv'),
+
+    # Gamification
+    path('gamification/leaderboard/', views.get_leaderboard, name='gamification-leaderboard'),
+    path('gamification/leaderboard/accuracy/', views.get_leaderboard_accuracy, name='gamification-leaderboard-accuracy'),
+    path('gamification/student/<int:student_id>/stats/', views.get_student_gamification_stats, name='gamification-student-stats'),
+    path('gamification/badges/', views.get_all_badges, name='gamification-badges'),
 ]
 
 websocket_urlpatterns = [

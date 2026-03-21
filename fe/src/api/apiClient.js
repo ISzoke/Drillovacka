@@ -426,11 +426,12 @@ export const deleteSkill = async (skillId) => {
  * @param {string} passphrase - passphrase for the new user.
  * @returns {Promise<Object>} server response..
  */
-export const registerStudent = async (username, passphrase) => {
+export const registerStudent = async (username, passphrase, grade = null) => {
   try {
     const response = await apiClient.post('/register/student', {
       username,
-      passphrase
+      passphrase,
+      ...(grade !== null ? { grade } : {}),
     });
 
     return response;
@@ -467,8 +468,24 @@ export const loginStudent = async (username, passphrase) => {
 };
 
 /**
+ * Updates the grade of a student (allowed once after registration).
+ *
+ * @param {number} studentId
+ * @param {number} grade - 1 to 9
+ * @returns {Promise<Object>} updated grade data
+ */
+export const updateStudentGrade = async (studentId, grade) => {
+  try {
+    const response = await apiClient.patch(`/student/${studentId}/grade/`, { grade });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error updating grade';
+  }
+};
+
+/**
  * Logs in an admin using the provided credentials.
- * 
+ *
  * @param {string} username - The admin's username.
  * @param {string} password - The admin's password.
  * @returns {Promise<Object>} the server.

@@ -35,6 +35,7 @@ import json
 import csv
 import io
 import random
+import threading
 from datetime import datetime
 import uuid
 import os
@@ -1424,19 +1425,28 @@ def delete_skill(request, skill_id):
 def register_student(request):
     username = request.data.get('username')
     passphrase = request.data.get('passphrase')
+    grade = request.data.get('grade')
 
     if not username or not passphrase:
         return Response({'error': 'Chybí uživatelské jméno nebo heslo'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     if Student.objects.filter(username=username).exists():
         return Response({'error': 'Tato přezdívka je již používána jiným uživatelem'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     hashed_passphrase = make_password(passphrase)
 
-    student = Student.objects.create(username=username, passphrase=hashed_passphrase)
-    student.save()
+    grade_value = None
+    if grade is not None:
+        try:
+            grade_value = int(grade)
+            if not (1 <= grade_value <= 9):
+                grade_value = None
+        except (TypeError, ValueError):
+            grade_value = None
 
-    return Response({'message': 'Student registered successfully!','id': student.id}, status=status.HTTP_201_CREATED)
+    student = Student.objects.create(username=username, passphrase=hashed_passphrase, grade=grade_value)
+
+    return Response({'message': 'Student registered successfully!', 'id': student.id}, status=status.HTTP_201_CREATED)
 
 # Login user account
 @api_view(['POST'])
@@ -1457,12 +1467,40 @@ def login_student(request):
             'message': 'Login successful!',
             'id': student.id,
             'role': 'student',
-            'language': student.language
+            'language': student.language,
+            'grade': student.grade,
+            'grade_change_used': student.grade_change_used,
         }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
     
-# Login admin account   
+# Update student grade (allowed once after initial registration)
+@api_view(['PATCH'])
+def update_student_grade(request, student_id):
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if student.grade_change_used:
+        return Response({'error': 'Grade can only be changed once'}, status=status.HTTP_400_BAD_REQUEST)
+
+    grade = request.data.get('grade')
+    try:
+        grade_value = int(grade)
+        if not (1 <= grade_value <= 9):
+            raise ValueError
+    except (TypeError, ValueError):
+        return Response({'error': 'Grade must be an integer between 1 and 9'}, status=status.HTTP_400_BAD_REQUEST)
+
+    student.grade = grade_value
+    student.grade_change_used = True
+    student.save(update_fields=['grade', 'grade_change_used'])
+
+    return Response({'grade': student.grade, 'grade_change_used': student.grade_change_used})
+
+
+# Login admin account
 @api_view(['POST'])
 def login_admin(request):
     username = request.data.get('username')
@@ -1604,6 +1642,7 @@ def check_answer(request):
             return Response({'error': 'Invalid answer type'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Persist detailed attempt log for keyboard-entered answers
+    attempt_obj = None
     try:
         student_record = _resolve_student_example_record(student_id, session_id, example_id, date)
 
@@ -1644,6 +1683,7 @@ def check_answer(request):
             )
 
             if attempt:
+                attempt_obj = attempt
                 def _bg_write_sync(att):
                     try:
                         sync_write_attempt_to_mega(att)
@@ -1651,14 +1691,21 @@ def check_answer(request):
                     except Exception as cloud_error:
                         print(f"[ERROR] Background write sync failed for attempt {att.id}: {cloud_error}")
 
-                import threading
                 threading.Thread(target=_bg_write_sync, args=(attempt,), daemon=True).start()
 
     except Exception as log_error:
         print(f"[ERROR] Failed to log text attempt: {log_error}")
-    
-    # Return if answer was corrrect and if new example should be shown
-    return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next}, status=status.HTTP_200_OK)    
+
+    # Award XP for correct text answers (registered students only)
+    xp_data = {}
+    if isCorrect and student_id:
+        try:
+            from .xp_service import award_xp
+            xp_data = award_xp(student_id, attempt_obj) or {}
+        except Exception as xp_error:
+            print(f"[ERROR] Failed to award XP for text attempt: {xp_error}")
+
+    return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next, **xp_data}, status=status.HTTP_200_OK)
 
 # Get all skill paths from skill ids to be displayed when editing task
 @api_view(['GET'])
@@ -2636,3 +2683,155 @@ def export_attempts_csv(request):
     csv_response = DjangoHttpResponse(buf.getvalue(), content_type='text/csv')
     csv_response['Content-Disposition'] = 'attachment; filename="attempts_export.csv"'
     return csv_response
+
+
+# ─────────────────────────── Gamification API ────────────────────────────────
+
+@api_view(['GET'])
+def get_leaderboard(request):
+    """Top 20 registered students ranked by XP."""
+    from .models import Badge, StudentBadge
+    import math
+
+    top_students = (
+        Student.objects
+        .filter(total_xp__gt=0)
+        .order_by('-total_xp', 'id')[:20]
+    )
+
+    result = []
+    for i, student in enumerate(top_students, start=1):
+        solved_count = ExampleAttempt.objects.filter(student=student, is_correct=True).count()
+        result.append({
+            'rank': i,
+            'student_id': student.id,
+            'username': student.username,
+            'total_xp': student.total_xp,
+            'level': student.level,
+            'current_streak': student.current_streak,
+            'solved_count': solved_count,
+        })
+
+    return Response(result)
+
+
+@api_view(['GET'])
+def get_leaderboard_accuracy(request):
+    """Top 20 registered students ranked by accuracy (min 10 attempts to qualify)."""
+    from django.db.models import Count, Case, When, IntegerField, FloatField, ExpressionWrapper, F
+
+    top_students = (
+        Student.objects
+        .annotate(
+            total_attempts=Count('exampleattempt'),
+            correct_attempts=Count(Case(When(exampleattempt__is_correct=True, then=1), output_field=IntegerField())),
+        )
+        .filter(total_attempts__gte=10)
+        .annotate(
+            accuracy=ExpressionWrapper(
+                F('correct_attempts') * 1.0 / F('total_attempts'),
+                output_field=FloatField()
+            )
+        )
+        .order_by('-accuracy', '-correct_attempts', 'id')[:20]
+    )
+
+    result = []
+    for i, student in enumerate(top_students, start=1):
+        result.append({
+            'rank': i,
+            'student_id': student.id,
+            'username': student.username,
+            'total_xp': student.total_xp,
+            'level': student.level,
+            'current_streak': student.current_streak,
+            'solved_count': student.correct_attempts,
+            'accuracy': round(student.accuracy, 4),
+        })
+
+    return Response(result)
+
+
+@api_view(['GET'])
+def get_student_gamification_stats(request, student_id):
+    """XP, level, streak, badges and leaderboard rank for one student."""
+    import math
+
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    from .models import StudentBadge
+
+    badges = (
+        StudentBadge.objects
+        .filter(student=student)
+        .select_related('badge')
+        .order_by('-earned_at')
+    )
+    badge_list = [
+        {
+            'key': sb.badge.key,
+            'name': sb.badge.name,
+            'icon': sb.badge.icon,
+            'category': sb.badge.category,
+            'description': sb.badge.description,
+            'earned_at': sb.earned_at.isoformat(),
+        }
+        for sb in badges
+    ]
+
+    rank = Student.objects.filter(total_xp__gt=student.total_xp).count() + 1
+    solved_count = ExampleAttempt.objects.filter(student=student, is_correct=True).count()
+
+    # XP thresholds for current level (for progress bar)
+    lvl = student.level
+    level_xp_start = (lvl - 1) ** 2 * 50
+    level_xp_end = lvl ** 2 * 50
+
+    return Response({
+        'total_xp': student.total_xp,
+        'level': student.level,
+        'current_streak': student.current_streak,
+        'longest_streak': student.longest_streak,
+        'rank': rank,
+        'badges': badge_list,
+        'solved_count': solved_count,
+        'level_xp_start': level_xp_start,
+        'level_xp_end': level_xp_end,
+        'grade': student.grade,
+        'grade_change_used': student.grade_change_used,
+    })
+
+
+@api_view(['GET'])
+def get_all_badges(request):
+    """All badges with metadata; optionally annotate which ones a student has earned."""
+    from .models import Badge, StudentBadge
+
+    student_id = request.query_params.get('student_id')
+    earned_keys = set()
+    if student_id:
+        try:
+            st = Student.objects.get(id=student_id)
+            earned_keys = set(
+                StudentBadge.objects.filter(student=st).values_list('badge__key', flat=True)
+            )
+        except Student.DoesNotExist:
+            pass
+
+    badges = Badge.objects.all().order_by('category', 'xp_reward')
+    result = [
+        {
+            'key': b.key,
+            'name': b.name,
+            'description': b.description,
+            'icon': b.icon,
+            'category': b.category,
+            'xp_reward': b.xp_reward,
+            'earned': b.key in earned_keys,
+        }
+        for b in badges
+    ]
+    return Response(result)

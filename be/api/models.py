@@ -112,11 +112,22 @@ class Student(models.Model):
         ('sk', 'Slovak'),
         ('en', 'English'),
     ]
-    
+
     username = models.CharField(max_length=255, unique=True)
     passphrase = models.CharField(max_length=255)
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='sk')
     audio_threshold = models.IntegerField(default=50)
+
+    # Grade level (1-9), set at registration, changeable once
+    grade = models.IntegerField(null=True, blank=True)
+    grade_change_used = models.BooleanField(default=False)
+
+    # Gamification fields (denormalized for fast leaderboard queries)
+    total_xp = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_practice_date = models.DateField(null=True, blank=True)
 
 class AnonymousSession(models.Model):
     LANGUAGE_CHOICES = [
@@ -287,6 +298,38 @@ class SurveyFeedback(models.Model):
                 name='survey_feedback_student_or_session_required'
             )
         ]
+
+class Badge(models.Model):
+    CATEGORY_CHOICES = [
+        ('activity', 'Activity'),
+        ('accuracy', 'Accuracy'),
+        ('speed', 'Speed'),
+        ('streak', 'Streak'),
+        ('milestone', 'Milestone'),
+    ]
+
+    key = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=512)
+    icon = models.CharField(max_length=64)
+    category = models.CharField(max_length=32, choices=CATEGORY_CHOICES)
+    xp_reward = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.name} ({self.key})"
+
+
+class StudentBadge(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='earned_badges')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='student_badges')
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'badge')
+
+    def __str__(self):
+        return f"{self.student.username} — {self.badge.key}"
+
 
 class Admin(models.Model):
     username = models.CharField(max_length=255, unique=True)

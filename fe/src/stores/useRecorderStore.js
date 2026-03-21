@@ -11,6 +11,7 @@
 import { defineStore } from "pinia";
 import { ref, onUnmounted } from "vue";
 import { useLanguageStore } from "./useLanguageStore";
+import { useGamificationStore } from "./useGamificationStore";
 
 export const useRecorderStore = defineStore("recorder", () => {
 
@@ -165,6 +166,12 @@ const processorCode = `
             isCorrect.value = data.isCorrect;
             continueWithNext.value = data.continue_with_next;
             student_answer.value = data.student_answer;
+
+            // Forward XP/badge update to gamification store
+            if (data.xp_awarded !== undefined) {
+              const gamStore = useGamificationStore();
+              gamStore.handleXPUpdate(data);
+            }
 
             // Update ExampleView
             if (emitFunction) {

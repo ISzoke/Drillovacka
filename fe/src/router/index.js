@@ -13,10 +13,10 @@ import ProfileView from '@/views/ProfileView.vue'
 import AdminView from '@/views/AdminView.vue'
 import GradeTopicsView from '@/views/GradeTopicsView.vue'
 import SkillAnalyticsView from '@/views/SkillAnalyticsView.vue'
-import StudentProgressView from '@/views/StudentProgressView.vue'
-import StudentDashboardView from '@/views/StudentDashboardView.vue'
 import AdminMyDataView from '@/views/AdminMyDataView.vue'
 import BulkImportView from '@/views/BulkImportView.vue'
+import LeaderboardView from '@/views/LeaderboardView.vue'
+import PokrokView from '@/views/PokrokView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,7 +26,6 @@ const router = createRouter({
       name: 'home',
       component: HomeView,
       meta: { lang: 'sk' }
-
     },
     {
       path: '/cs',
@@ -111,34 +110,29 @@ const router = createRouter({
       meta: { requiresAdmin: true }
     },
     {
-      path: '/my-progress',
-      name: 'my-progress',
-      component: StudentProgressView,
+      path: '/progress',
+      name: 'progress',
+      component: PokrokView,
       meta: { requiresAuth: true }
     },
     {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: StudentDashboardView,
-      meta: { requiresAuth: true }
+      path: '/leaderboard',
+      name: 'leaderboard',
+      component: LeaderboardView,
     },
   ]
 })
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
-  // If the route requires admin access
   if (to.meta.requiresAdmin) {
     if (authStore.isAuthenticated && authStore.role === 'admin') {
-      // Authenticated as admin - allow
-      next(); 
-
+      next();
     } else {
-      // Not authenticated as admin - redirect to home
-      next({ name: 'home' }); 
+      next({ name: 'home' });
     }
   } else {
-    next(); 
+    next();
   }
 });
 

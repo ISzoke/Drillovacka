@@ -22,7 +22,8 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: false,
     errorMessage: '',
     inactivityTimeout: null,
-
+    grade: null,
+    grade_change_used: false,
   }),
   actions: {
     async login(username, passphrase, router, isLogin, isAdmin) {
@@ -45,11 +46,15 @@ export const useAuthStore = defineStore('auth', {
           this.name = username;
           this.id = result.data.id;
           this.role = result.data.role;
+          this.grade = result.data.grade ?? null;
+          this.grade_change_used = result.data.grade_change_used ?? false;
           this.isAuthenticated = true;
 
           localStorage.setItem('name', JSON.stringify(this.name));
           localStorage.setItem('id', JSON.stringify(this.id));
           localStorage.setItem('role', JSON.stringify(this.role));
+          localStorage.setItem('grade', JSON.stringify(this.grade));
+          localStorage.setItem('grade_change_used', JSON.stringify(this.grade_change_used));
 
           this.startInactivityTimer(router);
 
@@ -89,6 +94,8 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('name');
       localStorage.removeItem('id');
       localStorage.removeItem('role');
+      localStorage.removeItem('grade');
+      localStorage.removeItem('grade_change_used');
 
       this.clearInactivityTimer();
 
@@ -119,6 +126,11 @@ export const useAuthStore = defineStore('auth', {
         this.id = storedId;
         this.role = JSON.parse(storedRole);
         this.isAuthenticated = true;
+
+        const storedGrade = localStorage.getItem('grade');
+        const storedGradeChangeUsed = localStorage.getItem('grade_change_used');
+        this.grade = storedGrade ? JSON.parse(storedGrade) : null;
+        this.grade_change_used = storedGradeChangeUsed ? JSON.parse(storedGradeChangeUsed) : false;
       }
     },
 

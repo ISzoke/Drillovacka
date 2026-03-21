@@ -226,6 +226,8 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         threading.Thread(target=_background_cloud_sync, args=(attempt,), daemon=True).start()
 
+        return attempt
+
     async def receive(self, text_data=None, bytes_data=None):
 
         # Metadata was received via websocket
@@ -721,8 +723,9 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                                         "evaluation": "error_unknown_type"
                                     }
 
+                    attempt_obj = None
                     try:
-                        self._store_attempt_log(
+                        attempt_obj = self._store_attempt_log(
                             student_id=student_id,
                             session_id=session_id,
                             example_id=example_id,
@@ -746,6 +749,15 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                         )
                     except Exception as log_error:
                         print(f"[ERROR] Failed to store attempt log: {log_error}")
+
+                    # Award XP for registered students on correct answers
+                    if is_correct_for_log is True and student_id and student_id != 'unknown' and attempt_obj:
+                        try:
+                            from .xp_service import award_xp
+                            xp_data = award_xp(student_id, attempt_obj)
+                            response_data.update(xp_data)
+                        except Exception as xp_error:
+                            print(f"[ERROR] Failed to award XP: {xp_error}")
                         
                     # Save evaluation data to JSON file
                     if DUMP_AUDIO:
