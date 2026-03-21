@@ -19,10 +19,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { updateStudentGrade } from '@/api/apiClient'
+import { useDarkStore } from '@/stores/useDarkStore'
 
 const authStore = useAuthStore()
 const gamStore = useGamificationStore()
 const langStore = useLanguageStore()
+const darkStore = useDarkStore()
 const route = useRoute()
 const showLogin = ref(route.query.register !== '1')
 
@@ -117,19 +119,19 @@ onMounted(async () => {
           <!-- User info -->
           <div class="flex-1 text-center sm:text-left">
             <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-2">{{ authStore.name }}</h2>
-            <p class="text-slate-500 font-bold mb-4 bg-slate-100 inline-block px-3 py-1 rounded-xl">
+            <p class="text-slate-500 dark:text-slate-400 font-bold mb-4 bg-slate-100 dark:bg-slate-700 inline-block px-3 py-1 rounded-xl">
               {{ authStore.grade ? authStore.grade + '. ročník' : 'ročník nenastavený' }}
             </p>
 
             <div class="flex flex-wrap justify-center sm:justify-start gap-2">
-              <div class="bg-amber-100 border-2 border-amber-300 text-amber-700 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
+              <div class="bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
                 ⭐ {{ gamStore.xp }} XP
               </div>
-              <div class="bg-blue-100 border-2 border-blue-300 text-blue-700 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
+              <div class="bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
                 <span v-if="gamStore.rank"># {{ gamStore.rank }}</span>
                 <span v-else>–</span>
               </div>
-              <div class="bg-orange-100 border-2 border-orange-300 text-orange-700 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
+              <div class="bg-orange-100 dark:bg-orange-900/40 border-2 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
                 🔥 {{ gamStore.streak }} deň
               </div>
             </div>
@@ -171,8 +173,8 @@ onMounted(async () => {
               :class="selectedGrade === g
                 ? 'bg-blue-500 text-white border-b-[4px] border-blue-700 translate-y-1 shadow-sm'
                 : (authStore.grade === g
-                    ? 'bg-violet-100 text-violet-700 border-b-[4px] border-violet-300'
-                    : 'bg-slate-100 text-slate-600 border-b-[4px] border-slate-300 hover:bg-slate-200 active:border-b-0 active:translate-y-1')">
+                    ? 'bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 border-b-[4px] border-violet-300 dark:border-violet-700'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-b-[4px] border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 active:border-b-0 active:translate-y-1')">
               {{ g }}
             </button>
           </div>
@@ -183,12 +185,12 @@ onMounted(async () => {
             class="w-full py-4 rounded-2xl font-black text-lg transition-all"
             :class="selectedGrade && !gradeChanging
               ? 'bg-emerald-500 hover:bg-emerald-400 text-white border-b-[6px] border-emerald-700 active:border-b-0 active:translate-y-[6px]'
-              : 'bg-slate-100 text-slate-400 border-b-[4px] border-slate-200 cursor-not-allowed'">
+              : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-b-[4px] border-slate-200 dark:border-slate-600 cursor-not-allowed'">
             {{ gradeChanging ? 'Ukladám...' : (authStore.grade ? 'ZMENIŤ ROČNÍK' : 'NASTAVIŤ ROČNÍK') }}
           </button>
 
           <p v-if="gradeChangeError" class="text-red-500 text-sm mt-3 font-semibold">{{ gradeChangeError }}</p>
-          <p v-if="authStore.grade" class="text-xs text-amber-600 mt-3 font-semibold bg-amber-50 p-3 rounded-xl border border-amber-200">
+          <p v-if="authStore.grade" class="text-xs text-amber-600 dark:text-amber-400 mt-3 font-semibold bg-amber-50 dark:bg-amber-900/30 p-3 rounded-xl border border-amber-200 dark:border-amber-800">
             ⚠️ Túto zmenu môžeš urobiť len raz.
           </p>
         </div>
@@ -198,11 +200,32 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- ── Dark mode toggle ── -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ darkStore.isDark ? '🌙 Tmavý režim' : '☀️ Svetlý režim' }}</h3>
+            <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Prepni vzhľad aplikácie</p>
+          </div>
+          <button
+            @click="darkStore.toggle()"
+            class="relative w-16 h-9 rounded-full border-[3px] border-b-[5px] transition-all duration-300 focus:outline-none flex-shrink-0"
+            :class="darkStore.isDark
+              ? 'bg-violet-600 border-violet-700 border-b-violet-800'
+              : 'bg-slate-200 border-slate-300 border-b-slate-400'">
+            <span
+              class="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-300"
+              :class="darkStore.isDark ? 'left-7' : 'left-0.5'">
+            </span>
+          </button>
+        </div>
+      </div>
+
       <!-- ── Badges ── -->
       <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100">Tvoje odznaky 🏆</h3>
-          <span class="bg-amber-100 text-amber-700 font-black px-4 py-1.5 rounded-xl border-2 border-amber-200">
+          <span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-black px-4 py-1.5 rounded-xl border-2 border-amber-200 dark:border-amber-700">
             {{ earnedBadges.length }} / {{ allBadges.length }}
           </span>
         </div>
@@ -251,16 +274,16 @@ onMounted(async () => {
               <div
                 v-for="badge in unearnedBadges"
                 :key="badge.key"
-                class="bg-slate-50 border-2 border-slate-200 border-dashed rounded-2xl p-4
-                       grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+                class="bg-slate-100 dark:bg-slate-700/50 border-2 border-slate-200 dark:border-slate-600 border-dashed rounded-2xl p-4
+                       grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
                 <div class="flex flex-col items-center text-center gap-2">
-                  <div class="w-12 h-12 rounded-xl bg-slate-200 flex items-center justify-center text-2xl">
+                  <div class="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-2xl">
                     {{ iconEmoji(badge.icon) }}
                   </div>
                   <div>
-                    <h5 class="font-black text-slate-700 text-sm mb-1">{{ badge.name }}</h5>
-                    <p class="text-xs font-medium text-slate-500 mb-2 leading-tight">{{ badge.description }}</p>
-                    <span class="inline-block bg-slate-200 px-2 py-1 rounded-lg text-xs font-black text-slate-600">
+                    <h5 class="font-black text-slate-700 dark:text-slate-200 text-sm mb-1">{{ badge.name }}</h5>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 leading-tight">{{ badge.description }}</p>
+                    <span class="inline-block bg-slate-200 dark:bg-slate-600 px-2 py-1 rounded-lg text-xs font-black text-slate-600 dark:text-slate-300">
                       +{{ badge.xp_reward }} XP
                     </span>
                   </div>

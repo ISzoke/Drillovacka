@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    command: uvicorn be.asgi:application --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn be.asgi:application --host 0.0.0.0 --port 8000
     environment:
       - DJANGO_SETTINGS_MODULE=be.settings
       - MYSQLHOST=db
