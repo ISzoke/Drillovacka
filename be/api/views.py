@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -1830,6 +1830,60 @@ def save_example_report(request):
     )
 
 
+@api_view(['POST'])
+def save_example_request(request):
+    """Student suggestion: what examples they'd like to see added."""
+    student, anonymous_session = get_user_identity(request)
+    text = (request.data.get('text') or '').strip()
+    grade = request.data.get('grade')
+    source = request.data.get('source', 'text')
+
+    if not text:
+        return Response({'error': 'text is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        grade = int(grade) if grade is not None else None
+    except (ValueError, TypeError):
+        grade = None
+
+    ExampleRequest.objects.create(
+        student=student,
+        anonymous_session=anonymous_session,
+        grade=grade,
+        text=text,
+        source=source,
+    )
+    return Response({'ok': True}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def get_all_example_requests(request):
+    limit = request.query_params.get('limit', 500)
+    try:
+        limit = max(1, min(int(limit), 2000))
+    except (TypeError, ValueError):
+        limit = 500
+
+    requests_qs = ExampleRequest.objects.select_related(
+        'student', 'anonymous_session'
+    ).order_by('-created_at')[:limit]
+
+    data = []
+    for req in requests_qs:
+        data.append({
+            'id': req.id,
+            'created_at': req.created_at.isoformat() if req.created_at else None,
+            'grade': req.grade,
+            'text': req.text,
+            'source': req.source,
+            'student_id': req.student.id if req.student else None,
+            'student_username': req.student.username if req.student else None,
+            'anonymous_session_id': str(req.anonymous_session.session_id) if req.anonymous_session else None,
+        })
+
+    return Response(data)
+
+
 @api_view(['GET'])
 def get_example_reports(request):
     limit = request.query_params.get('limit', 500)
@@ -2747,6 +2801,41 @@ def get_leaderboard_accuracy(request):
             'current_streak': student.current_streak,
             'solved_count': student.correct_attempts,
             'accuracy': round(student.accuracy, 4),
+        })
+
+    return Response(result)
+
+
+@api_view(['GET'])
+def get_leaderboard_by_grade(request):
+    """Top 20 students of the same grade, ranked by level then XP."""
+    grade = request.query_params.get('grade')
+    if not grade:
+        return Response({'error': 'grade parameter required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        grade = int(grade)
+    except (ValueError, TypeError):
+        return Response({'error': 'grade must be an integer'}, status=status.HTTP_400_BAD_REQUEST)
+
+    top_students = (
+        Student.objects
+        .filter(grade=grade, total_xp__gt=0)
+        .annotate(solved_count=Count('example_attempts', filter=Q(example_attempts__is_correct=True)))
+        .order_by('-level', '-total_xp', 'id')[:20]
+    )
+
+    result = []
+    for i, student in enumerate(top_students, start=1):
+        result.append({
+            'rank': i,
+            'student_id': student.id,
+            'username': student.username,
+            'total_xp': student.total_xp,
+            'level': student.level,
+            'current_streak': student.current_streak,
+            'solved_count': student.solved_count,
+            'grade': student.grade,
         })
 
     return Response(result)

@@ -756,6 +756,17 @@ export const getExampleReports = async (limit = 500) => {
   }
 };
 
+export const getAllExampleRequests = async (limit = 500) => {
+  try {
+    const response = await apiClient.get('example-requests/all/', {
+      params: { limit }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error fetching example requests.';
+  }
+};
+
 /**
  * Fetches stored survey/final feedback entries for admin overview.
  * @param {number} limit

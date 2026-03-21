@@ -84,9 +84,11 @@ urlpatterns = [
 
     # Gamification
     path('gamification/leaderboard/', views.get_leaderboard, name='gamification-leaderboard'),
-    path('gamification/leaderboard/accuracy/', views.get_leaderboard_accuracy, name='gamification-leaderboard-accuracy'),
+    path('gamification/leaderboard/grade/', views.get_leaderboard_by_grade, name='gamification-leaderboard-grade'),
     path('gamification/student/<int:student_id>/stats/', views.get_student_gamification_stats, name='gamification-student-stats'),
     path('gamification/badges/', views.get_all_badges, name='gamification-badges'),
+    path('example-requests/', views.save_example_request, name='example-requests'),
+    path('example-requests/all/', views.get_all_example_requests, name='example-requests-all'),
 ]
 
 websocket_urlpatterns = [

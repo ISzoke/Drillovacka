@@ -187,6 +187,51 @@
       </div>
     </div>
 
+    <!-- Example requests ("Málo príkladov? Klikni sem.") -->
+    <div class="border rounded-lg p-4 mb-6">
+      <div class="flex items-center justify-between gap-4 mb-3">
+        <h2 class="text-lg font-semibold">Požiadavky na príklady 💡</h2>
+        <button @click="loadExampleRequests" class="bg-violet-600 text-white px-4 py-2 rounded">
+          Obnoviť
+        </button>
+      </div>
+
+      <div v-if="requestsLoading" class="text-gray-500">Načítavam...</div>
+      <div v-else-if="requestsError" class="text-red-600">{{ requestsError }}</div>
+      <div v-else-if="exampleRequests.length === 0" class="text-gray-500">Zatiaľ žiadne požiadavky.</div>
+      <div v-else class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-2 border">Čas</th>
+              <th class="p-2 border">Ročník</th>
+              <th class="p-2 border">Požiadavka</th>
+              <th class="p-2 border">Zdroj</th>
+              <th class="p-2 border">Používateľ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="req in exampleRequests" :key="req.id">
+              <td class="p-2 border whitespace-nowrap">{{ formatDate(req.created_at) }}</td>
+              <td class="p-2 border text-center font-semibold">{{ req.grade ?? '-' }}</td>
+              <td class="p-2 border">{{ req.text }}</td>
+              <td class="p-2 border text-center">{{ req.source }}</td>
+              <td class="p-2 border">
+                <div v-if="req.student_id">
+                  <div class="font-semibold">{{ req.student_username || 'študent' }}</div>
+                  <div class="text-xs text-gray-600">ID: {{ req.student_id }}</div>
+                </div>
+                <div v-else>
+                  <div class="font-semibold">anonymný</div>
+                  <div class="text-xs text-gray-600 break-all">{{ req.anonymous_session_id || '-' }}</div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
       <div>
         <label class="block text-sm font-semibold mb-1">Typ identity</label>
@@ -383,7 +428,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getMyData, getSurveyFeedbacks } from '@/api/apiClient'
+import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getAllExampleRequests, getMyData, getSurveyFeedbacks } from '@/api/apiClient'
 
 const identityType = ref('student')
 const identityValue = ref('')
@@ -402,6 +447,9 @@ const exampleReports = ref([])
 const feedbacksLoading = ref(false)
 const feedbacksError = ref('')
 const surveyFeedbacks = ref([])
+const requestsLoading = ref(false)
+const requestsError = ref('')
+const exampleRequests = ref([])
 
 const filteredStudents = computed(() => {
   const text = (filterText.value || '').trim().toLowerCase()
@@ -517,6 +565,18 @@ async function loadSurveyFeedbacks() {
   }
 }
 
+async function loadExampleRequests() {
+  requestsLoading.value = true
+  requestsError.value = ''
+  try {
+    exampleRequests.value = await getAllExampleRequests(1000)
+  } catch (e) {
+    requestsError.value = typeof e === 'string' ? e : 'Chyba pri načítaní requestov.'
+  } finally {
+    requestsLoading.value = false
+  }
+}
+
 async function selectStudent(student) {
   identityType.value = 'student'
   identityValue.value = String(student.student_id)
@@ -563,6 +623,7 @@ onMounted(() => {
   loadAnonymousSessions()
   loadReports()
   loadSurveyFeedbacks()
+  loadExampleRequests()
 })
 </script>
 
