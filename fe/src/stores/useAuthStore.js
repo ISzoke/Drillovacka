@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', {
           localStorage.setItem('grade', JSON.stringify(this.grade));
           localStorage.setItem('grade_change_used', JSON.stringify(this.grade_change_used));
 
-          this.startInactivityTimer(router);
+          if (result.data.role === 'admin') this.startInactivityTimer(router);
 
           const langStore = useLanguageStore();
           

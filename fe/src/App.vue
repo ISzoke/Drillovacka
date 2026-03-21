@@ -52,7 +52,7 @@ const initializeSession = async () => {
 
 // Reset inactivity timer on user activity
 const resetInactivity = () => {
-  if (authStore.isAuthenticated) {
+  if (authStore.isAuthenticated && authStore.role === 'admin') {
     authStore.resetInactivityTimer(router);
   }
 };
