@@ -331,6 +331,26 @@ class StudentBadge(models.Model):
         return f"{self.student.username} — {self.badge.key}"
 
 
+class ExampleRequest(models.Model):
+    SOURCE_CHOICES = [
+        ('text', 'Text'),
+        ('voice', 'Voice'),
+    ]
+
+    student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.CASCADE)
+    anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.CASCADE)
+    grade = models.IntegerField(null=True, blank=True)
+    text = models.TextField()
+    source = models.CharField(max_length=16, choices=SOURCE_CHOICES, default='text')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Grade {self.grade} request: {self.text[:60]}"
+
+
 class Admin(models.Model):
     username = models.CharField(max_length=255, unique=True)
     password = models.CharField(max_length=255)
