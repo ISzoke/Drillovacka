@@ -35,6 +35,13 @@ BADGES = [
     dict(key='streak_14',            name='Dvojtýždenník',     description='Cvičil si 14 dní po sebe',                            icon='calendar', category='streak',    xp_reward=120),
     dict(key='streak_30',            name='Mesiac v rade',     description='Cvičil si 30 dní po sebe',                            icon='trophy',   category='streak',    xp_reward=280),
 
+    # ── Hlas (voice) ─────────────────────────────────────────────────────────
+    dict(key='voice_first',          name='Prvý hlas',         description='Prvá správna odpoveď hlasom',                         icon='mic',      category='voice',     xp_reward=15),
+    dict(key='voice_10',             name='Hlasitý žiak',      description='10 správnych odpovedí hlasom',                        icon='mic',      category='voice',     xp_reward=35),
+    dict(key='voice_50',             name='Rečník',            description='50 správnych odpovedí hlasom',                        icon='mic',      category='voice',     xp_reward=90),
+    dict(key='voice_100',            name='Hlasový majster',   description='100 správnych odpovedí hlasom',                       icon='mic',      category='voice',     xp_reward=200),
+    dict(key='voice_250',            name='Virtuóz reči',      description='250 správnych odpovedí hlasom',                       icon='mic',      category='voice',     xp_reward=450),
+
     # ── Míľniky ───────────────────────────────────────────────────────────────
     dict(key='level_5',              name='Level 5',           description='Dosiahol si level 5',                                 icon='star2',    category='milestone', xp_reward=40),
     dict(key='level_10',             name='Dvojciferný',       description='Dosiahol si level 10',                                icon='crown',    category='milestone', xp_reward=120),

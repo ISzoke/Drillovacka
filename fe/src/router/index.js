@@ -17,6 +17,8 @@ import AdminMyDataView from '@/views/AdminMyDataView.vue'
 import BulkImportView from '@/views/BulkImportView.vue'
 import LeaderboardView from '@/views/LeaderboardView.vue'
 import PokrokView from '@/views/PokrokView.vue'
+import MyGeneratedBatchesView from '@/views/MyGeneratedBatchesView.vue'
+import PracticeGeneratedView from '@/views/PracticeGeneratedView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -119,6 +121,17 @@ const router = createRouter({
       path: '/leaderboard',
       name: 'leaderboard',
       component: LeaderboardView,
+    },
+    {
+      path: '/moje-priklady',
+      name: 'my-generated-batches',
+      component: MyGeneratedBatchesView,
+    },
+    {
+      path: '/prakticovat/:batchId',
+      name: 'practice-generated',
+      component: PracticeGeneratedView,
+      props: true,
     },
   ]
 })

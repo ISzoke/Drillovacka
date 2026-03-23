@@ -187,6 +187,116 @@
       </div>
     </div>
 
+    <!-- AI Generated Batches -->
+    <div class="border rounded-lg p-4 mb-6">
+      <div class="flex items-center justify-between gap-4 mb-3 flex-wrap">
+        <h2 class="text-lg font-semibold">AI generované tasky 🤖</h2>
+        <div class="flex gap-2 items-center flex-wrap">
+          <select v-model="generatedBatchStatusFilter" @change="loadGeneratedBatches" class="border rounded px-2 py-1 text-sm">
+            <option value="">Všetky</option>
+            <option value="pending_review">Čakajú na schválenie</option>
+            <option value="approved">Schválené</option>
+            <option value="rejected">Zamietnuté</option>
+            <option value="preview">Preview</option>
+            <option value="survey_done">Anketa dokončená</option>
+          </select>
+          <button @click="loadGeneratedBatches" class="bg-violet-600 text-white px-4 py-2 rounded text-sm">
+            Obnoviť
+          </button>
+        </div>
+      </div>
+
+      <div v-if="generatedBatchesLoading" class="text-gray-500">Načítavam...</div>
+      <div v-else-if="generatedBatchesError" class="text-red-600">{{ generatedBatchesError }}</div>
+      <div v-else-if="!generatedBatches.length" class="text-gray-500">Žiadne záznamy.</div>
+      <div v-else class="space-y-4">
+        <div
+          v-for="batch in generatedBatches"
+          :key="batch.id"
+          class="border rounded-lg p-4"
+        >
+          <!-- Header row -->
+          <div class="flex items-start justify-between gap-3 mb-2 flex-wrap">
+            <div>
+              <span class="font-bold text-base">{{ batch.raw_json?.task_name || 'Bez názvu' }}</span>
+              <span class="ml-2 text-xs text-gray-500">{{ formatDate(batch.created_at) }} · {{ batch.grade }}. ročník</span>
+            </div>
+            <span
+              class="text-xs font-bold px-2 py-0.5 rounded-full"
+              :class="{
+                'bg-amber-100 text-amber-700': batch.status === 'pending_review',
+                'bg-emerald-100 text-emerald-700': batch.status === 'approved',
+                'bg-red-100 text-red-700': batch.status === 'rejected',
+                'bg-slate-100 text-slate-600': batch.status === 'preview' || batch.status === 'survey_done',
+              }"
+            >
+              {{ batch.status }}
+            </span>
+          </div>
+
+          <!-- Student + description -->
+          <div class="text-sm text-gray-600 mb-2">
+            <span class="font-semibold">{{ batch.student_username || 'neznámy' }}</span>
+            <span class="text-gray-400"> (ID {{ batch.student_id }})</span>
+          </div>
+          <p class="text-sm italic text-gray-500 mb-3">"{{ batch.description }}"</p>
+
+          <!-- Examples preview (collapsible) -->
+          <details class="mb-3">
+            <summary class="cursor-pointer text-xs font-bold text-violet-600 mb-2">
+              Zobraziť príklady ({{ batch.raw_json?.examples?.length || 0 }})
+            </summary>
+            <div class="overflow-x-auto mt-2">
+              <table class="min-w-full text-xs border-collapse">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="p-1.5 border">Príklad</th>
+                    <th class="p-1.5 border">Typ</th>
+                    <th class="p-1.5 border">Odpoveď</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(ex, i) in batch.raw_json?.examples" :key="i">
+                    <td class="p-1.5 border font-mono">{{ ex.example }}</td>
+                    <td class="p-1.5 border text-center">{{ ex.input_type }}</td>
+                    <td class="p-1.5 border font-mono text-green-700 font-bold">{{ ex.answer }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+
+          <!-- Survey answers (if any) -->
+          <div v-if="batch.survey" class="text-xs text-gray-500 mb-3 grid grid-cols-2 gap-x-4 gap-y-1 bg-gray-50 rounded p-2">
+            <div>Q1 – O čo žiadal: <strong>{{ batch.survey.q1_as_requested ? 'Áno' : 'Nie' }}</strong></div>
+            <div>Q2 – Počitateľné: <strong>{{ batch.survey.q2_solvable_display ? 'Áno' : 'Nie' }}</strong></div>
+            <div>Q3 – Obtiažnosť: <strong>{{ batch.survey.q3_difficulty }}</strong></div>
+            <div>Q4 – Chyby: <strong>{{ batch.survey.q4_has_errors ? 'Áno' : 'Nie' }}</strong></div>
+            <div class="col-span-2">Q5 – Spokojný: <strong>{{ batch.survey.q5_satisfied ? '✅ Áno' : '❌ Nie' }}</strong></div>
+          </div>
+
+          <!-- Approve / Reject (only for pending_review) -->
+          <div v-if="batch.status === 'pending_review'" class="flex gap-2">
+            <button
+              @click="approveBatch(batch.id)"
+              class="px-4 py-1.5 bg-emerald-600 text-white rounded text-sm font-bold hover:bg-emerald-700"
+            >
+              ✅ Schváliť
+            </button>
+            <button
+              @click="rejectBatch(batch.id)"
+              class="px-4 py-1.5 bg-red-500 text-white rounded text-sm font-bold hover:bg-red-600"
+            >
+              ❌ Zamietnuť
+            </button>
+          </div>
+          <div v-else-if="batch.rejection_note" class="text-xs text-red-600 mt-1">
+            Dôvod: {{ batch.rejection_note }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Example requests ("Málo príkladov? Klikni sem.") -->
     <div class="border rounded-lg p-4 mb-6">
       <div class="flex items-center justify-between gap-4 mb-3">
@@ -428,7 +538,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getAllExampleRequests, getMyData, getSurveyFeedbacks } from '@/api/apiClient'
+import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getAllExampleRequests, getMyData, getSurveyFeedbacks, getAllGeneratedBatches, approveGeneratedBatch, rejectGeneratedBatch } from '@/api/apiClient'
 
 const identityType = ref('student')
 const identityValue = ref('')
@@ -450,6 +560,10 @@ const surveyFeedbacks = ref([])
 const requestsLoading = ref(false)
 const requestsError = ref('')
 const exampleRequests = ref([])
+const generatedBatchesLoading = ref(false)
+const generatedBatchesError = ref('')
+const generatedBatches = ref([])
+const generatedBatchStatusFilter = ref('pending_review')
 
 const filteredStudents = computed(() => {
   const text = (filterText.value || '').trim().toLowerCase()
@@ -577,6 +691,39 @@ async function loadExampleRequests() {
   }
 }
 
+async function loadGeneratedBatches() {
+  generatedBatchesLoading.value = true
+  generatedBatchesError.value = ''
+  try {
+    const params = {}
+    if (generatedBatchStatusFilter.value) params.status = generatedBatchStatusFilter.value
+    generatedBatches.value = await getAllGeneratedBatches(params)
+  } catch (e) {
+    generatedBatchesError.value = typeof e === 'string' ? e : 'Chyba pri načítaní.'
+  } finally {
+    generatedBatchesLoading.value = false
+  }
+}
+
+async function approveBatch(batchId) {
+  try {
+    await approveGeneratedBatch(batchId)
+    await loadGeneratedBatches()
+  } catch (e) {
+    alert(typeof e === 'string' ? e : 'Chyba pri schvaľovaní.')
+  }
+}
+
+async function rejectBatch(batchId) {
+  const note = prompt('Dôvod zamietnutia (voliteľné):') ?? ''
+  try {
+    await rejectGeneratedBatch(batchId, note)
+    await loadGeneratedBatches()
+  } catch (e) {
+    alert(typeof e === 'string' ? e : 'Chyba pri zamietaní.')
+  }
+}
+
 async function selectStudent(student) {
   identityType.value = 'student'
   identityValue.value = String(student.student_id)
@@ -624,6 +771,7 @@ onMounted(() => {
   loadReports()
   loadSurveyFeedbacks()
   loadExampleRequests()
+  loadGeneratedBatches()
 })
 </script>
 

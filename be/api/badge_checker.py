@@ -182,6 +182,23 @@ def check_badges(student, attempt):
         if total_today >= 10 and today_ses.filter(solved=True).count() == total_today:
             try_award('perfect_session')
 
+    # ── Voice answer badges ─────────────────────────────────────────────────
+    needs_voice = not {'voice_first', 'voice_10', 'voice_50', 'voice_100', 'voice_250'}.issubset(existing_keys)
+    if needs_voice and attempt and attempt.source == 'speech':
+        voice_correct = ExampleAttempt.objects.filter(
+            student=student, is_correct=True, source='speech'
+        ).count()
+        if voice_correct >= 1:
+            try_award('voice_first')
+        if voice_correct >= 10:
+            try_award('voice_10')
+        if voice_correct >= 50:
+            try_award('voice_50')
+        if voice_correct >= 100:
+            try_award('voice_100')
+        if voice_correct >= 250:
+            try_award('voice_250')
+
     # ── Leaderboard rank ──────────────────────────────────────────────────────
     needs_lb = not {'top10_leaderboard', 'top3_leaderboard'}.issubset(existing_keys)
     if needs_lb:

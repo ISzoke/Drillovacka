@@ -11,9 +11,10 @@
 <script setup>
 import Example from '@/components/Example.vue';
 import ProgressBar from '@/components/Example/ProgressBar.vue';
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import GeneratedExamplesSurvey from '@/components/GeneratedExamplesSurvey.vue';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { getExamples, getTaskExamples } from '@/api/apiClient';
+import { getExamples, getTaskExamples, submitGeneratedBatchSurvey, getMyGeneratedBatches } from '@/api/apiClient';
 import correctIcon from '@/assets/img/correct.png';
 import wrongIcon from '@/assets/img/wrong.png'
 import correctSoundSrc from '@/assets/audio/correct.mp3';
@@ -65,6 +66,18 @@ const langStore = useLanguageStore();
 const gamStore = useGamificationStore();
 const authStore = useAuthStore();
 const route = useRoute();
+
+// ── AI-generated batch survey (shown before Summary when batch_id in URL) ─────
+const batchId = route.query.batch_id ? Number(route.query.batch_id) : null
+const batchSurveyDone = ref(false)
+const showBatchSurvey = computed(() => showSummary.value && !!batchId && !batchSurveyDone.value)
+
+async function onBatchSurveyDone(answers) {
+  try {
+    await submitGeneratedBatchSurvey(batchId, { student_id: authStore.id, ...answers })
+  } catch { /* best-effort */ }
+  batchSurveyDone.value = true
+}
 
 // Fire streak — 3 fast correct answers in a row
 const fireActive = ref(false)
@@ -263,8 +276,20 @@ const displaySummary = () => {
   showSummary.value = true;
 };
 
-onMounted(() => {
+onMounted(async () => {
   preloadMedia();
+
+  // If this is a generated batch, check its status before starting —
+  // skip survey if student already rated it
+  if (batchId && authStore.id) {
+    try {
+      const batches = await getMyGeneratedBatches({ student_id: authStore.id })
+      const batch = batches.find(b => b.id === batchId)
+      if (batch && batch.status !== 'preview') {
+        batchSurveyDone.value = true
+      }
+    } catch { /* non-critical */ }
+  }
 
   if (route.query.task_id) {
       topics.value = [];
@@ -309,7 +334,15 @@ onUnmounted(() => {
       </RouterLink>
     </div>
 
-    <!-- Progress bar --> 
+    <!-- Generated batch banner -->
+    <div v-if="batchId && examples.length > curr_index && !showSummary"
+         class="max-w-xl mx-auto px-4 pt-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 text-xs text-violet-600 dark:text-violet-400 font-semibold">
+        🤖 AI vygenerovaná sada · hodnotenie sa zobrazí po dokončení
+      </div>
+    </div>
+
+    <!-- Progress bar -->
     <div v-if="examples.length > curr_index && !showSummary" class="flex-col items-center justify-center">
       <ProgressBar :totalExamples="examples.length" :finishedExamples="curr_index"></ProgressBar>
     </div>
@@ -340,8 +373,18 @@ onUnmounted(() => {
         >
       </Transition>
 
+      <!-- AI-generated batch survey — shown before Summary when batch_id is in URL -->
+      <div v-if="showBatchSurvey" class="w-full max-w-lg mx-auto px-4 py-8">
+        <div class="mb-6 text-center">
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide mb-1">Hodnotenie vygenerovaných príkladov</p>
+          <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100">Ako sa ti páčili príklady?</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">5 rýchlych otázok — pomôžeš nám zlepšiť generovanie</p>
+        </div>
+        <GeneratedExamplesSurvey @done="onBatchSurveyDone" />
+      </div>
+
       <!-- Practice summary-->
-      <Summary v-if="showSummary" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes" :topics="topics"></Summary>
+      <Summary v-if="showSummary && !showBatchSurvey" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes" :topics="topics"></Summary>
 
     </div>
 
