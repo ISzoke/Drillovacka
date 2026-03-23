@@ -50,7 +50,7 @@ onMounted(async () => {
     if (gl) {
       const [skillsRes, tasksRes] = await Promise.all([
         apiClient.get(`skills/by-grade/${gl.id}/`),
-        getTasksByGrade(gl.id),
+        getTasksByGrade(gl.id, authStore.id || null),
       ])
       skills.value   = skillsRes.data
       manualTasks.value = tasksRes
@@ -69,7 +69,11 @@ function goToGrade(gradeLevel) {
 }
 
 function openTaskExamples(task) {
-  router.push({ name: 'examples', query: { task_id: String(task.id), task_name: task.name } })
+  const query = { task_id: String(task.id), task_name: task.name }
+  if (task.is_private && task.generated_batch_id) {
+    query.batch_id = String(task.generated_batch_id)
+  }
+  router.push({ name: 'examples', query })
 }
 </script>
 
@@ -93,6 +97,25 @@ function openTaskExamples(task) {
             :topic="item.name"
             :id="Number(item.id)"
           />
+          <!-- Private / AI-generated task -->
+          <button
+            v-else-if="item.is_private"
+            @click="openTaskExamples(item)"
+            class="text-left cursor-pointer rounded-3xl border-[3px] border-violet-300 dark:border-violet-600
+                   border-b-[8px] border-b-violet-400 dark:border-b-violet-700
+                   bg-violet-50 dark:bg-violet-900/20 p-5
+                   hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-black px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300">
+                🤖 Tebou vygenerovaná sada
+              </span>
+            </div>
+            <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ item.name }}</div>
+            <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ item.example_count }} príkladov · len pre teba</div>
+          </button>
+
+          <!-- Public task -->
           <button
             v-else
             @click="openTaskExamples(item)"
@@ -101,6 +124,11 @@ function openTaskExamples(task) {
                    bg-white dark:bg-slate-800 p-5
                    hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm"
           >
+            <div class="flex items-center gap-2 mb-1" v-if="item.generated_batch_id">
+              <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                🤖 AI sada
+              </span>
+            </div>
             <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ item.name }}</div>
             <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ item.example_count }} príkladov</div>
           </button>

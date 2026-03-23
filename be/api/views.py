@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -2069,11 +2069,27 @@ def get_skills_by_grade(request, grade_id):
 def get_tasks_by_grade(request, grade_id):
     try:
         grade = get_object_or_404(GradeLevel, id=grade_id)
+        student_id = request.GET.get('student_id')
+        try:
+            student_id = int(student_id) if student_id else None
+        except (ValueError, TypeError):
+            student_id = None
 
+        # Include public tasks + student's own private tasks; exclude other students' private tasks
+        from django.db.models import Q
         tasks = Task.objects.filter(
             grade_levels=grade,
             example__isnull=False,
+        ).filter(
+            Q(is_private=False) | Q(is_private=True, owner_student_id=student_id)
         ).distinct().order_by('name')
+
+        # Build batch_id lookup: task_id → batch_id (one query)
+        task_ids = [t.id for t in tasks]
+        batch_map = {
+            b['created_task_id']: b['id']
+            for b in GeneratedTaskBatch.objects.filter(created_task_id__in=task_ids).values('created_task_id', 'id')
+        }
 
         data = [
             {
@@ -2081,6 +2097,8 @@ def get_tasks_by_grade(request, grade_id):
                 "name": task.name,
                 "form": task.form,
                 "example_count": task.example_set.count(),
+                "is_private": task.is_private,
+                "generated_batch_id": batch_map.get(task.id),
             }
             for task in tasks
         ]
@@ -2924,3 +2942,343 @@ def get_all_badges(request):
         for b in badges
     ]
     return Response(result)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Example Generation — Phase 1 (System 1: AI Free Hand)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _grade_to_group(grade: int) -> int:
+    if grade <= 3:
+        return 1
+    if grade <= 6:
+        return 2
+    return 3
+
+
+def _serialize_batch(batch):
+    survey_data = None
+    if hasattr(batch, 'survey'):
+        s = batch.survey
+        survey_data = {
+            'q1_as_requested': s.q1_as_requested,
+            'q2_solvable_display': s.q2_solvable_display,
+            'q3_difficulty': s.q3_difficulty,
+            'q4_has_errors': s.q4_has_errors,
+            'q5_satisfied': s.q5_satisfied,
+            'created_at': s.created_at.isoformat(),
+        }
+    return {
+        'id': batch.id,
+        'grade': batch.grade,
+        'grade_group': batch.grade_group,
+        'generation_mode': batch.generation_mode,
+        'description': batch.description,
+        'raw_json': batch.raw_json,
+        'status': batch.status,
+        'rejection_note': batch.rejection_note,
+        'created_task_id': batch.created_task_id,
+        'created_at': batch.created_at.isoformat(),
+        'reviewed_at': batch.reviewed_at.isoformat() if batch.reviewed_at else None,
+        'student_id': batch.student_id,
+        'student_username': batch.student.username if batch.student else None,
+        'survey': survey_data,
+    }
+
+
+DAILY_GENERATION_LIMIT = 5
+
+
+@api_view(['GET'])
+def generation_quota(request):
+    """Return today's generation usage for the student."""
+    student_id = request.GET.get('student_id')
+    if not student_id:
+        return Response({'used': 0, 'limit': DAILY_GENERATION_LIMIT, 'remaining': DAILY_GENERATION_LIMIT})
+    try:
+        student_id = int(student_id)
+    except (ValueError, TypeError):
+        return Response({'used': 0, 'limit': DAILY_GENERATION_LIMIT, 'remaining': DAILY_GENERATION_LIMIT})
+
+    today = timezone.now().date()
+    used = GeneratedTaskBatch.objects.filter(
+        student_id=student_id,
+        created_at__date=today,
+    ).count()
+    remaining = max(0, DAILY_GENERATION_LIMIT - used)
+    return Response({'used': used, 'limit': DAILY_GENERATION_LIMIT, 'remaining': remaining})
+
+
+@api_view(['POST'])
+def generate_examples(request):
+    """
+    System 1: AI Free Hand.
+    Calls Gemini with the student's description and returns generated examples.
+    Requires a logged-in student (no anonymous sessions).
+    """
+    from .generators.ai_free_generator import generate_free
+
+    student_id = request.data.get('student_id')
+    if not student_id:
+        return Response({'error': 'Login required to generate examples.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Daily limit check
+    today = timezone.now().date()
+    used_today = GeneratedTaskBatch.objects.filter(
+        student=student,
+        created_at__date=today,
+    ).count()
+    if used_today >= DAILY_GENERATION_LIMIT:
+        return Response(
+            {'error': f'Denný limit {DAILY_GENERATION_LIMIT} generovaní bol dosiahnutý. Skús zajtra.', 'quota_exceeded': True},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    description = (request.data.get('description') or '').strip()
+    if not description:
+        return Response({'error': 'description is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    grade = student.grade
+    if not grade:
+        grade = request.data.get('grade')
+        try:
+            grade = int(grade)
+        except (TypeError, ValueError):
+            return Response({'error': 'grade is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    example_request_id = request.data.get('example_request_id')
+    example_request_obj = None
+    if example_request_id:
+        try:
+            example_request_obj = ExampleRequest.objects.get(id=example_request_id)
+        except ExampleRequest.DoesNotExist:
+            pass
+
+    # Fetch existing skill names for this grade to inject into the prompt
+    skill_names = list(
+        Skill.objects.filter(grade_levels__grade=grade, deleted=False)
+        .values_list('name', flat=True)
+        .distinct()
+    )
+
+    try:
+        raw_json = generate_free(description, grade, skill_names)
+    except ValueError as e:
+        return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    except RuntimeError as e:
+        return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    grade_group = _grade_to_group(grade)
+
+    with transaction.atomic():
+        # Create private Task + Examples + Answers immediately so student can practice
+        task = Task.objects.create(
+            name=raw_json.get('task_name', 'Vygenerovaná úloha'),
+            form=raw_json.get('form', 'classic'),
+            is_private=True,
+            owner_student=student,
+        )
+
+        # Link grade level
+        try:
+            gl = GradeLevel.objects.get(grade=grade)
+            task.grade_levels.add(gl)
+        except GradeLevel.DoesNotExist:
+            pass
+
+        # Link skills by name (best-effort)
+        skill_name_list = raw_json.get('skill_names', [])
+        matched_skills = Skill.objects.filter(name__in=skill_name_list, deleted=False)
+        task.skills.set(matched_skills)
+
+        for ex_data in raw_json.get('examples', []):
+            ex_text = str(ex_data.get('example', '')).strip()
+            input_type = str(ex_data.get('input_type', 'INLINE')).upper()
+            answer_text = str(ex_data.get('answer', '')).strip()
+            if not ex_text or not answer_text:
+                continue
+            ex_obj = Example.objects.create(
+                example=ex_text,
+                input_type=input_type,
+                task=task,
+            )
+            Answer.objects.create(example=ex_obj, answer=answer_text)
+            for skill in matched_skills:
+                ExampleSkill.objects.get_or_create(example=ex_obj, skill=skill)
+
+        if matched_skills.exists():
+            create_skill_relations([s.id for s in matched_skills])
+
+        batch = GeneratedTaskBatch.objects.create(
+            student=student,
+            example_request=example_request_obj,
+            grade=grade,
+            grade_group=grade_group,
+            generation_mode='ai_free',
+            description=description,
+            raw_json=raw_json,
+            status='preview',
+            created_task=task,
+        )
+
+    return Response({
+        'batch_id': batch.id,
+        'task_id': task.id,
+        'raw_json': raw_json,
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def submit_batch_survey(request, batch_id):
+    """Submit the 5-question post-generation survey for a batch."""
+    student_id = request.data.get('student_id')
+    if not student_id:
+        return Response({'error': 'Login required.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        batch = GeneratedTaskBatch.objects.get(id=batch_id, student__id=student_id)
+    except GeneratedTaskBatch.DoesNotExist:
+        return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if hasattr(batch, 'survey'):
+        return Response({'error': 'Survey already submitted.'}, status=status.HTTP_409_CONFLICT)
+
+    q1 = request.data.get('q1_as_requested')
+    q2 = request.data.get('q2_solvable_display')
+    q3 = request.data.get('q3_difficulty', 'ok')
+    q4 = request.data.get('q4_has_errors')
+    q5 = request.data.get('q5_satisfied')
+
+    if any(v is None for v in [q1, q2, q4, q5]):
+        return Response({'error': 'All survey questions are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if q3 not in ('easy', 'ok', 'hard'):
+        return Response({'error': "q3_difficulty must be 'easy', 'ok', or 'hard'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    GeneratedTaskBatchSurvey.objects.create(
+        batch=batch,
+        q1_as_requested=bool(q1),
+        q2_solvable_display=bool(q2),
+        q3_difficulty=q3,
+        q4_has_errors=bool(q4),
+        q5_satisfied=bool(q5),
+    )
+
+    if bool(q5):
+        batch.status = 'pending_review'
+    else:
+        batch.status = 'survey_done'
+    batch.save(update_fields=['status'])
+
+    return Response({
+        'submitted_for_review': bool(q5),
+        'status': batch.status,
+    })
+
+
+@api_view(['GET'])
+def get_my_generated_batches(request):
+    """Student: list their own generated batches."""
+    student_id = request.query_params.get('student_id')
+    if not student_id:
+        return Response({'error': 'Login required.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    batches = GeneratedTaskBatch.objects.filter(
+        student__id=student_id
+    ).select_related('student', 'survey').order_by('-created_at')
+
+    return Response([_serialize_batch(b) for b in batches])
+
+
+@api_view(['GET'])
+def get_all_generated_batches(request):
+    """Admin: list all generated batches, optionally filtered by status."""
+    status_filter = request.query_params.get('status')
+    qs = GeneratedTaskBatch.objects.select_related('student', 'survey').order_by('-created_at')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    limit = request.query_params.get('limit', 200)
+    try:
+        limit = max(1, min(int(limit), 1000))
+    except (TypeError, ValueError):
+        limit = 200
+    return Response([_serialize_batch(b) for b in qs[:limit]])
+
+
+@api_view(['POST'])
+def approve_generated_batch(request, batch_id):
+    """Admin: approve a batch → make the private task public."""
+    try:
+        batch = GeneratedTaskBatch.objects.select_related('created_task').get(id=batch_id)
+    except GeneratedTaskBatch.DoesNotExist:
+        return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if batch.status != 'pending_review':
+        return Response({'error': f'Batch is not pending review (status: {batch.status}).'}, status=status.HTTP_409_CONFLICT)
+
+    task = batch.created_task
+    if not task:
+        return Response({'error': 'No task associated with this batch.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        task.is_private = False
+        task.owner_student = None
+        task.owner_session = None
+        task.save(update_fields=['is_private', 'owner_student', 'owner_session'])
+
+        # Ensure skill relations are up to date
+        skill_ids = list(task.skills.values_list('id', flat=True))
+        if skill_ids:
+            create_skill_relations(skill_ids)
+
+        batch.status = 'approved'
+        batch.reviewed_at = timezone.now()
+        batch.save(update_fields=['status', 'reviewed_at'])
+
+    return Response({
+        'task_id': task.id,
+        'task_name': task.name,
+        'status': 'approved',
+    })
+
+
+@api_view(['POST'])
+def reject_generated_batch(request, batch_id):
+    """Admin: reject a batch."""
+    try:
+        batch = GeneratedTaskBatch.objects.get(id=batch_id)
+    except GeneratedTaskBatch.DoesNotExist:
+        return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    note = (request.data.get('note') or '').strip()
+    batch.status = 'rejected'
+    batch.rejection_note = note
+    batch.reviewed_at = timezone.now()
+    batch.save(update_fields=['status', 'rejection_note', 'reviewed_at'])
+
+    return Response({'status': 'rejected'})
+
+
+@api_view(['DELETE'])
+def delete_generated_batch(request, batch_id):
+    """Student: delete own batch (and its private task)."""
+    student_id = request.data.get('student_id') or request.query_params.get('student_id')
+    try:
+        batch = GeneratedTaskBatch.objects.get(id=batch_id)
+    except GeneratedTaskBatch.DoesNotExist:
+        return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not student_id or batch.student_id != int(student_id):
+        return Response({'error': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
+
+    with transaction.atomic():
+        if batch.created_task and batch.created_task.is_private:
+            batch.created_task.delete()
+        batch.delete()
+
+    return Response(status=status.HTTP_204_NO_CONTENT)

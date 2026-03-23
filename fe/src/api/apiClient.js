@@ -643,9 +643,10 @@ export const getGradeLevels = async () => {
  * @param {number} gradeId - id of the grade level.
  * @returns {Promise<Array<Object>>}
  */
-export const getTasksByGrade = async (gradeId) => {
+export const getTasksByGrade = async (gradeId, studentId = null) => {
   try {
-    const response = await apiClient.get(`tasks/by-grade/${gradeId}/`);
+    const params = studentId ? { student_id: studentId } : {};
+    const response = await apiClient.get(`tasks/by-grade/${gradeId}/`, { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching tasks by grade:', error);
@@ -857,6 +858,75 @@ export const bulkImportTasks = async (tasks) => {
 export const getExportCsvUrl = (params = {}) => {
   const query = new URLSearchParams(params).toString();
   return `/api/export/csv/${query ? '?' + query : ''}`;
+};
+
+// ── AI Example Generation ────────────────────────────────────────────────────
+
+export const getGenerationQuota = async (studentId) => {
+  const response = await apiClient.get('generation-quota/', { params: { student_id: studentId } });
+  return response.data; // { used, limit, remaining }
+};
+
+export const generateExamples = async (payload) => {
+  try {
+    const response = await apiClient.post('generate-examples/', payload);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error generating examples.';
+  }
+};
+
+export const submitGeneratedBatchSurvey = async (batchId, answers) => {
+  try {
+    const response = await apiClient.post(`generated-batches/${batchId}/survey/`, answers);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error submitting survey.';
+  }
+};
+
+export const getMyGeneratedBatches = async (params = {}) => {
+  try {
+    const response = await apiClient.get('my-generated-batches/', { params });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error loading generated batches.';
+  }
+};
+
+export const getAllGeneratedBatches = async (params = {}) => {
+  try {
+    const response = await apiClient.get('generated-batches/', { params });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error loading generated batches.';
+  }
+};
+
+export const approveGeneratedBatch = async (batchId) => {
+  try {
+    const response = await apiClient.post(`generated-batches/${batchId}/approve/`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error approving batch.';
+  }
+};
+
+export const rejectGeneratedBatch = async (batchId, note = '') => {
+  try {
+    const response = await apiClient.post(`generated-batches/${batchId}/reject/`, { note });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.error || 'Error rejecting batch.';
+  }
+};
+
+export const deleteGeneratedBatch = async (batchId, studentId) => {
+  try {
+    await apiClient.delete(`generated-batches/${batchId}/delete/`, { params: { student_id: studentId } });
+  } catch (error) {
+    throw error.response?.data?.error || 'Error deleting batch.';
+  }
 };
 
 export default apiClient;

@@ -23,6 +23,7 @@ const passphraseError = ref('');
 const showPassphrase = ref(false);
 const errorMessage = ref('');
 const copied = ref(false);
+const credentialsSaved = ref(false);
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -156,12 +157,28 @@ const copyToClipboard = () => {
         <!-- Error message -->
         <p v-if="errorMessage" class="text-red-500 text-sm font-semibold text-center">{{ errorMessage }}</p>
 
+        <!-- Credentials confirmation checkbox -->
+        <label class="flex items-start gap-3 cursor-pointer select-none">
+          <div class="mt-0.5 flex-shrink-0">
+            <input
+              type="checkbox"
+              v-model="credentialsSaved"
+              class="w-5 h-5 rounded-lg border-2 border-slate-300 dark:border-slate-500 accent-violet-500 cursor-pointer"
+            />
+          </div>
+          <span class="text-sm font-semibold text-slate-600 dark:text-slate-300 leading-snug">
+            Zapísal/a som si prihlasovacie meno aj heslo a budem si ich pamätať
+          </span>
+        </label>
+
         <!-- Submit -->
         <button
           type="submit"
+          :disabled="!credentialsSaved"
           class="w-full py-4 rounded-2xl font-black text-lg text-white
                  bg-violet-500 border-[3px] border-violet-600 border-b-[8px] border-b-violet-700
-                 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
+                 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all
+                 disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 disabled:border-b-[8px]"
         >
           {{ dictionary[langStore.language].register }}
         </button>

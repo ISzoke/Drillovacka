@@ -89,6 +89,16 @@ urlpatterns = [
     path('gamification/badges/', views.get_all_badges, name='gamification-badges'),
     path('example-requests/', views.save_example_request, name='example-requests'),
     path('example-requests/all/', views.get_all_example_requests, name='example-requests-all'),
+
+    # AI Example Generation
+    path('generation-quota/', views.generation_quota, name='generation-quota'),
+    path('generate-examples/', views.generate_examples, name='generate-examples'),
+    path('generated-batches/', views.get_all_generated_batches, name='generated-batches-all'),
+    path('generated-batches/<int:batch_id>/survey/', views.submit_batch_survey, name='generated-batch-survey'),
+    path('generated-batches/<int:batch_id>/approve/', views.approve_generated_batch, name='generated-batch-approve'),
+    path('generated-batches/<int:batch_id>/reject/', views.reject_generated_batch, name='generated-batch-reject'),
+    path('my-generated-batches/', views.get_my_generated_batches, name='my-generated-batches'),
+    path('generated-batches/<int:batch_id>/delete/', views.delete_generated_batch, name='generated-batch-delete'),
 ]
 
 websocket_urlpatterns = [
