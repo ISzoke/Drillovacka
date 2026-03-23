@@ -21,9 +21,9 @@ class Task(models.Model):
     name = models.CharField(max_length=255)
 
     skills = models.ManyToManyField(
-        'Skill',  
-        blank=True,  
-        related_name='tasks' 
+        'Skill',
+        blank=True,
+        related_name='tasks'
     )
 
     grade_levels = models.ManyToManyField(
@@ -33,9 +33,21 @@ class Task(models.Model):
     )
 
     form = models.CharField(
-        max_length=20, 
-        choices=FORM_CHOICES, 
-        default='classic', 
+        max_length=20,
+        choices=FORM_CHOICES,
+        default='classic',
+    )
+
+    # Private tasks: only visible to the student who generated them
+    # Set to False when admin approves the task for public use
+    is_private = models.BooleanField(default=False)
+    owner_student = models.ForeignKey(
+        'Student', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='private_tasks'
+    )
+    owner_session = models.ForeignKey(
+        'AnonymousSession', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='private_tasks'
     )
 
 class Example(models.Model):
@@ -356,9 +368,92 @@ class Admin(models.Model):
     password = models.CharField(max_length=255)
 
     def save(self, *args, **kwargs):
-        if self.pk is None: 
+        if self.pk is None:
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
     def check_password(self, password):
         return check_password(password, self.password)
+
+
+class GeneratedTaskBatch(models.Model):
+    """
+    Central connector for the AI example generation pipeline.
+    Links: student query → generated JSON → private Task → survey answers → admin review.
+    """
+    GENERATION_MODE_CHOICES = [
+        ('ai_free', 'AI Free Hand'),
+        ('backend_generator', 'Backend Generator'),
+    ]
+    STATUS_CHOICES = [
+        ('preview',        'Preview'),         # generated, shown to student
+        ('survey_done',    'Survey Done'),      # student completed survey (Q5=No)
+        ('pending_review', 'Pending Review'),   # Q5=Yes → awaiting admin
+        ('approved',       'Approved'),
+        ('rejected',       'Rejected'),
+    ]
+    GRADE_GROUP_CHOICES = [
+        (1, 'Grades 1–3'),
+        (2, 'Grades 4–6'),
+        (3, 'Grades 7–9'),
+    ]
+
+    student = models.ForeignKey(
+        Student, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='generated_batches'
+    )
+    example_request = models.ForeignKey(
+        ExampleRequest, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='generated_batches'
+    )
+
+    grade = models.IntegerField()
+    grade_group = models.IntegerField(choices=GRADE_GROUP_CHOICES)
+    generation_mode = models.CharField(max_length=20, choices=GENERATION_MODE_CHOICES, default='ai_free')
+
+    description = models.TextField()          # student's original query (denormalized)
+    parser_output = models.JSONField(default=dict, blank=True)  # Phase 2: AI-parsed config
+    raw_json = models.JSONField()             # generated task + examples JSON
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='preview')
+    rejection_note = models.TextField(blank=True, default='')
+
+    created_task = models.ForeignKey(
+        Task, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='generated_batch'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Batch #{self.pk} — grade {self.grade} — {self.status}"
+
+
+class GeneratedTaskBatchSurvey(models.Model):
+    """
+    Post-generation survey answers linked to a GeneratedTaskBatch.
+    If q5_satisfied=True the batch is moved to pending_review for admin approval.
+    """
+    DIFFICULTY_CHOICES = [
+        ('easy',  'Ľahké'),
+        ('ok',    'Primerané'),
+        ('hard',  'Ťažké'),
+    ]
+
+    batch = models.OneToOneField(
+        GeneratedTaskBatch, on_delete=models.CASCADE, related_name='survey'
+    )
+
+    q1_as_requested     = models.BooleanField()  # Boli príklady to, o čo si žiadal?
+    q2_solvable_display = models.BooleanField()  # Boli počitateľné? Zobrazili sa správne?
+    q3_difficulty       = models.CharField(max_length=8, choices=DIFFICULTY_CHOICES)
+    q4_has_errors       = models.BooleanField()  # Mali príklady chyby?
+    q5_satisfied        = models.BooleanField()  # Si spokojný? → True triggers pending_review
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Survey for Batch #{self.batch_id} — satisfied={self.q5_satisfied}"
