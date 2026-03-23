@@ -301,7 +301,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
     </div>
 
     <div class="flex items-center justify-center mt-10 md:mt-20">
-      <div class="flex flex-col">
+      <div class="flex flex-col dark:bg-slate-800 dark:rounded-3xl dark:px-10 dark:py-8">
 
         <div :class="[
           isWordProblem ? 'text-xl md:text-3xl flex flex-col items-center' : 'text-4xl md:text-7xl flex flex-col',
