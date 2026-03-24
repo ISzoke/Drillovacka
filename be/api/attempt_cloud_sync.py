@@ -143,8 +143,8 @@ def _do_sync(attempt):
     if not sidecar_path:
         return {"uploaded": False, "reason": "sidecar_missing_locally"}
 
-    audio_upload = upload_file_to_mega(local_audio)
-    json_upload = upload_file_to_mega(sidecar_path)
+    audio_upload = upload_file_to_mega(local_audio, dest_folder="audioprompts")
+    json_upload = upload_file_to_mega(sidecar_path, dest_folder="audioprompts")
 
     meta = dict(attempt.meta or {})
     meta.update(
@@ -230,7 +230,7 @@ def _do_write_sync(attempt):
     except Exception as exc:
         return {"uploaded": False, "reason": f"json_write_failed: {exc}"}
 
-    upload_result = upload_file_to_mega(local_path)
+    upload_result = upload_file_to_mega(local_path, dest_folder="audioprompts")
 
     meta = dict(attempt.meta or {})
     meta.update({

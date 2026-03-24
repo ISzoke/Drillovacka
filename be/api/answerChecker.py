@@ -100,9 +100,9 @@ class InlineAnswerChecker(AnswerChecker):
             continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next)
         
-        # Normalize decimal format
-        correct_answer = float(correct_answer.replace(',', '.'))
-        student_answer = float(student_answer.replace(',', '.'))
+        # Normalize decimal format (strip spaces e.g. '3 500' -> '3500')
+        correct_answer = float(correct_answer.replace(' ', '').replace(',', '.'))
+        student_answer = float(student_answer.replace(' ', '').replace(',', '.'))
         
         # Compare and update record
         if AnswerChecker.compareAnswers(student_answer, correct_answer):

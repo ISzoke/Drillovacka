@@ -56,6 +56,10 @@ function startPractice() {
   }
 }
 
+function goBack() {
+  router.back();
+}
+
 const updateExampleCount = ({ relatedSkills, isSelected }) => {
   relatedSkills.forEach(({ related_id, examples }) => {
     const subtopic = subtopics.value.find(sub => sub.id === related_id);
@@ -68,11 +72,20 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
   <div class="min-h-screen pb-16">
     <div class="max-w-3xl mx-auto px-4 pt-8 flex flex-col items-center">
 
-      <!-- Main skill title -->
-      <div v-if="topic"
-        class="w-full bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
-               border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-6 mb-8 text-center shadow-sm">
-        <h1 class="text-2xl md:text-4xl font-black text-slate-800 dark:text-slate-100">
+      <!-- Header with back button + title -->
+      <div class="flex items-center w-full mb-8">
+        <button
+          @click="goBack"
+          class="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400
+                 transition font-black text-sm bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-2xl
+                 border-2 border-slate-200 dark:border-slate-700 border-b-[4px] border-b-slate-300 dark:border-b-slate-600
+                 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[2px] flex-shrink-0"
+        >
+          <i class="fa-solid fa-arrow-left"></i>
+          {{ dictionary[langStore.language].back }}
+        </button>
+
+        <h1 v-if="topic" class="flex-1 text-2xl md:text-4xl font-black text-slate-800 dark:text-slate-100 text-center pr-16">
           {{ getSkillName(topic.name, langStore.language) }}
         </h1>
       </div>

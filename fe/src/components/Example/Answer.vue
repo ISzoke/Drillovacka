@@ -49,7 +49,7 @@ watch(() => props.answer, () => {
             <!--Just placeholder for answer to be centered -->
             <img :src="correctIcon" class="w-12 h-12 invisible">
 
-            <p class="text-5xl md:text-7xl">{{ renderedAnswer }}</p>
+            <p class="text-5xl md:text-7xl dark:text-white">{{ renderedAnswer }}</p>
             
             <!--Actual correct icon -->
             <img :src="correctIcon" class="w-12 h-12 ml-2">

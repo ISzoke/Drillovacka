@@ -166,13 +166,13 @@ def sync_survey_feedback_to_mega(feedback):
         with open(json_path, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, ensure_ascii=False)
 
-        json_upload = upload_file_to_mega(json_path)
+        json_upload = upload_file_to_mega(json_path, dest_folder="survey")
 
         audio_upload = {"uploaded": False, "public_url": "", "error": ""}
         local_audio = feedback.audio_file_path
         if local_audio:
             if os.path.exists(local_audio):
-                audio_upload = upload_file_to_mega(local_audio)
+                audio_upload = upload_file_to_mega(local_audio, dest_folder="survey")
             else:
                 audio_upload = {"uploaded": False, "public_url": "", "error": "Local audio missing"}
 

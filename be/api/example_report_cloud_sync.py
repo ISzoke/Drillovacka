@@ -64,7 +64,7 @@ def sync_report_to_mega(report):
         with open(json_path, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, ensure_ascii=False)
 
-        upload_result = upload_file_to_mega(json_path)
+        upload_result = upload_file_to_mega(json_path, dest_folder="survey")
         meta = dict(report.meta or {})
         meta.update(
             {
