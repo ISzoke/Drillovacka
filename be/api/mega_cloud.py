@@ -67,9 +67,18 @@ def _get_client():
             raise RuntimeError(_CLIENT_ERROR)
 
 
-def upload_file_to_mega(local_path):
+def _reset_client():
+    global _CLIENT, _CLIENT_ERROR
+    with _LOCK:
+        _CLIENT = None
+        _CLIENT_ERROR = None
+
+
+def upload_file_to_mega(local_path, dest_folder=None):
     """
     Upload file to MEGA and return metadata.
+    dest_folder: optional remote folder name (e.g. 'audioprompts', 'survey', 'db_backups').
+                 If provided, file is uploaded into /Root/<dest_folder>/ (folder is created if missing).
     Returns dict:
       {
         'uploaded': bool,
@@ -85,10 +94,18 @@ def upload_file_to_mega(local_path):
 
     try:
         client = _get_client()
-        uploaded = client.upload(local_path)
+        dest = None
+        if dest_folder:
+            dest = client.find(dest_folder)
+            if dest is None:
+                dest = client.create_folder(dest_folder)
+                dest = client.find(dest_folder)
+        uploaded = client.upload(local_path, dest=dest)
         public_url = client.get_upload_link(uploaded)
         return {"uploaded": True, "public_url": public_url or "", "error": ""}
     except Exception as exc:
+        # Reset the cached client so the next call re-authenticates (handles expired sessions).
+        _reset_client()
         return {"uploaded": False, "public_url": "", "error": str(exc)}
 
 
