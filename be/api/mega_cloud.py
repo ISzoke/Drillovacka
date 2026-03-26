@@ -96,10 +96,14 @@ def upload_file_to_mega(local_path, dest_folder=None):
         client = _get_client()
         dest = None
         if dest_folder:
-            dest = client.find(dest_folder)
-            if dest is None:
-                dest = client.create_folder(dest_folder)
-                dest = client.find(dest_folder)
+            found = client.find(dest_folder)
+            if found is not None:
+                # find() returns (handle, node_dict); upload() expects the string handle
+                dest = found[0] if isinstance(found, tuple) else found
+            else:
+                created = client.create_folder(dest_folder)
+                # create_folder returns {name: handle_string}
+                dest = created.get(dest_folder) if isinstance(created, dict) else None
         uploaded = client.upload(local_path, dest=dest)
         public_url = client.get_upload_link(uploaded)
         return {"uploaded": True, "public_url": public_url or "", "error": ""}
