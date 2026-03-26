@@ -87,23 +87,9 @@ const percentages = computed(() => {
 
 const feedbackText = ref('');
 
-const feedbackPrompt = {
-    cs: 'Napíš, alebo řekni, čo se ti líbilo nebo co by jsi změnil/a...  ',
-    en: 'Do you have any feedback for us? ',
-    sk: 'Napíš, alebo povedz, čo sa ti páčilo alebo čo by si zmenil/a...  '
-};
-
-const feedbackPlaceholder = {
-    cs: 'Napíš, čo sa ti páčilo alebo čo by si zmenil/a... ',
-    en: 'Write what you liked or what should be improved... ',
-    sk: 'Napíš, čo sa ti páčilo alebo čo by si zmenil/a... '
-};
-
-const feedbackQuestionByLang = {
-    cs: 'Máš pre nás nejaký feedback?',
-    en: 'Do you have any feedback for us?',
-    sk: 'Máš pre nás nejaký feedback?'
-};
+const feedbackPrompt = computed(() => dictionary[langStore.language]?.feedbackPromptText ?? dictionary['sk'].feedbackPromptText);
+const feedbackPlaceholder = computed(() => dictionary[langStore.language]?.feedbackPlaceholderText ?? dictionary['sk'].feedbackPlaceholderText);
+const feedbackQuestionByLang = computed(() => dictionary[langStore.language]?.feedbackQuestion ?? dictionary['sk'].feedbackQuestion);
 
 const BADGE_NAMES = {
     first_correct: 'Prvý gól', ten_correct: 'Rozbehnutý', hundred_correct: 'Stovkár',
@@ -143,7 +129,7 @@ const confirmFeedback = async () => {
 
     const trimmedFeedback = feedbackText.value.trim();
     if (trimmedFeedback.length > 0) {
-        await sendSurveyAnswer('final-feedback-text', feedbackQuestionByLang[langStore.language], trimmedFeedback, props.topics, student_id, session_id, langStore.language);
+        await sendSurveyAnswer('final-feedback-text', feedbackQuestionByLang.value, trimmedFeedback, props.topics, student_id, session_id, langStore.language);
     }
 
     feedbackSubmitted.value = true;
@@ -159,7 +145,7 @@ const backToMenu = () => {
 };
 
 onMounted(() => {
-    recorderStore.updateSurveyQuestionData(feedbackQuestionByLang[langStore.language], props.topics, student_id, session_id, 'final-feedback-voice');
+    recorderStore.updateSurveyQuestionData(feedbackQuestionByLang.value, props.topics, student_id, session_id, 'final-feedback-voice');
     console.log('[DEBUG Summary.vue] onMounted - student_id:', student_id, 'session_id:', session_id);
 });
 
@@ -250,11 +236,11 @@ onUnmounted(() => {
 
         <!-- Final optional feedback section -->
         <div class="flex flex-col items-center my-8 md:my-12">
-            <div class="flex justify-center text-center text-xl font-semibold mb-4">{{ feedbackPrompt[langStore.language] }}</div>
+            <div class="flex justify-center text-center text-xl font-semibold mb-4">{{ feedbackPrompt }}</div>
 
             <textarea
                 v-model="feedbackText"
-                :placeholder="feedbackPlaceholder[langStore.language]"
+                :placeholder="feedbackPlaceholder"
                 :disabled="isSubmitting || feedbackSubmitted"
                 rows="4"
                 class="w-full md:w-[700px] max-w-full border-[3px] border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-3 text-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition"

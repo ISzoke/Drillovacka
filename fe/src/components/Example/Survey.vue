@@ -108,32 +108,36 @@ const questions = ref([
     }, 
     type: "voice" 
   },
-  { 
-    text: { 
-      cs: "Jak rychle aplikace reagovala, když jsi řekl výsledek?", 
-      en: "How quickly did the app respond when you said the result?" 
-    }, 
-    type: "scale", 
-    boundaries: { 
-      cs: "Označ: 1 = pomalu, 5 = hned!", 
-      en: "Mark: 1 = slowly, 5 = instantly!" 
-    } 
+  {
+    text: {
+      cs: "Jak rychle aplikace reagovala, když jsi řekl výsledek?",
+      en: "How quickly did the app respond when you said the result?",
+      sk: "Ako rýchlo aplikácia reagovala, keď si povedal výsledok?"
+    },
+    type: "scale",
+    boundaries: {
+      cs: "Označ: 1 = pomalu, 5 = hned!",
+      en: "Mark: 1 = slowly, 5 = instantly!",
+      sk: "Označ: 1 = pomaly, 5 = hneď!"
+    }
   },
-  { 
-    text: { 
-      cs: "Přišlo ti rychlejší říkat výsledky nahlas, nebo je psát na klávesnici?", 
-      en: "Did you find it faster to say the results out loud or type them on the keyboard?" 
-    }, 
-    type: "choice", 
-    a: { cs: "Nahlas", en: "Out loud" }, 
-    b: { cs: "Na klávesnici", en: "On the keyboard" } 
+  {
+    text: {
+      cs: "Přišlo ti rychlejší říkat výsledky nahlas, nebo je psát na klávesnici?",
+      en: "Did you find it faster to say the results out loud or type them on the keyboard?",
+      sk: "Prišlo ti rýchlejšie hovoriť výsledky nahlas, alebo ich písať na klávesnici?"
+    },
+    type: "choice",
+    a: { cs: "Nahlas", en: "Out loud", sk: "Nahlas" },
+    b: { cs: "Na klávesnici", en: "On the keyboard", sk: "Na klávesnici" }
   },
-  { 
-    text: { 
-      cs: "Stalo se ti, že něco v aplikaci nefungovalo tak, jak mělo? Kde přesně?", 
-      en: "Did anything in the app not work as expected? Where exactly?" 
-    }, 
-    type: "voice" 
+  {
+    text: {
+      cs: "Stalo se ti, že něco v aplikaci nefungovalo tak, jak mělo? Kde přesně?",
+      en: "Did anything in the app not work as expected? Where exactly?",
+      sk: "Stalo sa ti, že niečo v aplikácii nefungovalo tak, ako malo? Kde presne?"
+    },
+    type: "voice"
   }
 ]);
 

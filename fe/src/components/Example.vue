@@ -347,7 +347,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
 
           <!-- Example hint -->
           <div v-if="step" class="mt-8">
-            <p class="text-xl md:text-4xl text-center text-slate-500 dark:text-slate-400">Nápověda: <span class="font-semibold text-slate-800 dark:text-slate-100">{{ step }}</span></p>
+            <p class="text-xl md:text-4xl text-center text-slate-500 dark:text-slate-400">{{ dictionary[langStore.language].hint }}: <span class="font-semibold text-slate-800 dark:text-slate-100">{{ step }}</span></p>
           </div>
 
         </div>

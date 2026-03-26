@@ -9,6 +9,11 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { dictionary } from "@/utils/dictionary";
+import { useLanguageStore } from "@/stores/useLanguageStore";
+
+const langStore = useLanguageStore();
+const t = (key) => dictionary[langStore.language]?.[key] ?? dictionary['sk'][key];
 
 const showTips = ref(false);
 
@@ -54,7 +59,7 @@ onBeforeUnmount(() => {
             w-11/12 md:w-1/2 bg-white dark:bg-slate-800 border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] border-b-slate-300 dark:border-b-slate-600
             shadow-2xl rounded-3xl p-6 text-lg text-slate-800 dark:text-slate-100 transition-all duration-300 ease-in-out z-50">
 
-            <h3 class="text-xl font-black text-center mb-4 text-violet-600 dark:text-violet-400">Tipy pro zadávání hlasem</h3>
+            <h3 class="text-xl font-black text-center mb-4 text-violet-600 dark:text-violet-400">{{ t('tipsTitle') }}</h3>
 
             <!-- Close button for mobiles which cant use hover -->
             <button v-if="isMobile" @click="showTips = false" class="absolute top-4 right-4 text-4xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
@@ -66,7 +71,7 @@ onBeforeUnmount(() => {
 
                 <li class="flex flex-col space-y-2 pb-2 border-b border-slate-200 dark:border-slate-700 text-[15px] md:text-lg">
                     <span class="flex items-center font-semibold">
-                        Pro zadávání hlasem stiskni
+                        {{ t('tipsStart') }}
                         <div class="w-8 h-8 rounded-full bg-emerald-500 flex justify-center items-center ml-2 shadow-md">
                             <i class="fas fa-microphone text-white"></i>
                         </div>
@@ -75,7 +80,7 @@ onBeforeUnmount(() => {
 
                 <li class="flex flex-col space-y-2 pb-2 border-b border-slate-200 dark:border-slate-700 text-[15px] md:text-lg">
                     <span class="flex items-center font-semibold">
-                        Pro ukončení zadávání hlasem stiskni
+                        {{ t('tipsStop') }}
                         <div class="w-8 h-8 rounded-full bg-red-500 flex justify-center items-center ml-2 shadow-md">
                             <i class="fas fa-stop text-white"></i>
                         </div>
