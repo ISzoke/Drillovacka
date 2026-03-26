@@ -14,7 +14,8 @@ import { getSkillName } from '@/utils/dictionary'
 
 const props = defineProps({
   topic: { type: String, required: true },
-  id:    { type: Number, required: true }
+  id:    { type: Number, required: true },
+  exampleCount: { type: Number, default: null }
 })
 
 const router = useRouter()
@@ -34,9 +35,13 @@ function goToTopicDetail() {
            hover:-translate-y-1 active:translate-y-1 active:border-b-[3px]
            transition-all shadow-sm"
   >
-    <h2 class="flex justify-center text-lg md:text-2xl text-center font-black
-               text-slate-800 dark:text-slate-100 p-5">
-      {{ getSkillName(topic, langStore.language) }}
-    </h2>
+    <div class="p-5 flex flex-col items-center gap-1">
+      <h2 class="text-lg md:text-2xl text-center font-black text-slate-800 dark:text-slate-100">
+        {{ getSkillName(topic, langStore.language) }}
+      </h2>
+      <p v-if="exampleCount !== null" class="text-sm font-bold text-slate-400 dark:text-slate-500">
+        {{ exampleCount }} príkladov
+      </p>
+    </div>
   </div>
 </template>

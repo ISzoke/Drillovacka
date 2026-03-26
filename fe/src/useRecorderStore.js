@@ -1,0 +1,359 @@
+/**
+ * ================================================================================
+ * File: useRecorderStore.js
+ * Description:
+ *       Pinia store for managing the audio recording state and WebSocket communication
+ *       for user answers by voice.
+ * Author: Dominik Horut (xhorut01)
+ * ================================================================================
+ */
+
+import { defineStore } from "pinia";
+import { ref, onUnmounted } from "vue";
+import { useLanguageStore } from "./useLanguageStore";
+
+export const useRecorderStore = defineStore("recorder", () => {
+
+  let ws = null;
+
+  // Control recording
+  const isRecording = ref(false);
+
+  // Metadata for the audio answer evaluation
+  const student_id = ref(null);
+  const session_id = ref(null);
+  const example_id = ref(null);
+  const input_type = ref(null); 
+  const record_date = ref(null);
+
+  // Result of evaluation data
+  const isCorrect = ref(null);
+  const continueWithNext = ref(null);
+  const student_answer = ref(null);
+
+  // User allowed his voice to be recorded
+  const allowedRecording = ref(false);
+
+  // Audio threshold for filtering (0-100, where 50 = center)
+  const audioThreshold = ref(50);
+
+  // Survey metadata
+  const question_text = ref(null);
+  const question_type = ref('open-question');
+  const skillsList = ref(null);
+
+  // Audio processing variables
+  let audioContext = null;
+  let source = null;
+  let stream = null;
+  let workletNode = null;
+
+  let emitFunction = null;
+
+  const setEmitFunction = (emit) => {
+    emitFunction = emit;
+  };
+
+  // AudioWorklet processor code as a string
+const processorCode = `
+  class PCMProcessor extends AudioWorkletProcessor {
+    constructor() {
+      super();
+      this.bufferSize = 4096;
+      this.buffer = new Float32Array(this.bufferSize);
+      this.bufferIndex = 0;
+    }
+    
+    process(inputs, outputs, parameters) {
+      const input = inputs[0][0];
+      if (!input) return true;
+      
+      // Fill buffer with incoming audio data
+      for (let i = 0; i < input.length; i++) {
+        this.buffer[this.bufferIndex++] = input[i];
+        
+        // When buffer is full, process and send it
+        if (this.bufferIndex >= this.bufferSize) {
+          // Convert to Int16 and send everything (no threshold filtering)
+          const int16Buffer = new Int16Array(this.bufferSize);
+          for (let j = 0; j < this.bufferSize; j++) {
+            const s = Math.max(-1, Math.min(1, this.buffer[j]));
+            int16Buffer[j] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          
+          this.port.postMessage(int16Buffer.buffer, [int16Buffer.buffer]);
+
+          // Reset buffer
+          this.buffer = new Float32Array(this.bufferSize);
+          this.bufferIndex = 0;
+        }
+      }
+      return true;
+    }
+  }
+  registerProcessor('pcm-processor', PCMProcessor);
+`;
+
+  // Start the recording process and initiate WebSocket connection
+  const startRecording = async (isSurvey) => {
+    try {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        // Generate WebSocket URL dynamically based on current location
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const path = isSurvey ? 'ws/survey/' : 'ws/speech/';
+        const wsurl = `${protocol}//${host}/${path}`;
+        
+        console.log(`Connecting to WebSocket: ${wsurl}`);
+        ws = new WebSocket(wsurl);
+        ws.onopen = () => {
+          console.log("WebSocket connection opened.");
+
+          // Send metadata
+          if (isSurvey) { 
+            // For survey answer
+            sendSurveyQuestionData();
+          } else{
+            // For example answer
+            sendExampleData();
+          }
+
+          // Set ASR language
+          // Set ASR (Speech-to-Text) language dynamically
+          const langStore = useLanguageStore();
+
+          const langMap = {
+            en: 'en-US',
+            cs: 'cs-CZ',
+            sk: 'sk-SK'
+          };
+
+          // Vyber z mapy alebo použi češtinu ako fallback
+          const asrLang = langMap[langStore.language] || 'sk-SK';
+          changeASRLanguage(asrLang);
+          console.log(`ASR language set to: ${asrLang}`);
+
+        };
+
+        // Handle incoming WebSocket messages - answer evaluation results
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          
+          // User skipped the question by voice
+          if(data.skipped == true){
+            // Update ExampleView
+            if (emitFunction) {
+              emitFunction("skipped", {skipped: true});
+            }
+          
+          // User terminated practice by voice
+          } else if(data.finished == true){
+            // Update ExampleView
+            if (emitFunction) {
+              emitFunction("finished");
+            }
+
+          // Speech was recognized but intentionally ignored (non-numeric noise)
+          } else if (data.filtered === true) {
+            isCorrect.value = null;
+            continueWithNext.value = false;
+            student_answer.value = null;
+            // Do not emit answerSent; this should not be treated as a wrong answer.
+          
+          // User answered the question by voice
+          } else {
+            isCorrect.value = data.isCorrect;
+            continueWithNext.value = data.continue_with_next;
+            student_answer.value = data.student_answer;
+
+            // Update ExampleView
+            if (emitFunction) {
+              emitFunction("answerSent", {
+                isCorrect: data.isCorrect,
+                nextExample: data.continue_with_next,
+                studentAnswer: data.student_answer,
+              });
+            }
+          }
+        };
+      }
+
+      // Initialize audio context and stream
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext = new AudioContext({ sampleRate: 16000 }); // 16kHz sample rate
+      source = audioContext.createMediaStreamSource(stream);
+      
+      // Create AudioWorklet for processing audio
+      const blob = new Blob([processorCode], { type: 'application/javascript' });
+      const workletUrl = URL.createObjectURL(blob);
+      await audioContext.audioWorklet.addModule(workletUrl);
+      console.log('[DEBUG] AudioWorklet module loaded successfully');
+      
+      workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+      console.log('[DEBUG] AudioWorkletNode created');
+      
+      // Handle processed audio data from the worklet
+      let chunkCount = 0;
+      workletNode.port.onmessage = (event) => {
+        chunkCount++;
+        if (chunkCount % 20 === 0) {
+          console.log(`[DEBUG] Worklet sent ${chunkCount} chunks so far`);
+        }
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(event.data); // Send processed audio data to server
+          if (chunkCount % 20 === 0) {
+            console.log(`[DEBUG] Sent chunk ${chunkCount} to WebSocket`);
+          }
+        } else {
+          console.warn(`[DEBUG] WS not open (state=${ws?.readyState}), dropping chunk ${chunkCount}`);
+        }
+      };
+      
+      // Connect the audio processing pipeline
+      source.connect(workletNode);
+      workletNode.connect(audioContext.destination);
+      console.log('[DEBUG] Audio pipeline connected');
+      
+      isRecording.value = true;
+      console.log('[DEBUG] Recording started, isRecording=true');
+
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+  // Stop the recording and clean up
+  const stopRecording = () => {
+    if (workletNode) {
+      workletNode.disconnect();
+      workletNode = null;
+    }
+    
+    if (source) {
+      source.disconnect();
+      source = null;
+    }
+    
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+    
+    if (audioContext) {
+      audioContext.close().catch(err => console.error("Error closing AudioContext:", err));
+      audioContext = null;
+    }
+    
+    closeWebSocket();
+    isRecording.value = false;
+  };
+
+  // Send metadata about current example
+  const sendExampleData = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const payload = { 
+        student_id: student_id.value, 
+        session_id: session_id.value,
+        example_id: example_id.value, 
+        record_date: record_date.value, 
+        input_type: input_type.value,
+        format: "pcm"
+      };
+      console.log('[DEBUG useRecorderStore] sendExampleData payload:', payload);
+      ws.send(JSON.stringify(payload));
+    }
+  };
+  // Update metadata about practiced example and example record
+  const updateExampleData = (studentId, exampleId, inputType, recordDate, sessionId = null) => {
+    console.log('[DEBUG useRecorderStore] updateExampleData called with:', {
+      studentId,
+      sessionId,
+      exampleId,
+      inputType,
+      recordDate
+    });
+    student_id.value = studentId;
+    session_id.value = sessionId;
+    example_id.value = exampleId;
+    input_type.value = inputType;
+    record_date.value = recordDate;
+    sendExampleData();
+  };
+
+  // Send metadata about survey question
+  const sendSurveyQuestionData = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ 
+          question_text: question_text.value, 
+          question_type: question_type.value || 'open-question',
+          skills: JSON.parse(JSON.stringify(skillsList.value)), 
+          student_id: student_id.value,
+          session_id: session_id.value,
+        format: "pcm"
+      }));
+      }
+  };
+
+  // Update metadata about survey question
+  const updateSurveyQuestionData = (questionText, skills, studentId = null, sessionId = null, questionType = 'open-question') => {
+    question_text.value = questionText;
+    question_type.value = questionType;
+    skillsList.value = skills;
+    student_id.value = studentId;
+    session_id.value = sessionId;
+    console.log('[DEBUG useRecorderStore] updateSurveyQuestionData - student_id:', student_id.value, 'session_id:', session_id.value);
+    sendSurveyQuestionData();
+  };
+
+  // Change ASR language
+  const changeASRLanguage = (language) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ language }));
+    }
+  };
+
+  // Allow recording
+  const allowRecording = () => {
+    allowedRecording.value = true;
+  };
+
+  // Set audio threshold for filtering
+  const setAudioThreshold = (value) => {
+    audioThreshold.value = Math.max(0, Math.min(100, value));
+    console.log(`[DEBUG] Audio threshold set to: ${audioThreshold.value}%`);
+  };
+
+  // Close Websocket connection
+  const closeWebSocket = () => {
+    if (ws) {
+      ws.close();
+      ws = null;
+      isRecording.value = false;
+      console.log("WebSocket connection closed.");
+    }
+  };
+
+  // Cleanup when the component is unmounted
+  onUnmounted(() => {
+    console.log("Component unmounted, closing WebSocket...");
+    allowedRecording.value = false;
+    stopRecording();
+    closeWebSocket();
+  });
+
+  return {
+    isRecording,
+    startRecording,
+    stopRecording,
+    updateExampleData,
+    updateSurveyQuestionData,
+    allowRecording,
+    allowedRecording,
+    isCorrect,
+    continueWithNext,
+    student_answer,
+    setEmitFunction,
+    changeASRLanguage,
+    audioThreshold,
+    setAudioThreshold,
+  };
+});

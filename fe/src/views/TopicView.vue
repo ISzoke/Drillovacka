@@ -31,6 +31,7 @@ const router = useRouter();
 onMounted(async () => {
   try {
     topic.value = await skillStore.fetchSkill(props.id);
+    // example_count is included in get_skills_by_grade response and stored in topic
     if (topic.value.skill_type === 'OPERATION') {
       subtopics.value = await skillStore.fetchRelatedSkillsTree(props.id);
     } else if (topic.value.skill_type === 'NUMBER_DOMAIN') {
@@ -93,37 +94,50 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
       <Spinner v-if="loading" class="mt-24" />
 
       <template v-else>
-        <!-- Operations section -->
-        <div v-if="operations.length > 0" class="w-full mb-8">
-          <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
-            {{ dictionary[langStore.language].chooseOperation }}
-          </p>
-          <div class="flex flex-wrap justify-center gap-3">
-            <OperationButton
-              v-for="operation in operations"
-              :key="operation.id"
-              :operation="operation"
-              :selectedSubtopics="selectedSubtopics"
-              @updateExampleCount="updateExampleCount"
-            />
+        <!-- TASK type: no subtopic selection, just show example count + start -->
+        <template v-if="topic && topic.skill_type === 'TASK'">
+          <div class="w-full bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+                      border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-6 mb-8 text-center shadow-sm">
+            <p class="text-slate-400 dark:text-slate-500 font-bold text-lg">
+              {{ topic.example_count }} {{ dictionary[langStore.language].examples || 'príkladov' }}
+            </p>
           </div>
-        </div>
+        </template>
 
-        <!-- Subtopics section -->
-        <div v-if="subtopics.length > 0" class="w-full mb-8">
-          <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
-            {{ dictionary[langStore.language].chooseTopic }}
-          </p>
-          <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
-                      border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-5 shadow-sm">
-            <SubTopic
-              v-for="subtopic in subtopics"
-              :key="subtopic.id"
-              :subtopic="subtopic"
-              :selectedSubtopics="selectedSubtopics"
-            />
+        <!-- Regular skill: Operations + Subtopics -->
+        <template v-else>
+          <!-- Operations section -->
+          <div v-if="operations.length > 0" class="w-full mb-8">
+            <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
+              {{ dictionary[langStore.language].chooseOperation }}
+            </p>
+            <div class="flex flex-wrap justify-center gap-3">
+              <OperationButton
+                v-for="operation in operations"
+                :key="operation.id"
+                :operation="operation"
+                :selectedSubtopics="selectedSubtopics"
+                @updateExampleCount="updateExampleCount"
+              />
+            </div>
           </div>
-        </div>
+
+          <!-- Subtopics section -->
+          <div v-if="subtopics.length > 0" class="w-full mb-8">
+            <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
+              {{ dictionary[langStore.language].chooseTopic }}
+            </p>
+            <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
+                        border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-5 shadow-sm">
+              <SubTopic
+                v-for="subtopic in subtopics"
+                :key="subtopic.id"
+                :subtopic="subtopic"
+                :selectedSubtopics="selectedSubtopics"
+              />
+            </div>
+          </div>
+        </template>
 
         <!-- Start practice button -->
         <button

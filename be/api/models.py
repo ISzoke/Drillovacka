@@ -32,6 +32,14 @@ class Task(models.Model):
         related_name='tasks',
     )
 
+    primary_skill = models.OneToOneField(
+        'Skill',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='task',
+    )
+
     form = models.CharField(
         max_length=20,
         choices=FORM_CHOICES,
@@ -93,6 +101,7 @@ class Skill(models.Model):
     SKILL_TYPES = [
         ('OPERATION', 'Operation'),
         ('NUMBER_DOMAIN', 'Number Domain'),
+        ('TASK', 'Task'),
     ]
     
     skill_type = models.CharField(

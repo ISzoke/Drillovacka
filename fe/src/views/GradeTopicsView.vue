@@ -9,7 +9,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getGradeLevels, getTasksByGrade } from '@/api/apiClient';
+import { getGradeLevels } from '@/api/apiClient';
 import apiClient from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TopicCard from '@/components/MainMenu/TopicCard.vue';
@@ -25,13 +25,13 @@ const authStore = useAuthStore();
 
 const gradeInfo = ref(null);
 const skills = ref([]);
-const manualTasks = ref([]);
+const privateTasks = ref([]);
 const loading = ref(true);
 const requestSheetOpen = ref(false);
 
 const gradeItems = computed(() => {
   const skillItems = (skills.value || []).map(skill => ({ ...skill, itemType: 'skill' }));
-  const taskItems  = (manualTasks.value || []).map(task => ({ ...task, itemType: 'task' }));
+  const taskItems  = (privateTasks.value || []).map(task => ({ ...task, itemType: 'task' }));
   return [...skillItems, ...taskItems].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
@@ -54,10 +54,11 @@ onMounted(async () => {
 
     const [skillsResponse, taskResponse] = await Promise.all([
       apiClient.get(`skills/by-grade/${gradeInfo.value.id}/`),
-      getTasksByGrade(gradeInfo.value.id, authStore.id || null),
+      apiClient.get(`tasks/by-grade/${gradeInfo.value.id}/`, { params: { student_id: authStore.id || null } }),
     ]);
     skills.value = skillsResponse.data;
-    manualTasks.value = taskResponse;
+    // Only keep private tasks (public ones are now unified as TASK skills)
+    privateTasks.value = (taskResponse.data || []).filter(t => t.is_private);
   } catch (error) {
     console.error('Error fetching grade skills:', error);
   } finally {
@@ -109,6 +110,7 @@ const openTaskExamples = (task) => {
             v-if="item.itemType === 'skill'"
             :topic="item.name"
             :id="Number(item.id)"
+            :example-count="item.example_count || null"
           />
           <!-- Private / AI-generated task -->
           <button
@@ -128,23 +130,7 @@ const openTaskExamples = (task) => {
             <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ item.example_count }} príkladov · len pre teba</div>
           </button>
 
-          <!-- Public task -->
-          <button
-            v-else
-            @click="openTaskExamples(item)"
-            class="text-left cursor-pointer rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
-                   border-b-[8px] border-b-slate-300 dark:border-b-slate-600
-                   bg-white dark:bg-slate-800 p-5
-                   hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm"
-          >
-            <div class="flex items-center gap-2 mb-1" v-if="item.generated_batch_id">
-              <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                🤖 AI sada
-              </span>
-            </div>
-            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ item.name }}</div>
-            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ item.example_count }} príkladov</div>
-          </button>
+
         </template>
       </div>
 
