@@ -16,7 +16,7 @@ import TopicCard from '@/components/MainMenu/TopicCard.vue';
 import ExampleRequestSheet from '@/components/ExampleRequestSheet.vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { dictionary } from '@/utils/dictionary';
+import { dictionary, getTaskName } from '@/utils/dictionary';
 
 const router = useRouter();
 const route = useRoute();
@@ -121,11 +121,11 @@ const openTaskExamples = (task) => {
           >
             <div class="flex items-center gap-2 mb-2">
               <span class="text-xs font-black px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300">
-                🤖 Tebou vygenerovaná sada
+                {{ dictionary[langStore.language].aiGeneratedBadge }}
               </span>
             </div>
-            <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ item.name }}</div>
-            <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ item.example_count }} príkladov · len pre teba</div>
+            <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ getTaskName(item.name, langStore.language) }}</div>
+            <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ item.example_count }} {{ dictionary[langStore.language].examplesCountPrivate }}</div>
           </button>
 
           <!-- Public task -->
@@ -139,11 +139,11 @@ const openTaskExamples = (task) => {
           >
             <div class="flex items-center gap-2 mb-1" v-if="item.generated_batch_id">
               <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                🤖 AI sada
+                {{ dictionary[langStore.language].aiGeneratedBadge }}
               </span>
             </div>
-            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ item.name }}</div>
-            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ item.example_count }} príkladov</div>
+            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ getTaskName(item.name, langStore.language) }}</div>
+            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ item.example_count }} {{ dictionary[langStore.language].examplesCount }}</div>
           </button>
         </template>
       </div>
@@ -160,7 +160,7 @@ const openTaskExamples = (task) => {
           @click="requestSheetOpen = true"
           class="text-sm font-semibold text-slate-400 dark:text-slate-500 hover:text-violet-500 transition underline underline-offset-2"
         >
-          💡 Málo príkladov? Klikni sem.
+          {{ dictionary[langStore.language].requestMoreExamples }}
         </button>
       </div>
 
