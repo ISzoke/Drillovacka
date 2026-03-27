@@ -46,7 +46,6 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         # Buffer for incoming audio data
         self.speech_data = bytearray()
 
-        self.message_queue = asyncio.Queue()
         self.loop = asyncio.get_event_loop()
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.language = "sk-SK"
@@ -61,12 +60,25 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         await self.accept()
         
         # Start receiving audio
-        asyncio.create_task(self.receive_audio())
+        self.receive_task = asyncio.create_task(self.receive_audio())
 
     async def disconnect(self, close_code):
-        self.stream.close()
-        self.speech_recognizer.stop_continuous_recognition()
+        self.receive_task.cancel()
+        try:
+            await self.receive_task
+        except asyncio.CancelledError:
+            pass
+        try:
+            self.stream.close()
+        except Exception:
+            pass
+        try:
+            self.speech_recognizer.stop_continuous_recognition()
+        except Exception:
+            pass
         self.executor.shutdown(wait=False)
+        del self.speech_recognizer
+        del self.stream
         print("Speech recognition stopped.")
 
     def _resolve_student_example(self, student_id, session_id, example_id, record_date):
@@ -256,6 +268,14 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                         self.speech_recognizer.stop_continuous_recognition()
                     except Exception:
                         pass  # ak ešte nebežal
+
+                    try:
+                        self.stream.close()
+                    except Exception:
+                        pass
+
+                    del self.speech_recognizer
+                    del self.stream
 
                     # Vytvor nový recognizer s novým jazykom (automatically starts via create_speech_recognizer)
                     self.speech_recognizer, self.stream = self.create_speech_recognizer()
@@ -777,16 +797,7 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     traceback.print_exc()
                 
         def recognizing_cb(evt: speechsdk.SpeechRecognitionEventArgs):
-            try:
-                if evt.result.text:
-                    #print(f"[DEBUG] recognizing_cb (interim): {evt.result.text}")
-                    future = asyncio.run_coroutine_threadsafe(
-                        self.message_queue.put(f"[interim] {evt.result.text}"),
-                        self.loop
-                    )
-                    future.result() 
-            except Exception as e:
-                print(f"Error in recognizing callback: {e}")
+            pass
 
         speech_recognizer.recognized.connect(recognized_cb)
         speech_recognizer.recognizing.connect(recognizing_cb)
