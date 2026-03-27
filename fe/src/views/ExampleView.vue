@@ -316,6 +316,7 @@ const fetchTaskExamples = async (taskId) => {
 onUnmounted(() => {
   clearTimeout(fireTimer);
   clearTimeout(xpToastTimer);
+  recorderStore.stopRecording();
 });
 
 </script>

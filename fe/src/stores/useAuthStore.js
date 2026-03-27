@@ -39,9 +39,11 @@ export const useAuthStore = defineStore('auth', {
           result = await loginStudent(username, passphrase);
         }
         
+        const langStore = useLanguageStore();
+
         // Successful login
         if (result.status === 200) {
-         
+
           // Save data in the store
           this.name = username;
           this.id = result.data.id;
@@ -57,8 +59,6 @@ export const useAuthStore = defineStore('auth', {
           localStorage.setItem('grade_change_used', JSON.stringify(this.grade_change_used));
 
           if (result.data.role === 'admin') this.startInactivityTimer(router);
-
-          const langStore = useLanguageStore();
           
           // Set language from student profile if available
           if (result.data.language) {

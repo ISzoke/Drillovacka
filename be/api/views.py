@@ -440,7 +440,7 @@ def get_examples(request):
 
         examples = Example.objects.filter(
             exampleskill__skill__id__in=path
-        ).distinct()
+        ).exclude(task__is_private=True).distinct()
 
         for example in examples:
 
@@ -3218,8 +3218,8 @@ def approve_generated_batch(request, batch_id):
     except GeneratedTaskBatch.DoesNotExist:
         return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    if batch.status != 'pending_review':
-        return Response({'error': f'Batch is not pending review (status: {batch.status}).'}, status=status.HTTP_409_CONFLICT)
+    if batch.status not in ('pending_review', 'preview'):
+        return Response({'error': f'Batch cannot be approved (status: {batch.status}).'}, status=status.HTTP_409_CONFLICT)
 
     task = batch.created_task
     if not task:

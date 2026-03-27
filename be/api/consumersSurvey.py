@@ -113,6 +113,10 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
                 if 'language' in metadata:
                     self.language = metadata['language']
                     self.speech_recognizer.stop_continuous_recognition()
+                    try:
+                        self.stream.close()
+                    except Exception:
+                        pass
                     self.speech_recognizer, self.stream = self.create_speech_recognizer()
 
             except json.JSONDecodeError:

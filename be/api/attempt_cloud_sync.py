@@ -99,7 +99,10 @@ def ensure_attempt_sidecar(attempt):
         }
     )
     attempt.meta = meta
-    attempt.save(update_fields=["meta"])
+    try:
+        attempt.save(update_fields=["meta"])
+    except ValueError:
+        pass  # attempt was cascade-deleted (delete-record) before sync completed
 
     return sidecar_path
 
@@ -143,8 +146,8 @@ def _do_sync(attempt):
     if not sidecar_path:
         return {"uploaded": False, "reason": "sidecar_missing_locally"}
 
-    audio_upload = upload_file_to_mega(local_audio)
-    json_upload = upload_file_to_mega(sidecar_path)
+    audio_upload = upload_file_to_mega(local_audio, dest_folder="audioprompts")
+    json_upload = upload_file_to_mega(sidecar_path, dest_folder="audioprompts")
 
     meta = dict(attempt.meta or {})
     meta.update(
@@ -160,7 +163,10 @@ def _do_sync(attempt):
         }
     )
     attempt.meta = meta
-    attempt.save(update_fields=["meta"])
+    try:
+        attempt.save(update_fields=["meta"])
+    except ValueError:
+        pass  # attempt was cascade-deleted (delete-record) before sync completed
 
     # If both files are uploaded and cleanup is enabled, remove local copies.
     if _should_delete_local() and audio_upload.get("uploaded") and json_upload.get("uploaded"):
@@ -180,7 +186,10 @@ def _do_sync(attempt):
             meta = dict(attempt.meta or {})
             meta["mega_cleanup_error"] = cleanup_error
             attempt.meta = meta
-            attempt.save(update_fields=["meta"])
+            try:
+                attempt.save(update_fields=["meta"])
+            except ValueError:
+                pass  # attempt was cascade-deleted (delete-record) before sync completed
 
     return {
         "uploaded": audio_upload.get("uploaded", False) and json_upload.get("uploaded", False),
@@ -230,7 +239,7 @@ def _do_write_sync(attempt):
     except Exception as exc:
         return {"uploaded": False, "reason": f"json_write_failed: {exc}"}
 
-    upload_result = upload_file_to_mega(local_path)
+    upload_result = upload_file_to_mega(local_path, dest_folder="audioprompts")
 
     meta = dict(attempt.meta or {})
     meta.update({
@@ -240,7 +249,10 @@ def _do_write_sync(attempt):
         "write_json_local_path": local_path,
     })
     attempt.meta = meta
-    attempt.save(update_fields=["meta"])
+    try:
+        attempt.save(update_fields=["meta"])
+    except ValueError:
+        pass  # attempt was cascade-deleted (delete-record) before sync completed
 
     if _should_delete_local() and upload_result.get("uploaded"):
         try:

@@ -276,7 +276,7 @@
           </div>
 
           <!-- Approve / Reject (only for pending_review) -->
-          <div v-if="batch.status === 'pending_review'" class="flex gap-2">
+          <div v-if="batch.status === 'pending_review' || batch.status === 'preview'" class="flex gap-2">
             <button
               @click="approveBatch(batch.id)"
               class="px-4 py-1.5 bg-emerald-600 text-white rounded text-sm font-bold hover:bg-emerald-700"
@@ -563,7 +563,7 @@ const exampleRequests = ref([])
 const generatedBatchesLoading = ref(false)
 const generatedBatchesError = ref('')
 const generatedBatches = ref([])
-const generatedBatchStatusFilter = ref('pending_review')
+const generatedBatchStatusFilter = ref('')
 
 const filteredStudents = computed(() => {
   const text = (filterText.value || '').trim().toLowerCase()
