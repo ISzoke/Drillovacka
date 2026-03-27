@@ -376,6 +376,7 @@ def get_skill(request, skill_id):
             return Response({"error": "Skill not found"}, status=status.HTTP_404_NOT_FOUND)
         
         skill_data = SkillSerializer(skill).data
+        skill_data['example_count'] = ExampleSkill.objects.filter(skill=skill).count()
     
         return Response(skill_data, status=status.HTTP_200_OK)
 
@@ -1091,6 +1092,24 @@ def update_task_grade_levels(request, task_id):
         GradeLevel.objects.filter(id__in=grade_level_ids).values_list('id', flat=True)
     )
     task.grade_levels.set(valid_grade_ids)
+
+    # Sync primary TASK skill: create if missing, update grade_levels, link all examples
+    if valid_grade_ids:
+        skill = task.primary_skill
+        if skill is None:
+            skill = Skill.objects.create(name=task.name, skill_type='TASK')
+            task.primary_skill = skill
+            task.save(update_fields=['primary_skill'])
+        else:
+            skill.name = task.name
+            skill.save(update_fields=['name'])
+        skill.grade_levels.set(valid_grade_ids)
+        # Ensure every example is linked to this skill
+        for example in task.example_set.all():
+            ExampleSkill.objects.get_or_create(example=example, skill=skill)
+    elif task.primary_skill:
+        # All grades removed — clear skill grade_levels so it disappears from grade pages
+        task.primary_skill.grade_levels.clear()
 
     return Response(
         {
@@ -2043,18 +2062,24 @@ def get_skills_by_grade(request, grade_id):
         grade = get_object_or_404(GradeLevel, id=grade_id)
         
         # Show only leaf skills for the grade that have at least one example.
+        # TASK-type skills are always leaf nodes so they bypass the subskills filter.
+        from django.db.models import Count
         skills = Skill.objects.filter(
             grade_levels=grade,
             deleted=False,
-            subskills__isnull=True,
             exampleskill__isnull=False,
+        ).filter(
+            Q(subskills__isnull=True) | Q(skill_type='TASK')
+        ).annotate(
+            example_count=Count('exampleskill', distinct=True)
         ).distinct().order_by('name')
         
         skills_data = [
             {
                 "id": skill.id,
                 "name": skill.name,
-                "skill_type": skill.skill_type
+                "skill_type": skill.skill_type,
+                "example_count": skill.example_count,
             }
             for skill in skills
         ]

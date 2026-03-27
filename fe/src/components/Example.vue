@@ -54,6 +54,7 @@ const speechRecorder = ref(null);
 const step = ref('');
 const showReportForm = ref(false);
 const shaking = ref(false);
+const isSubmitting = ref(false);
 const reportType = ref('wrong_answer');
 const reportNote = ref('');
 const reportSubmitting = ref(false);
@@ -90,42 +91,54 @@ const triggerShake = () => {
 
 // Sends answer to be evaluated for inline answers and emits evaluation result
 const checkInline = async (answer) => {
+  isSubmitting.value = true;
+  try {
+    const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "inline");
+    if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
+    emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
 
-  const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "inline");
-  if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
-  emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
-
-  if (!result.isCorrect) {
-    triggerShake();
-    clearInput();
+    if (!result.isCorrect) {
+      triggerShake();
+      clearInput();
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
 // Sends answer to be evaluated for fraction answers and emits evaluation result
 const checkFraction = async (numerator, denominator) => {
+  isSubmitting.value = true;
+  try {
+    const answer = [numerator, denominator];
+    const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "fraction");
+    if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
+    emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
 
-  const answer = [numerator, denominator];
-  const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answer, "fraction");
-  if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
-  emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
-
-  if (!result.isCorrect) {
-    triggerShake();
-    clearInput();
+    if (!result.isCorrect) {
+      triggerShake();
+      clearInput();
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
 // Sends answer to be evaluated for variable answers and emits evaluation result
 const checkVariables = async (variables) => {
+  isSubmitting.value = true;
+  try {
+    const answers = variables.map(variable => variable.answer);
+    const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answers, "variable");
+    if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
+    emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
 
-  const answers = variables.map(variable => variable.answer);
-  const result = await checkAnswer(student_id, props.example.id, record_date.value, timer.value.getTime(), answers, "variable");
-  if (result.xp_awarded !== undefined) gamStore.handleXPUpdate(result);
-  emits('answerSent', { isCorrect: result.isCorrect, nextExample: result.continue_with_next });
-
-  if (!result.isCorrect) {
-    triggerShake();
-    clearInput();
+    if (!result.isCorrect) {
+      triggerShake();
+      clearInput();
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
@@ -213,6 +226,7 @@ const handleEnter = (event) => {
 
 // Get answer from currently used input field
 const getAnswer = () => {
+  if (isSubmitting.value) return;
 
   if (inlineInput.value != null) {
     inlineInput.value.getAnswer();
@@ -242,7 +256,7 @@ const clearInput = () => {
 // Set up event listeners to handle Enter key and render latex
 onMounted(() => {
   initRecord()
-  window.addEventListener('keydown', handleEnter);
+  window.addEventListener('keyup', handleEnter);
   renderMathJax();
   timer.value.startTimer();
 
@@ -252,7 +266,7 @@ onMounted(() => {
 
 // Clean up event listener for Enter key 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleEnter);
+  window.removeEventListener('keyup', handleEnter);
 });
 
 // Get example step text depending on number of mistakes
@@ -301,7 +315,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
     </div>
 
     <div class="flex items-center justify-center mt-10 md:mt-20">
-      <div class="flex flex-col dark:bg-slate-800 dark:rounded-3xl dark:px-10 dark:py-8">
+      <div class="flex flex-col dark:bg-slate-800 dark:text-white dark:rounded-3xl dark:px-10 dark:py-8">
 
         <div :class="[
           isWordProblem ? 'text-xl md:text-3xl flex flex-col items-center' : 'text-4xl md:text-7xl flex flex-col',

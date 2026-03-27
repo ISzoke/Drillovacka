@@ -9,7 +9,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getGradeLevels, getTasksByGrade } from '@/api/apiClient';
+import { getGradeLevels } from '@/api/apiClient';
 import apiClient from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TopicCard from '@/components/MainMenu/TopicCard.vue';
@@ -25,13 +25,13 @@ const authStore = useAuthStore();
 
 const gradeInfo = ref(null);
 const skills = ref([]);
-const manualTasks = ref([]);
+const privateTasks = ref([]);
 const loading = ref(true);
 const requestSheetOpen = ref(false);
 
 const gradeItems = computed(() => {
   const skillItems = (skills.value || []).map(skill => ({ ...skill, itemType: 'skill' }));
-  const taskItems  = (manualTasks.value || []).map(task => ({ ...task, itemType: 'task' }));
+  const taskItems  = (privateTasks.value || []).map(task => ({ ...task, itemType: 'task' }));
   return [...skillItems, ...taskItems].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
@@ -54,10 +54,11 @@ onMounted(async () => {
 
     const [skillsResponse, taskResponse] = await Promise.all([
       apiClient.get(`skills/by-grade/${gradeInfo.value.id}/`),
-      getTasksByGrade(gradeInfo.value.id, authStore.id || null),
+      apiClient.get(`tasks/by-grade/${gradeInfo.value.id}/`, { params: { student_id: authStore.id || null } }),
     ]);
     skills.value = skillsResponse.data;
-    manualTasks.value = taskResponse;
+    // Only keep private tasks (public ones are now unified as TASK skills)
+    privateTasks.value = (taskResponse.data || []).filter(t => t.is_private);
   } catch (error) {
     console.error('Error fetching grade skills:', error);
   } finally {
@@ -109,6 +110,7 @@ const openTaskExamples = (task) => {
             v-if="item.itemType === 'skill'"
             :topic="item.name"
             :id="Number(item.id)"
+            :example-count="item.example_count || null"
           />
           <!-- Private / AI-generated task -->
           <button

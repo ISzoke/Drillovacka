@@ -282,12 +282,12 @@ const handleEditTask = (taskIndex) => {
             class="flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-start mb-4 border-b pb-3 min-w-0">
 
             <p class="text-gray-700 min-w-0 break-words lg:flex-1">
-              <span>Příklad:</span> <span v-html="example.example" class="font-semibold text-black break-words"></span>
+              <span>Příklad:</span> <span v-html="example.example" class="font-semibold text-black dark:text-white break-words"></span>
             </p>
 
             <p class="text-gray-700 break-words lg:min-w-[140px] lg:text-right">
               <span>Výsledek: </span>
-              <span v-html="example.answers.map(a => a.answer_text).join(', ')" class="font-semibold text-black"></span>
+              <span v-html="example.answers.map(a => a.answer_text).join(', ')" class="font-semibold text-black dark:text-white"></span>
             </p>
 
           </div>
