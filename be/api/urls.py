@@ -16,6 +16,9 @@ urlpatterns = [
 
     path('tasks/', views.get_tasks, name='get-tasks'),
     path('tasks/assignment-overview/', views.get_task_assignment_overview, name='get-task-assignment-overview'),
+    path('tasks/<int:task_id>/', views.get_task, name='get-task'),
+    path('tasks/<int:task_id>/stats/', views.get_task_stats, name='get-task-stats'),
+    path('tasks/<int:task_id>/history/', views.get_task_history, name='get-task-history'),
     path('tasks/<int:task_id>/grade-levels/', views.update_task_grade_levels, name='update-task-grade-levels'),
     path('create-task/', views.create_task, name='create-task'),
     path('edit-task/', views.edit_task, name='edit-task'),

@@ -30,20 +30,22 @@ class RecordInitSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.StudentExample
-        fields = ['student', 'anonymous_session', 'example', 'practiced_skills']
+        fields = ['student', 'anonymous_session', 'example', 'practiced_skills', 'practice_session_key']
     
     def create(self, validated_data):
-        # Extract practiced_skills before creating the instance
         practiced_skill_ids = validated_data.pop('practiced_skills', [])
-        
-        # Create the StudentExample instance
+
+        # Auto-fill task from the example's task
+        example = validated_data.get('example')
+        if example and not validated_data.get('task'):
+            validated_data['task'] = example.task
+
         student_example = models.StudentExample.objects.create(**validated_data)
-        
-        # Add the practiced skills to the ManyToMany relationship
+
         if practiced_skill_ids:
             skills = models.Skill.objects.filter(id__in=practiced_skill_ids)
             student_example.practiced_skills.set(skills)
-        
+
         return student_example
 
 

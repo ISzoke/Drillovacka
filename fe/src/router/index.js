@@ -19,6 +19,8 @@ import LeaderboardView from '@/views/LeaderboardView.vue'
 import PokrokView from '@/views/PokrokView.vue'
 import MyGeneratedBatchesView from '@/views/MyGeneratedBatchesView.vue'
 import PracticeGeneratedView from '@/views/PracticeGeneratedView.vue'
+import TaskDetailView from '@/views/TaskDetailView.vue'
+import ContactView from '@/views/ContactView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,6 +57,12 @@ const router = createRouter({
       path: '/topic/:id',
       name: 'topic',
       component: TopicView,
+      props: true
+    },
+    {
+      path: '/task/:taskId',
+      name: 'taskDetail',
+      component: TaskDetailView,
       props: true
     },
     {
@@ -132,6 +140,11 @@ const router = createRouter({
       name: 'practice-generated',
       component: PracticeGeneratedView,
       props: true,
+    },
+    {
+      path: '/kontakt',
+      name: 'contact',
+      component: ContactView,
     },
   ]
 })

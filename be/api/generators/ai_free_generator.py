@@ -18,7 +18,6 @@ _MOCK_MODE = os.environ.get('MOCK_AI_GENERATION', '').lower() in ('true', '1', '
 _MOCK_RESPONSE = {
     "task_name": "TEST – Násobilka 7",
     "form": "classic",
-    "skill_names": [],
     "grade": 3,
     "examples": [
         {"example": "7 × 3",      "input_type": "INLINE", "answer": "21"},
@@ -58,15 +57,11 @@ FRAC   – zlomky v LaTeX. VŽDY \\frac{{čit}}{{men}} v example aj answer. Prí
 WORD   – slovné úlohy po slovensky, odpoveď je číslo. input_type MUSÍ byť "WORD". Príklad: {{"example": "Vlak ide 80 km/h, za 3 hodiny ujde?", "input_type": "WORD", "answer": "240"}}
 VAR    – rovnice s neznámou. Odpoveď: "x=číslo" alebo "x=číslo;y=číslo". Príklad: {{"example": "3x + 2 = 17", "input_type": "VAR", "answer": "x=5"}}
 
-Dostupné zručnosti (vyber relevantné, alebo nechaj prázdne):
-{skill_names_list}
-
 Pravidlá: presne 10 príkladov · rovnaký input_type · obtiažnosť pre {grade}. ročník · jazyk slovenčina · výstup iba JSON.
 
 {{
   "task_name": "krátky názov max 5 slov",
   "form": "classic alebo word-problem",
-  "skill_names": [],
   "grade": {grade},
   "examples": [{{"example": "...", "input_type": "INLINE|FRAC|WORD|VAR", "answer": "..."}}]
 }}
@@ -75,7 +70,7 @@ POPIS OD ŽIAKA: "{description}"
 """
 
 
-def generate_free(description: str, grade: int, skill_names: list) -> dict:
+def generate_free(description: str, grade: int) -> dict:
     """
     Call Gemini to generate a full task+examples JSON from a student description.
     Returns the parsed dict matching the batch raw_json schema.
@@ -90,12 +85,10 @@ def generate_free(description: str, grade: int, skill_names: list) -> dict:
         return mock
 
     grade_desc = GRADE_DESCRIPTIONS.get(grade, f"{grade}. ročník")
-    skill_list_str = "\n".join(f"- {s}" for s in skill_names) if skill_names else "(žiadne)"
 
     prompt = SYSTEM_PROMPT.format(
         grade=grade,
         grade_description=grade_desc,
-        skill_names_list=skill_list_str,
         description=description,
     )
 

@@ -35,6 +35,10 @@ const props = defineProps({
   topics: {
     type: Array,
     default: () => []
+  },
+  practiceSessionKey: {
+    type: String,
+    default: null
   }
 });
 
@@ -144,7 +148,7 @@ const checkVariables = async (variables) => {
 
 // Record that user practiced example creation
 const initRecord = async () => {
-  const result = await createRecord(student_id, props.example.id, props.topics);
+  const result = await createRecord(student_id, props.example.id, props.topics, props.practiceSessionKey);
   record_date.value = result.date;
   if (speechRecorder.value) {
     speechRecorder.value.updateExampleData(student_id, props.example.id, props.example.input_type, record_date.value, session_id);

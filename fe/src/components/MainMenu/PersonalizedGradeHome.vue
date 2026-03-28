@@ -12,6 +12,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useLanguageStore } from '@/stores/useLanguageStore'
+import { getTaskName } from '@/utils/dictionary'
 import { getGradeLevels, getTasksByGrade } from '@/api/apiClient'
 import apiClient from '@/api/apiClient'
 import TopicCard from '@/components/MainMenu/TopicCard.vue'
@@ -19,6 +21,7 @@ import Spinner from '@/components/Spinner.vue'
 import ExampleRequestSheet from '@/components/ExampleRequestSheet.vue'
 
 const authStore = useAuthStore()
+const langStore = useLanguageStore()
 const router = useRouter()
 
 const allGrades   = ref([])
@@ -69,11 +72,7 @@ function goToGrade(gradeLevel) {
 }
 
 function openTaskExamples(task) {
-  const query = { task_id: String(task.id), task_name: task.name }
-  if (task.is_private && task.generated_batch_id) {
-    query.batch_id = String(task.generated_batch_id)
-  }
-  router.push({ name: 'examples', query })
+  router.push({ name: 'taskDetail', params: { taskId: String(task.id) } })
 }
 </script>
 
@@ -111,7 +110,7 @@ function openTaskExamples(task) {
                 🤖 Tebou vygenerovaná sada
               </span>
             </div>
-            <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ item.name }}</div>
+            <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ getTaskName(item.name, langStore.language) }}</div>
             <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ item.example_count }} príkladov · len pre teba</div>
           </button>
 
@@ -129,7 +128,7 @@ function openTaskExamples(task) {
                 🤖 AI sada
               </span>
             </div>
-            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ item.name }}</div>
+            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ getTaskName(item.name, langStore.language) }}</div>
             <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ item.example_count }} príkladov</div>
           </button>
         </template>

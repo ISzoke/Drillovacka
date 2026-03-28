@@ -157,8 +157,7 @@ const handleDeleteTask = async () => {
 const handleEditTask = (taskIndex) => {
   const taskStore = useTaskStore();
   const task = tasks.value[taskIndex];
-  const skills = task.skills;
-  taskStore.setTask(task, skills);
+  taskStore.setTask(task);
   router.push('/sandbox');
 };
 </script>

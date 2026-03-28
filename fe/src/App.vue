@@ -14,6 +14,8 @@ import { RouterView } from 'vue-router';
 import ToastManager from '@/components/Toast/ToastManager.vue';
 import BadgePopup from '@/components/BadgePopup.vue';
 import LevelUpToast from '@/components/LevelUpToast.vue';
+import StarField from '@/components/StarField.vue';
+import CloudField from '@/components/CloudField.vue';
 import { onMounted, onBeforeUnmount, watch } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useDarkStore } from '@/stores/useDarkStore';
@@ -86,6 +88,8 @@ watch(
 
 <template>
 
+  <StarField />
+  <CloudField />
   <Navbar />
 
   <ToastManager />

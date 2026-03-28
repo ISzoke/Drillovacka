@@ -17,7 +17,7 @@ import { useTaskStore } from '@/stores/useTaskStore';
 import { useRouter } from 'vue-router';
 
 const props = defineProps({
-  selectedSkills: {
+  selectedGradeLevelIds: {
     type: Array,
     default: () => []
   },
@@ -94,9 +94,9 @@ const submitExamples = async (action) => {
   try{
 
     // Validation
-    if(props.selectedSkills.length === 0){
+    if(props.selectedGradeLevelIds.length === 0){
       toastStore.addToast({
-        message: 'Nebyly vybrány žádné dovednosti',
+        message: 'Nebyl vybrán žádný ročník',
         type: 'error',
         visible: true,
       });
@@ -112,7 +112,7 @@ const submitExamples = async (action) => {
     }
 
     // Create task
-    await postTask(examples, props.selectedSkills, props.taskName, taskId.value, props.examplesType, action);
+    await postTask(examples, props.selectedGradeLevelIds, props.taskName, taskId.value, props.examplesType, action);
     toastStore.addToast({
         message: action == 'create' ? 'Sada byla vytvořena' : 'Změny byly uloženy',
         type: 'success',
@@ -146,7 +146,7 @@ const exportJSON = () => {
   });
 
   // Create task object and convert to JSON
-  task.value = { 'task_name': props.taskName, 'form': props.examplesType, 'skill_ids': props.selectedSkills, 'examples': examples };
+  task.value = { 'task_name': props.taskName, 'form': props.examplesType, 'grade_level_ids': props.selectedGradeLevelIds, 'examples': examples };
   taskJSON.value = JSON.stringify(task.value, null, 2);
 
   // Open export window
@@ -181,8 +181,8 @@ const importJSON = () => {
       });
     });
 
-    // Import task name and skills
-    emit('importTask', task.value.task_name, task.value.skill_ids, task.value.form);
+    // Import task name and grade levels
+    emit('importTask', task.value.task_name, null, task.value.form, task.value.grade_level_ids || []);
   }
 };
 
@@ -252,12 +252,12 @@ const importTask = () => {
 
   const task = taskStore.task;
   taskId.value = task.task_id;
-  const skills = taskStore.skills;
-  
+  const gradeLevelIds = (task.grade_levels || []).map(g => g.grade);
+
   const importedExamples = task.examples;
   const importedCount = importedExamples.length;
 
-  // Extend example creators if needed  
+  // Extend example creators if needed
   if (importedCount > exampleCount.value) {
     exampleCount.value = importedCount;
   }
@@ -273,8 +273,8 @@ const importTask = () => {
         }
       });
     });
-  // Import task name and skills
-  emit('importTask', task.task_name, skills, task.task_form);
+  // Import task name and grade levels
+  emit('importTask', task.task_name, null, task.task_form, gradeLevelIds);
 };
 
 // Import task to be edited if redirected from task list

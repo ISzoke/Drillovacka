@@ -170,6 +170,8 @@ class StudentExample(models.Model):
     student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.CASCADE)
     anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.CASCADE)
     example = models.ForeignKey(Example, on_delete=models.CASCADE)
+    task = models.ForeignKey('Task', null=True, blank=True, on_delete=models.SET_NULL, related_name='student_examples')
+    practice_session_key = models.CharField(max_length=36, null=True, blank=True, db_index=True)
     date = models.DateTimeField(auto_now_add=True)
     duration = models.IntegerField(default=0)
     attempts = models.IntegerField(default=0) 
@@ -466,3 +468,23 @@ class GeneratedTaskBatchSurvey(models.Model):
 
     def __str__(self):
         return f"Survey for Batch #{self.batch_id} — satisfied={self.q5_satisfied}"
+
+
+class SkillMastery(models.Model):
+    """
+    Persistent per-student per-skill mastery state.
+    Updated incrementally (EWMA) after each completed example.
+    """
+    student          = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='skill_masteries')
+    skill            = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name='masteries')
+    accuracy_mastery = models.FloatField(default=0.05)
+    fluency_mastery  = models.FloatField(default=0.50)
+    example_count    = models.IntegerField(default=0)
+    updated_at       = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('student', 'skill')
+        indexes = [models.Index(fields=['student', 'skill'])]
+
+    def __str__(self):
+        return f"{self.student.username} / {self.skill.name} — mastery n={self.example_count}"

@@ -11,14 +11,21 @@ import { ref, onMounted } from 'vue';
 import { getGradeLevels } from '@/api/apiClient';
 import { useRouter } from 'vue-router';
 import Spinner from '../Spinner.vue';
+import RegistrationPromptModal from '../RegistrationPromptModal.vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { dictionary } from '@/utils/dictionary';
 
 const router = useRouter();
 const langStore = useLanguageStore();
+const authStore = useAuthStore();
 
 const gradeLevels = ref([]);
 const loading = ref(true);
+
+const showRegPrompt = ref(false);
+const pendingGradeId = ref(null);
+const pendingGradeNumber = ref(null);
 
 // Solid colored backgrounds (used for the card body)
 const GRADE_COLORS = [
@@ -71,21 +78,46 @@ onMounted(async () => {
   }
 });
 
-const selectGrade = (gradeId, gradeNumber) => {
-  if (!Number.isFinite(Number(gradeId))) {
-    console.error('Missing or invalid gradeId:', gradeId, gradeNumber);
-    return;
-  }
+const doNavigate = (gradeId, gradeNumber) => {
   sessionStorage.setItem('selectedGrade', JSON.stringify({
     id: Number(gradeId),
     grade: Number.isFinite(Number(gradeNumber)) ? Number(gradeNumber) : Number(gradeId),
   }));
   router.push({ name: 'gradeTopics', params: { gradeId: String(gradeId) } });
 };
+
+const selectGrade = (gradeId, gradeNumber) => {
+  if (!Number.isFinite(Number(gradeId))) {
+    console.error('Missing or invalid gradeId:', gradeId, gradeNumber);
+    return;
+  }
+  // Show registration prompt for anonymous users (only if not dismissed before)
+  if (!authStore.isAuthenticated && !localStorage.getItem('regPromptDismissed')) {
+    pendingGradeId.value = gradeId;
+    pendingGradeNumber.value = gradeNumber;
+    showRegPrompt.value = true;
+    return;
+  }
+  doNavigate(gradeId, gradeNumber);
+};
+
+const onPromptSkip = () => {
+  showRegPrompt.value = false;
+  doNavigate(pendingGradeId.value, pendingGradeNumber.value);
+};
+
+const onPromptRegister = () => {
+  showRegPrompt.value = false;
+};
 </script>
 
 <template>
   <div>
+    <RegistrationPromptModal
+      v-if="showRegPrompt"
+      @skip="onPromptSkip"
+      @register="onPromptRegister"
+    />
     <Spinner v-if="loading" class="pt-48" />
 
     <div v-else-if="gradeLevels.length === 0" class="flex justify-center py-16 px-4">

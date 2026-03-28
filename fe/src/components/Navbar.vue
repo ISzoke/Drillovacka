@@ -49,6 +49,15 @@ function changeLanguage(lang) {
   }
 }
 
+const logoHtml = computed(() => {
+  const moonColor = darkStore.isDark ? '#fbbf24' : '#ffffff';
+  const sunColor  = darkStore.isDark ? '#ffffff' : '#fbbf24';
+  const raw = dictionary[langStore.language].logo;
+  return raw
+    .replace(/^D/, `<i class="fa-solid fa-moon" style="display:inline-block;transform:scaleX(-1);color:${moonColor};vertical-align:-0.1em"></i>`)
+    .replace(/O/, `<i class="fa-solid fa-sun" style="display:inline-block;color:${sunColor};font-size:0.85em;vertical-align:-0.1em"></i>`);
+});
+
 // Redirect to home page based on language
 const handleLogoClick = () => {
   if (langStore.language === 'en') {
@@ -74,7 +83,7 @@ const handleLogoClick = () => {
 
           <RouterLink to="/" @click="handleLogoClick">
             <img src="/app.ico" alt="App Logo" class="w-14 h-14 md:hidden" />
-            <h1 class="text-4xl font-black tracking-wide text-white hidden md:block">{{ dictionary[langStore.language].logo }}</h1>
+            <h1 class="text-4xl font-black tracking-wide text-white hidden md:block" style="line-height:1" v-html="logoHtml"></h1>
           </RouterLink>
 
         </div>
@@ -108,6 +117,9 @@ const handleLogoClick = () => {
 
           <!-- Unauthenticated user menu -->
           <template v-if="!isAuthenticated">
+            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].contact }}
+            </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].login }}
             </RouterLink>
@@ -128,6 +140,7 @@ const handleLogoClick = () => {
             <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].skills }}</RouterLink>
             <RouterLink to="/analytics/skills" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
             <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].myData }}</RouterLink>
+            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
           </template>
 
@@ -144,6 +157,9 @@ const handleLogoClick = () => {
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               👤 {{ dictionary[langStore.language].profile }}
+            </RouterLink>
+            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].contact }}
             </RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].logout }}
@@ -165,6 +181,9 @@ const handleLogoClick = () => {
 
           <!-- Unauthenticated user menu -->
           <template v-if="!isAuthenticated">
+            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition" @click="isMenuOpen = false">
+              {{ dictionary[langStore.language].contact }}
+            </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].login }}
             </RouterLink>
@@ -185,6 +204,7 @@ const handleLogoClick = () => {
             <RouterLink to="/skill-creator" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skills }}</RouterLink>
             <RouterLink to="/analytics/skills" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
             <RouterLink to="/analytics/my-data" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].myData }}</RouterLink>
+            <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>
           </template>
 
@@ -201,6 +221,9 @@ const handleLogoClick = () => {
             </RouterLink>
             <RouterLink to="/profile" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               👤 {{ dictionary[langStore.language].profile }}
+            </RouterLink>
+            <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              {{ dictionary[langStore.language].contact }}
             </RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">
               {{ dictionary[langStore.language].logout }}

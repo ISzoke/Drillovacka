@@ -3,84 +3,96 @@
  Component: SandboxView.vue
  Description:
         Displays interface for creating and editing tasks and their examples.
- Author: Dominik Horut (xhorut01)
 ================================================================================
 -->
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import SkillList from '@/components/TaskCreator/SkillList.vue';
 import ExamplesList from '@/components/TaskCreator/ExamplesList.vue';
 import LatexToolbar from '@/components/TaskCreator/LatexToolbar.vue';
 
-const selectedSkills = ref([]); 
 const taskName = ref('');
+const examplesType = ref(null);
+const selectedGradeLevelIds = ref([]);
 
-// 'classic' or 'word-problem'
-const examplesType = ref(null); 
+const GRADES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-const skillList = ref(null);
-
-const updateSelectedSkills = (skills) => {
-    selectedSkills.value = skills; 
+const toggleGrade = (grade) => {
+  const idx = selectedGradeLevelIds.value.indexOf(grade);
+  if (idx === -1) selectedGradeLevelIds.value.push(grade);
+  else selectedGradeLevelIds.value.splice(idx, 1);
 };
 
-// Handle import of task 
-const applyImport = (name, skills, form) => {
-    taskName.value = name;
-    selectedSkills.value = skills;
-    skillList.value.importSkills(skills);
-    examplesType.value = form;
-    console.log(examplesType.value);
-}
+const applyImport = (name, _skills, form, gradeLevelIds) => {
+  taskName.value = name;
+  examplesType.value = form;
+  selectedGradeLevelIds.value = gradeLevelIds || [];
+};
 
 const clearInput = () => {
-    taskName.value = ''; 
-    skillList.value.clearSkills();
+  taskName.value = '';
+  selectedGradeLevelIds.value = [];
 };
 
 onMounted(() => {
-    console.log(examplesType.value);
-    examplesType.value = examplesType.value ?? 'classic';
+  examplesType.value = examplesType.value ?? 'classic';
 });
 </script>
 
 <template>
+  <div class="flex justify-center">
+    <LatexToolbar v-if="examplesType == 'classic'"></LatexToolbar>
 
-    <div class="flex justify-center">
-        <!-- Toolbar to enter latex representation of math symbols -->
-        <LatexToolbar v-if="examplesType == 'classic'"></LatexToolbar>
+    <div class="flex justify-center flex-col items-center">
 
-        <div class="flex justify-center flex-col items-center">
+      <!-- Task name input -->
+      <div class="flex w-full items-center my-2">
+        <h2 class="text-2xl font-bold text-primary mr-8">Název cvičení:</h2>
+        <input v-model="taskName" type="text" class="p-1 text-2xl border border-tertiary rounded-md">
+      </div>
 
-            <!-- Task name input -->
-            <div class="flex w-full items-center my-2">
-                <h2 class="text-2xl font-bold text-primary mr-8">Název cvičení:</h2>
-                <input v-model="taskName" type="text" class="p-1 text-2xl border border-tertiary rounded-md">
-            </div>
+      <!-- Grade level picker -->
+      <div class="flex w-full items-center flex-wrap gap-2 my-2">
+        <h2 class="text-2xl font-bold text-primary mr-4">Ročník:</h2>
+        <button
+          v-for="grade in GRADES"
+          :key="grade"
+          @click="toggleGrade(grade)"
+          :class="[
+            'w-10 h-10 rounded-xl font-black text-sm border-2 border-b-4 transition-all',
+            selectedGradeLevelIds.includes(grade)
+              ? 'bg-violet-600 text-white border-violet-700 border-b-violet-900'
+              : 'bg-white text-slate-600 border-slate-300 border-b-slate-400 hover:border-violet-400'
+          ]"
+        >
+          {{ grade }}
+        </button>
+      </div>
 
-            <!-- Task skills selecting component -->
-            <SkillList ref="skillList" @update-skills="updateSelectedSkills"></SkillList>
+      <!-- Examples form selector -->
+      <div class="flex w-full justify-start items-center mt-4 space-x-8">
+        <h1 class="text-primary font-bold text-2xl">Forma zadání:</h1>
+        <label class="flex items-center space-x-2 cursor-pointer text-lg font-medium">
+          <input type="radio" v-model="examplesType" value="classic"
+            class="h-5 w-5 text-primary bg-transparent border-gray-500 checked:bg-primary checked:border-primary focus:ring-primary" />
+          <span class="text-primary text-2xl font-semibold">Klasické příklady</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer text-lg font-medium">
+          <input type="radio" v-model="examplesType" value="word-problem"
+            class="h-5 w-5 text-primary bg-transparent border-gray-500 checked:bg-primary checked:border-primary focus:ring-primary" />
+          <span class="text-primary text-2xl font-semibold">Slovní úlohy</span>
+        </label>
+      </div>
 
-            <!-- Examples form selector -->
-            <div class="flex w-full justify-start items-center mt-4 space-x-8">
-                <h1 class="text-primary font-bold text-2xl">Forma zadání:</h1>
-                <label class="flex items-center space-x-2 cursor-pointer text-lg font-medium">
-                    <input type="radio" v-model="examplesType" value="classic"
-                        class="h-5 w-5 text-primary bg-transparent border-gray-500 checked:bg-primary checked:border-primary focus:ring-primary" />
-                    <span class="text-primary text-2xl font-semibold">Klasické příklady</span>
-                </label>
-                <label class="flex items-center space-x-2 cursor-pointer text-lg font-medium">
-                    <input type="radio" v-model="examplesType" value="word-problem"
-                        class="h-5 w-5 text-primary bg-transparent border-gray-500 checked:bg-primary checked:border-primary focus:ring-primary" />
-                    <span class="text-primary text-2xl font-semibold">Slovní úlohy</span>
-                </label>
-            </div>
+      <!-- Examples -->
+      <ExamplesList
+        :selectedGradeLevelIds="selectedGradeLevelIds"
+        :taskName="taskName"
+        :examplesType="examplesType"
+        @importTask="applyImport"
+        @submit="clearInput"
+      />
 
-            <!-- Examples -->
-            <ExamplesList :selectedSkills="selectedSkills" :taskName="taskName" :examplesType="examplesType"
-                @importTask="applyImport" @submit="clearInput"></ExamplesList>
-       
-        </div>
     </div>
+  </div>
 </template>

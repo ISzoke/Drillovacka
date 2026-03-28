@@ -39,18 +39,18 @@ function getUserIdentifier(studentId) {
  * @param {Array<number>} practicedSkills - IDs of skills being practiced in this session.
  * @returns {string} timestamp of record.
  */
-export const createRecord = async (studentId, exampleId, practicedSkills = []) => {
+export const createRecord = async (studentId, exampleId, practicedSkills = [], practiceSessionKey = null) => {
     try {
       const userIdentifier = getUserIdentifier(studentId);
-      const response = await apiClient.post('create-record/', {
+      const body = {
         ...userIdentifier,
         example_id: exampleId,
         practiced_skills: practicedSkills,
-      });
-
-      return response.data; 
+      };
+      if (practiceSessionKey) body.practice_session_key = practiceSessionKey;
+      const response = await apiClient.post('create-record/', body);
+      return response.data;
     } catch (error) {
-
       throw error.response?.data?.error || 'Error creating record.';
     }
 };
@@ -106,13 +106,13 @@ export const skipExample = async (studentId, exampleId, date) => {
  * @param {string} taskForm - form of task examples (classic or word-problem).
  * @param {string} action action type ('create' or 'update').
  */
-export const postTask = async (examples, selectedSkills, taskName, taskId, taskForm, action) => {
+export const postTask = async (examples, gradeLevelIds, taskName, taskId, taskForm, action) => {
   try {
       const payload = {
           task_name: taskName,
           task_id: taskId,
-          task_form: taskForm,  
-          skill_ids: selectedSkills.map(skill => skill.id),
+          task_form: taskForm,
+          grade_level_ids: gradeLevelIds || [],
           examples: examples.value.map(example => ({
               example: example.example,
               example_id: example.example_id,
@@ -201,12 +201,35 @@ export const getTaskExamples = async (taskId) => {
  */
 export const getTasks = async () => {
   try {
-    const response = await apiClient.get('tasks/'); 
+    const response = await apiClient.get('tasks/');
     return response.data;
-    
+
   } catch (error) {
     console.error("Error fetching skills:", error)
   }
+};
+
+export const getTask = async (taskId) => {
+  const response = await apiClient.get(`tasks/${taskId}/`);
+  return response.data;
+};
+
+export const getTaskStats = async (taskId, studentId = null) => {
+  const userIdentifier = getUserIdentifier(studentId);
+  const params = userIdentifier.student_id
+    ? { student_id: userIdentifier.student_id }
+    : { session_id: userIdentifier.session_id };
+  const response = await apiClient.get(`tasks/${taskId}/stats/`, { params });
+  return response.data;
+};
+
+export const getTaskHistory = async (taskId, studentId = null) => {
+  const userIdentifier = getUserIdentifier(studentId);
+  const params = userIdentifier.student_id
+    ? { student_id: userIdentifier.student_id }
+    : { session_id: userIdentifier.session_id };
+  const response = await apiClient.get(`tasks/${taskId}/history/`, { params });
+  return response.data.history;
 };
 
 /**

@@ -778,6 +778,31 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                             response_data.update(xp_data)
                         except Exception as xp_error:
                             print(f"[ERROR] Failed to award XP: {xp_error}")
+
+                    # Update incremental skill mastery (once per completed example)
+                    # Only task-based practice counts; skills come from the Task, not from the example.
+                    if response_data.get("continue_with_next") and student_id and student_id != 'unknown' and attempt_obj:
+                        try:
+                            from .mastery import update_skill_mastery
+                            student_example = attempt_obj.student_example
+                            if student_example.task_id:
+                                leaf_skill_ids = set(
+                                    student_example.task.skills.filter(
+                                        subskills__isnull=True,
+                                        deleted=False,
+                                    ).values_list('id', flat=True)
+                                )
+                                student_time_ms = student_example.duration
+                                for skill_id in leaf_skill_ids:
+                                    update_skill_mastery(
+                                        student_id=int(student_id),
+                                        skill_id=skill_id,
+                                        attempt_number=attempt_obj.attempt_number,
+                                        solved=bool(is_correct_for_log),
+                                        student_time_ms=student_time_ms,
+                                    )
+                        except Exception as mastery_error:
+                            print(f"[ERROR] Failed to update skill mastery: {mastery_error}")
                         
                     # Save evaluation data to JSON file
                     if DUMP_AUDIO:

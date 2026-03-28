@@ -27,7 +27,8 @@ import { useGamificationStore } from '@/stores/useGamificationStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import {dictionary} from '@/utils/dictionary';
 
-const examples = ref([]); 
+const examples = ref([]);
+const practiceSessionKey = ref(crypto.randomUUID());
 
 // Instance of the <Example> component
 const exampleComponent = ref(null); 
@@ -363,7 +364,7 @@ onUnmounted(() => {
     <div class="flex items-center justify-center">
 
       <!-- Example component -->
-      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" :topics="topics" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
+      <Example ref="exampleComponent" v-if="examples.length > curr_index && !showSummary" :example="examples[curr_index]" :answer="examples[curr_index].answers[0].answer" :topics="topics" :practiceSessionKey="practiceSessionKey" @answerSent="displayNext" @skipped="displayNext" @finished="displaySummary" :key="curr_index"></Example>
 
       <!-- Correct or incorrect icon -->
       <Transition name="answer-flash">
@@ -385,7 +386,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Practice summary-->
-      <Summary v-if="showSummary && !showBatchSurvey" :skipped="skipped"  :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes" :topics="topics"></Summary>
+      <Summary v-if="showSummary && !showBatchSurvey" :skipped="skipped" :noMistakes="noMistakes" :oneMistake="oneMistake" :twoMistakes="twoMistakes" :threeMistakes="threeMistakes" :topics="topics" :taskId="route.query.task_id ? Number(route.query.task_id) : null" :practiceSessionKey="practiceSessionKey"></Summary>
 
     </div>
 

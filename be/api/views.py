@@ -62,6 +62,22 @@ def get_user_identity(request):
             return (None, session)
         except AnonymousSession.DoesNotExist:
             return (None, None)
+
+def get_user_identity_any(request):
+    """Like get_user_identity but also checks query_params (for GET requests)."""
+    student_id = request.data.get('student_id') or request.query_params.get('student_id')
+    session_id = request.data.get('session_id') or request.query_params.get('session_id')
+    if student_id:
+        try:
+            return (Student.objects.get(id=student_id), None)
+        except Student.DoesNotExist:
+            return (None, None)
+    elif session_id:
+        try:
+            return (None, AnonymousSession.objects.get(session_id=session_id))
+        except AnonymousSession.DoesNotExist:
+            return (None, None)
+    return (None, None)
     
     return (None, None)
 
@@ -202,25 +218,23 @@ def create_skill_relations(skill_ids):
 def create_task(request):
     task_name = request.data.get('task_name')
     task_form = request.data.get('task_form')
-    skill_ids = request.data.get('skill_ids', [])
-    examples_data = request.data.get('examples', [])  
+    grade_level_ids = request.data.get('grade_level_ids', [])
+    examples_data = request.data.get('examples', [])
 
     if not task_name:
         return Response({"error": "Nebyl zadán název sady"}, status=status.HTTP_400_BAD_REQUEST)
 
-    skills = Skill.objects.filter(id__in=skill_ids)
+    if not grade_level_ids:
+        return Response({"error": "Nebyl vybrán žádný ročník"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not skills.exists():
-        return Response({"error": "Nebyly zadány žádné dovednosti"}, status=status.HTTP_400_BAD_REQUEST)
+    grade_levels = GradeLevel.objects.filter(grade__in=grade_level_ids)
 
     task_instance, created = Task.objects.get_or_create(name=task_name)
-
-    task_instance.form = task_form 
-
+    task_instance.form = task_form
     task_instance.save()
 
-    # Assign skills to the task
-    task_instance.skills.add(*skills)
+    # Assign grade levels to the task
+    task_instance.grade_levels.add(*grade_levels)
 
     created_examples = []
 
@@ -231,44 +245,33 @@ def create_task(request):
         answer_text = example_data.get('answer')
         steps = example_data.get('steps', [])
 
-        # Validate required fields
         if not example_text or not input_type:
-            continue 
+            continue
 
-        
         example_payload = {
             'example': example_text,
             'input_type': input_type,
-            'task': task_instance.id  
+            'task': task_instance.id
         }
         example_serializer = ExampleSerializer(data=example_payload)
-        
+
         if example_serializer.is_valid():
-            with transaction.atomic():  
+            with transaction.atomic():
                 example_instance = example_serializer.save()
 
-                # Create answer of example
                 if answer_text:
                     Answer.objects.create(example=example_instance, answer=answer_text)
 
-                # Assign skills to the example
-                for skill in skills:
-                    ExampleSkill.objects.create(example=example_instance, skill=skill)
-                
-                create_skill_relations(skill_ids)
-
-                # Create example steps if any
                 for index, step_text in enumerate(steps, start=1):
-                    if step_text:  
+                    if step_text:
                         Step.objects.create(
                             example=example_instance,
                             text=step_text,
-                            order=index  
+                            order=index
                         )
 
-                
                 created_examples.append(example_serializer.data)
-    
+
     return Response({"created_examples": created_examples}, status=status.HTTP_201_CREATED)
 
 # Edits an existing task and its examples
@@ -277,7 +280,7 @@ def edit_task(request):
     task_id = request.data.get('task_id')
     task_name = request.data.get('task_name')
     task_form = request.data.get('task_form')   
-    skill_ids = request.data.get('skill_ids', [])
+    grade_level_ids = request.data.get('grade_level_ids', [])
     examples_data = request.data.get('examples', [])
 
     if not task_id:
@@ -294,12 +297,10 @@ def edit_task(request):
         task_instance.form = task_form
         task_instance.save()
 
-    skills = Skill.objects.filter(id__in=skill_ids)
-    if not skills.exists():
-        return Response({"error": "At least one valid skill ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Update tasks skills
-    task_instance.skills.set(skills)
+    # Update grade levels if provided
+    if grade_level_ids:
+        grade_levels = GradeLevel.objects.filter(grade__in=grade_level_ids)
+        task_instance.grade_levels.set(grade_levels)
 
     updated_examples = []
 
@@ -312,9 +313,9 @@ def edit_task(request):
         steps = example_data.get('steps', [])
 
         if not example_text or not input_type:
-            continue  
+            continue
 
-        # If example_id is provided, try to update the existing example
+        # If example_id is provided, update the existing example
         if example_id:
             try:
                 example_instance = Example.objects.get(id=example_id, task=task_instance)
@@ -324,8 +325,8 @@ def edit_task(request):
             except Example.DoesNotExist:
                 return Response({"error": f"Example with ID {example_id} not found."},
                                 status=status.HTTP_404_NOT_FOUND)
-        
-        # If no example_id is provided, check by example text or create a new one
+
+        # No example_id — check by text or create new
         else:
             example_instance, created = Example.objects.update_or_create(
                 example=example_text,
@@ -335,23 +336,13 @@ def edit_task(request):
 
         # Update or create answer
         if answer_text:
-            answer_instance, _ = Answer.objects.update_or_create(
+            Answer.objects.update_or_create(
                 example=example_instance,
                 defaults={'answer': answer_text}
             )
 
-        # Update related skills to the example
-        existing_relations = ExampleSkill.objects.filter(example=example_instance)
-        new_skill_ids = set(skill.id for skill in skills)
-        existing_relations.exclude(skill_id__in=new_skill_ids).delete()
-
-        for skill in skills:
-            ExampleSkill.objects.update_or_create(example=example_instance, skill=skill)
-        
-        create_skill_relations(skill_ids)
-
-        # Update or create Step instances
-        Step.objects.filter(example=example_instance).delete() 
+        # Update steps
+        Step.objects.filter(example=example_instance).delete()
         for index, step_text in enumerate(steps, start=1):
             if step_text:
                 Step.objects.create(
@@ -363,7 +354,6 @@ def edit_task(request):
         example_serializer = ExampleSerializer(example_instance)
         updated_examples.append(example_serializer.data)
 
-    
     return Response({"updated_examples": updated_examples}, status=status.HTTP_200_OK)
 
 # Get skill data by provided skill id
@@ -492,7 +482,8 @@ def create_example_record(request):
         'student': student.id if student else None,
         'anonymous_session': anonymous_session.id if anonymous_session else None,
         'example': example_id,
-        'practiced_skills': practiced_skills
+        'practiced_skills': practiced_skills,
+        'practice_session_key': request.data.get('practice_session_key') or None,
     }
 
     record_init_serializer = RecordInitSerializer(data=init_data)
@@ -1724,6 +1715,31 @@ def check_answer(request):
         except Exception as xp_error:
             print(f"[ERROR] Failed to award XP for text attempt: {xp_error}")
 
+    # Update incremental skill mastery (once per completed example)
+    # Only task-based practice counts; skills come from the Task, not from the example.
+    if continue_with_next and student_id and attempt_obj:
+        try:
+            from .mastery import update_skill_mastery
+            student_example = attempt_obj.student_example
+            if student_example.task_id:
+                leaf_skill_ids = set(
+                    student_example.task.skills.filter(
+                        subskills__isnull=True,
+                        deleted=False,
+                    ).values_list('id', flat=True)
+                )
+                student_time_ms = student_example.duration
+                for skill_id in leaf_skill_ids:
+                    update_skill_mastery(
+                        student_id=int(student_id),
+                        skill_id=skill_id,
+                        attempt_number=attempt_obj.attempt_number,
+                        solved=bool(isCorrect),
+                        student_time_ms=student_time_ms,
+                    )
+        except Exception as mastery_error:
+            print(f"[ERROR] Failed to update skill mastery (text): {mastery_error}")
+
     return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next, **xp_data}, status=status.HTTP_200_OK)
 
 # Get all skill paths from skill ids to be displayed when editing task
@@ -2091,6 +2107,159 @@ def get_skills_by_grade(request, grade_id):
 
 
 @api_view(['GET'])
+def get_task_stats(request, task_id):
+    from django.db.models import Count, Avg, Q
+    task = get_object_or_404(Task, id=task_id)
+    student, anonymous_session = get_user_identity_any(request)
+
+    # --- Leaderboard: top 3 registered students, success_rate >= 60%, sorted by solved count ---
+    rows = (
+        StudentExample.objects
+        .filter(task=task, student__isnull=False)
+        .values('student_id', 'student__username')
+        .annotate(
+            solved=Count('id', filter=Q(solved=True)),
+            total=Count('id'),
+        )
+        .filter(total__gt=0)
+        .order_by('-solved')
+    )
+    leaderboard = []
+    for row in rows:
+        success_rate = round(row['solved'] / row['total'] * 100)
+        if success_rate < 60:
+            continue
+        leaderboard.append({
+            'username': row['student__username'],
+            'solved': row['solved'],
+            'success_rate': success_rate,
+        })
+        if len(leaderboard) == 3:
+            break
+
+    # --- Global avg time per example (ms, solved only) ---
+    global_avg = (
+        StudentExample.objects
+        .filter(task=task, solved=True, duration__gt=0)
+        .aggregate(avg=Avg('duration'))
+    )['avg']
+
+    # --- My stats ---
+    my_stats = None
+    if student or anonymous_session:
+        base = StudentExample.objects.filter(task=task)
+        base = base.filter(student=student) if student else base.filter(anonymous_session=anonymous_session)
+
+        agg = base.aggregate(
+            total=Count('id'),
+            solved_count=Count('id', filter=Q(solved=True)),
+            avg_time=Avg('duration', filter=Q(solved=True, duration__gt=0)),
+        )
+
+        total_examples = task.example_set.count()
+        unique_solved = base.filter(solved=True).values('example').distinct().count()
+        mastery = round(unique_solved / total_examples * 100) if total_examples > 0 else 0
+        success_rate = round(agg['solved_count'] / agg['total'] * 100) if agg['total'] else 0
+
+        my_stats = {
+            'solved': agg['solved_count'],
+            'total_attempted': agg['total'],
+            'success_rate': success_rate,
+            'avg_time': round(agg['avg_time'], 1) if agg['avg_time'] else None,
+            'mastery': mastery,
+            'total_examples': total_examples,
+        }
+
+    return JsonResponse({
+        'leaderboard': leaderboard,
+        'global_avg_time': round(global_avg, 1) if global_avg else None,
+        'my_stats': my_stats,
+    }, status=200)
+
+
+@api_view(['GET'])
+def get_task_history(request, task_id):
+    """Per-session avg time and cumulative mastery for a user on a given task."""
+    from datetime import timedelta
+    task = get_object_or_404(Task, id=task_id)
+    student, anonymous_session = get_user_identity_any(request)
+    if not student and not anonymous_session:
+        return JsonResponse({'history': []})
+
+    base = StudentExample.objects.filter(task=task)
+    base = base.filter(student=student) if student else base.filter(anonymous_session=anonymous_session)
+
+    records = list(base.order_by('date').values('example_id', 'solved', 'duration', 'date', 'practice_session_key'))
+    if not records:
+        return JsonResponse({'history': []})
+
+    # Group by practice_session_key if available, else fall back to 30-min gap heuristic
+    SESSION_GAP = timedelta(minutes=30)
+    sessions = []
+    keyed = {}   # key -> list of records
+    ungrouped = []
+    for r in records:
+        k = r['practice_session_key']
+        if k:
+            keyed.setdefault(k, []).append(r)
+        else:
+            ungrouped.append(r)
+
+    # Sort keyed sessions by their first record's date
+    for k, recs in sorted(keyed.items(), key=lambda x: x[1][0]['date']):
+        sessions.append(recs)
+
+    # Apply gap heuristic only to legacy records without a key
+    if ungrouped:
+        current = [ungrouped[0]]
+        for r in ungrouped[1:]:
+            if r['date'] - current[-1]['date'] > SESSION_GAP:
+                sessions.append(current)
+                current = [r]
+            else:
+                current.append(r)
+        sessions.append(current)
+
+    # Re-sort all sessions by their start date
+    sessions.sort(key=lambda s: s[0]['date'])
+
+    total_examples = task.example_set.count()
+    cumulative_solved = set()
+    history = []
+    for i, session in enumerate(sessions):
+        solved_ids = set()
+        times = []
+        for r in session:
+            if r['solved']:
+                solved_ids.add(r['example_id'])
+                if r['duration'] and r['duration'] > 0:
+                    times.append(r['duration'])
+        cumulative_solved |= solved_ids
+        mastery = round(len(cumulative_solved) / total_examples * 100) if total_examples > 0 else 0
+        avg_time = round(sum(times) / len(times), 1) if times else None
+        label = session[0]['date'].strftime('%d.%m %H:%M')
+        history.append({'session': i + 1, 'label': label, 'avg_time': avg_time, 'mastery': mastery})
+
+    return JsonResponse({'history': history})
+
+
+def get_task(request, task_id):
+    try:
+        task = get_object_or_404(Task, id=task_id)
+        batch = GeneratedTaskBatch.objects.filter(created_task=task).values('id').first()
+        data = {
+            "id": task.id,
+            "name": task.name,
+            "form": task.form,
+            "example_count": task.example_set.count(),
+            "is_private": task.is_private,
+            "generated_batch_id": batch['id'] if batch else None,
+        }
+        return JsonResponse(data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 def get_tasks_by_grade(request, grade_id):
     try:
         grade = get_object_or_404(GradeLevel, id=grade_id)
@@ -2223,6 +2392,15 @@ def get_student_skill_stats(request, student_id):
         now = timezone.now()
         tau_seconds = int(request.GET.get('tau_seconds', '86400'))  # ~1 day default
 
+        # Batch-load EWMA mastery state for this student
+        from .mastery import compute_final_mastery
+        from .models import SkillMastery
+        skill_ids_in_results = [r['skill_id'] for r in results]
+        mastery_map = {
+            m.skill_id: m
+            for m in SkillMastery.objects.filter(student_id=student_id, skill_id__in=skill_ids_in_results)
+        }
+
         data = []
         for row in results:
             practiced = row['examples_practiced'] or 0
@@ -2258,6 +2436,10 @@ def get_student_skill_stats(request, student_id):
             # Next practice weight: focus on weak + stale skills
             next_weight = (1 - wilson_lower) * freshness
 
+            # EWMA mastery (accuracy + fluency, confidence-scaled)
+            sm = mastery_map.get(row['skill_id'])
+            final_mastery = round(compute_final_mastery(sm)['final_mastery'], 3) if sm else None
+
             data.append({
                 'skill_id': row['skill_id'],
                 'skill_name': row['skill_name'],
@@ -2273,6 +2455,7 @@ def get_student_skill_stats(request, student_id):
                 'wilson_lower': round(wilson_lower, 3),
                 'next_weight': round(next_weight, 3),
                 'observations': n,
+                'final_mastery': final_mastery,
             })
 
         # Sort by lowest accuracy first by default
@@ -2329,7 +2512,16 @@ def get_student_skill_combinations(request, student_id):
         # Calculate stats for each combination
         now = timezone.now()
         tau_seconds = int(request.GET.get('tau_seconds', '86400'))
-        
+
+        # Batch-load EWMA mastery for all skills this student has practiced
+        from .mastery import compute_final_mastery as _compute_final_mastery
+        from .models import SkillMastery as _SkillMastery
+        all_skill_ids_in_combos = {sid for skill_ids in combinations for sid in skill_ids}
+        combo_mastery_map = {
+            m.skill_id: m
+            for m in _SkillMastery.objects.filter(student_id=student_id, skill_id__in=all_skill_ids_in_combos)
+        }
+
         data = []
         for skill_ids, combo_records in combinations.items():
             # Get skill names
@@ -2372,7 +2564,14 @@ def get_student_skill_combinations(request, student_id):
             
             # Next practice weight
             next_weight = (1 - wilson_lower) * freshness
-            
+
+            # EWMA mastery: average final_mastery across skills in this combination
+            combo_sm_values = [
+                _compute_final_mastery(combo_mastery_map[sid])['final_mastery']
+                for sid in skill_ids if sid in combo_mastery_map
+            ]
+            final_mastery = round(sum(combo_sm_values) / len(combo_sm_values), 3) if combo_sm_values else None
+
             data.append({
                 'skill_ids': list(skill_ids),
                 'skill_names': skill_names,
@@ -2389,6 +2588,7 @@ def get_student_skill_combinations(request, student_id):
                 'wilson_lower': round(wilson_lower, 3),
                 'next_weight': round(next_weight, 3),
                 'observations': n,
+                'final_mastery': final_mastery,
             })
         
         # Sort by next_weight (descending) - most important to practice first
@@ -3084,15 +3284,8 @@ def generate_examples(request):
         except ExampleRequest.DoesNotExist:
             pass
 
-    # Fetch existing skill names for this grade to inject into the prompt
-    skill_names = list(
-        Skill.objects.filter(grade_levels__grade=grade, deleted=False)
-        .values_list('name', flat=True)
-        .distinct()
-    )
-
     try:
-        raw_json = generate_free(description, grade, skill_names)
+        raw_json = generate_free(description, grade)
     except ValueError as e:
         return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
     except RuntimeError as e:
@@ -3116,11 +3309,6 @@ def generate_examples(request):
         except GradeLevel.DoesNotExist:
             pass
 
-        # Link skills by name (best-effort)
-        skill_name_list = raw_json.get('skill_names', [])
-        matched_skills = Skill.objects.filter(name__in=skill_name_list, deleted=False)
-        task.skills.set(matched_skills)
-
         for ex_data in raw_json.get('examples', []):
             ex_text = str(ex_data.get('example', '')).strip()
             input_type = str(ex_data.get('input_type', 'INLINE')).upper()
@@ -3133,11 +3321,6 @@ def generate_examples(request):
                 task=task,
             )
             Answer.objects.create(example=ex_obj, answer=answer_text)
-            for skill in matched_skills:
-                ExampleSkill.objects.get_or_create(example=ex_obj, skill=skill)
-
-        if matched_skills.exists():
-            create_skill_relations([s.id for s in matched_skills])
 
         batch = GeneratedTaskBatch.objects.create(
             student=student,
