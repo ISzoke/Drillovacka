@@ -13,10 +13,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { getTaskName } from '@/utils/dictionary'
+import { dictionary, getTaskName } from '@/utils/dictionary'
 import { getGradeLevels, getTasksByGrade } from '@/api/apiClient'
-import apiClient from '@/api/apiClient'
-import TopicCard from '@/components/MainMenu/TopicCard.vue'
 import Spinner from '@/components/Spinner.vue'
 import ExampleRequestSheet from '@/components/ExampleRequestSheet.vue'
 
@@ -25,9 +23,8 @@ const langStore = useLanguageStore()
 const router = useRouter()
 
 const allGrades   = ref([])
-const skills      = ref([])
-const manualTasks = ref([])
-const loading     = ref(true)
+const tasks   = ref([])
+const loading = ref(true)
 const drawer      = ref(null) // null | 'basics' | 'challenge' | 'request'
 
 const myGradeLevel = computed(() =>
@@ -39,11 +36,6 @@ const lowerGrades = computed(() =>
 const higherGrades = computed(() =>
   allGrades.value.filter(g => g.grade > authStore.grade).sort((a,b) => a.grade - b.grade)
 )
-const gradeItems = computed(() => {
-  const s = skills.value.map(x => ({ ...x, itemType: 'skill' }))
-  const t = manualTasks.value.map(x => ({ ...x, itemType: 'task' }))
-  return [...s, ...t].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-})
 
 onMounted(async () => {
   try {
@@ -51,12 +43,7 @@ onMounted(async () => {
     allGrades.value = raw.map(g => ({ id: Number(g.id), grade: Number(g.grade) }))
     const gl = myGradeLevel.value
     if (gl) {
-      const [skillsRes, tasksRes] = await Promise.all([
-        apiClient.get(`skills/by-grade/${gl.id}/`),
-        getTasksByGrade(gl.id, authStore.id || null),
-      ])
-      skills.value   = skillsRes.data
-      manualTasks.value = tasksRes
+      tasks.value = await getTasksByGrade(gl.id, authStore.id || null)
     }
   } catch (e) {
     console.error('[PersonalizedGradeHome] fetch error:', e)
@@ -88,18 +75,13 @@ function openTaskExamples(task) {
         <h1 class="text-3xl md:text-5xl font-black text-slate-800 dark:text-slate-100">{{ authStore.grade }}. ročník</h1>
       </div>
 
-      <!-- My grade topics grid -->
-      <div v-if="gradeItems.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <template v-for="item in gradeItems" :key="`${item.itemType}-${item.id}`">
-          <TopicCard
-            v-if="item.itemType === 'skill'"
-            :topic="item.name"
-            :id="Number(item.id)"
-          />
+      <!-- My grade tasks grid -->
+      <div v-if="tasks.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <template v-for="task in tasks" :key="task.id">
           <!-- Private / AI-generated task -->
           <button
-            v-else-if="item.is_private"
-            @click="openTaskExamples(item)"
+            v-if="task.is_private"
+            @click="openTaskExamples(task)"
             class="text-left cursor-pointer rounded-3xl border-[3px] border-violet-300 dark:border-violet-600
                    border-b-[8px] border-b-violet-400 dark:border-b-violet-700
                    bg-violet-50 dark:bg-violet-900/20 p-5
@@ -107,29 +89,29 @@ function openTaskExamples(task) {
           >
             <div class="flex items-center gap-2 mb-2">
               <span class="text-xs font-black px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300">
-                🤖 Tebou vygenerovaná sada
+                {{ dictionary[langStore.language].aiGeneratedBadge }}
               </span>
             </div>
-            <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ getTaskName(item.name, langStore.language) }}</div>
-            <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ item.example_count }} príkladov · len pre teba</div>
+            <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ getTaskName(task.name, langStore.language) }}</div>
+            <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ task.example_count }} {{ dictionary[langStore.language].examplesCountPrivate }}</div>
           </button>
 
           <!-- Public task -->
           <button
             v-else
-            @click="openTaskExamples(item)"
+            @click="openTaskExamples(task)"
             class="text-left cursor-pointer rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
                    border-b-[8px] border-b-slate-300 dark:border-b-slate-600
                    bg-white dark:bg-slate-800 p-5
                    hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm"
           >
-            <div class="flex items-center gap-2 mb-1" v-if="item.generated_batch_id">
+            <div class="flex items-center gap-2 mb-1" v-if="task.generated_batch_id">
               <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                🤖 AI sada
+                {{ dictionary[langStore.language].aiGeneratedBadge }}
               </span>
             </div>
-            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ getTaskName(item.name, langStore.language) }}</div>
-            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ item.example_count }} príkladov</div>
+            <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ getTaskName(task.name, langStore.language) }}</div>
+            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ task.example_count }} {{ dictionary[langStore.language].examplesCount }}</div>
           </button>
         </template>
       </div>
