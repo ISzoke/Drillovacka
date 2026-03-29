@@ -8,19 +8,19 @@
 -->
 
 <script setup>
-import { defineProps, ref, watch, defineEmits, computed } from 'vue';
+import { defineProps, ref, watch, defineEmits } from 'vue';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 
 const props = defineProps({
-    answer: {
-        type: String,
-        required: true,
+    variableKeys: {
+        type: Array,
+        default: () => [],
     }
 });
 const variables = ref([]);
-const recorderStore = useRecorderStore();   
+const recorderStore = useRecorderStore();
 
-const emits = defineEmits(['answerSent']); 
+const emits = defineEmits(['answerSent']);
 
 // Return input fields value to parent component - Example
 function getAnswer() {
@@ -30,29 +30,19 @@ function getAnswer() {
 // Clear input fields
 const clearInput = () => {
     variables.value.forEach(variable => {
-        variable.answer = ''; 
+        variable.answer = '';
     });
 }
 
-// Extract variable names from answer using ';' and '=' as delimiter
+// Build variable input fields from key names
 function getVariables() {
-    variables.value = [];
-
-    const pairs = props.answer.split(';').filter(pair => pair);
-
-    pairs.forEach(pair => {
-        const [key, value] = pair.split('=');
-
-        if (key && value !== undefined) {
-            variables.value.push({ key: key.trim(), correctAnswer: value.trim(), answer: '' });
-        }
-    });   
+    variables.value = props.variableKeys.map(key => ({ key, answer: '' }));
 }
 
 defineExpose({getAnswer, clearInput});
 
-// Get variables when the component is mounted
-watch(() => props.answer, getVariables, { immediate: true });
+// Rebuild variables when keys change
+watch(() => props.variableKeys, getVariables, { immediate: true });
 
 // Display users answer by voice if any
 watch(
@@ -82,7 +72,7 @@ watch(
         <div v-for="(variable, index) in variables" :key="index" class="flex">
 
             <!-- Name of variable -->
-            <p class="flex items-center">{{ computed(() => `\\(${variable.key}\\)`)}} = </p>
+            <p class="flex items-center">\({{ variable.key }}\) = </p>
 
             <!-- Input field for variable -->
             <input

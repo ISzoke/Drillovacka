@@ -373,6 +373,17 @@ def get_skill(request, skill_id):
     except Skill.DoesNotExist:
         return Response({"error": "Skill not found"}, status=status.HTTP_404_NOT_FOUND)
 
+def _extract_variable_keys(answer_str):
+    """Return list of variable names from answer string like 'x=5;y=3' → ['x', 'y']."""
+    keys = []
+    for pair in (answer_str or '').split(';'):
+        if '=' in pair:
+            key = pair.split('=')[0].strip()
+            if key:
+                keys.append(key)
+    return keys
+
+
 # Get all examples for the provided skill ids
 @api_view(['GET'])
 def get_examples(request):
@@ -384,29 +395,21 @@ def get_examples(request):
             id=task_id,
         )
 
-        example_data = [
-            {
+        example_data = []
+        for example in task.example_set.all():
+            entry = {
                 "id": example.id,
                 "example": example.example,
                 "input_type": example.input_type,
-                "answers": [
-                    {
-                        "id": answer.id,
-                        "answer": answer.answer
-                    }
-                    for answer in example.answers.all()
-                ],
                 "steps": [
-                    {
-                        "id": step.id,
-                        "order": step.order,
-                        "text": step.text
-                    }
+                    {"id": step.id, "order": step.order, "text": step.text}
                     for step in example.steps.all().order_by('order')
-                ]
+                ],
             }
-            for example in task.example_set.all()
-        ]
+            if example.input_type == 'VAR':
+                first_answer = example.answers.first()
+                entry["variable_keys"] = _extract_variable_keys(first_answer.answer if first_answer else '')
+            example_data.append(entry)
 
         random.shuffle(example_data)
         return Response(example_data, status=status.HTTP_200_OK)
@@ -440,26 +443,19 @@ def get_examples(request):
             # Check if the example skill ids contain all the skills in the current path (no missing skills)
             if example_skill_ids.issuperset(set(path)):
 
-                example_data.append({
+                entry = {
                     "id": example.id,
                     "example": example.example,
                     "input_type": example.input_type,
-                    "answers": [
-                        {
-                            "id": answer.id,
-                            "answer": answer.answer
-                        }
-                        for answer in example.answers.all()
-                    ],
                     "steps": [
-                        {
-                            "id": step.id,
-                            "order": step.order,
-                            "text": step.text
-                        }
+                        {"id": step.id, "order": step.order, "text": step.text}
                         for step in example.steps.all().order_by('order')
-                    ]
-                })
+                    ],
+                }
+                if example.input_type == 'VAR':
+                    first_answer = example.answers.first()
+                    entry["variable_keys"] = _extract_variable_keys(first_answer.answer if first_answer else '')
+                example_data.append(entry)
 
     # Shuffle the final list of examples to ensure they are mixed
     random.shuffle(example_data)
@@ -1742,6 +1738,15 @@ def check_answer(request):
 
     return Response({'isCorrect': isCorrect, 'continue_with_next': continue_with_next, **xp_data}, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+def reveal_example_answer(request, example_id):
+    """Return the correct answer for an example (called only after 3 failed attempts)."""
+    example = get_object_or_404(Example, id=example_id)
+    answer = Answer.objects.filter(example=example).first()
+    return Response({'answer': answer.answer if answer else ''}, status=status.HTTP_200_OK)
+
+
 # Get all skill paths from skill ids to be displayed when editing task
 @api_view(['GET'])
 def get_paths_for_sandbox(request):
@@ -2591,6 +2596,48 @@ def get_student_skill_combinations(request, student_id):
                 'final_mastery': final_mastery,
             })
         
+        # Add unpracticed grade skills at mastery=0 so recommendations cover full grade
+        try:
+            student = Student.objects.filter(id=student_id).first()
+            if student and student.grade:
+                grade_level = GradeLevel.objects.filter(grade=student.grade).first()
+                if grade_level:
+                    from django.db.models import Q
+                    grade_skills = Skill.objects.filter(
+                        grade_levels=grade_level,
+                        deleted=False,
+                        exampleskill__isnull=False,
+                    ).filter(
+                        Q(subskills__isnull=True) | Q(skill_type='TASK')
+                    ).distinct()
+
+                    practiced_skill_ids = set()
+                    for item in data:
+                        practiced_skill_ids.update(item['skill_ids'])
+
+                    for skill in grade_skills:
+                        if skill.id not in practiced_skill_ids:
+                            data.append({
+                                'skill_ids': [skill.id],
+                                'skill_names': [skill.name],
+                                'combination_display': skill.name,
+                                'examples_practiced': 0,
+                                'solved_count': 0,
+                                'skip_count': 0,
+                                'total_attempts': 0,
+                                'avg_attempts_per_example': 0,
+                                'avg_duration_ms': 0,
+                                'last_practiced': None,
+                                'accuracy': 0,
+                                'mastery_mean': 0,
+                                'wilson_lower': 0,
+                                'next_weight': 1.0,
+                                'observations': 0,
+                                'final_mastery': None,
+                            })
+        except Exception:
+            pass  # Don't break recommendation if grade lookup fails
+
         # Sort by next_weight (descending) - most important to practice first
         data.sort(key=lambda x: x['next_weight'], reverse=True)
         
@@ -2830,8 +2877,21 @@ def bulk_import_tasks(request):
             results.append({"task_name": task_name, "status": "skipped", "reason": "empty name"})
             continue
 
+        skill_name = task_data.get("skill_name", "").strip()
+
+        # skill_name auto-creates a TASK leaf skill if not exists
+        if skill_name and not skill_ids:
+            _grades = GradeLevel.objects.filter(id__in=grade_ids) if grade_ids else []
+            _skill_obj, _ = Skill.objects.get_or_create(
+                name=skill_name,
+                defaults={"skill_type": "TASK", "height": 0, "deleted": False, "parent_skill": None},
+            )
+            if _grades:
+                _skill_obj.grade_levels.add(*_grades)
+            skill_ids = [_skill_obj.id]
+
         if not skill_ids:
-            results.append({"task_name": task_name, "status": "skipped", "reason": "no skill_ids"})
+            results.append({"task_name": task_name, "status": "skipped", "reason": "no skill_ids or skill_name"})
             continue
 
         skills = Skill.objects.filter(id__in=skill_ids)

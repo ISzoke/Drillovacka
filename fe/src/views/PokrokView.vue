@@ -141,7 +141,7 @@
                 :key="skill.skill_id"
                 class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-600">
                 <div class="flex justify-between items-center mb-3">
-                  <span class="font-black text-lg text-slate-700 dark:text-slate-200 truncate pr-2">{{ skill.skill_name }}</span>
+                  <span class="font-black text-lg text-slate-700 dark:text-slate-200 truncate pr-2">{{ skill.combination_display }}</span>
                   <div class="flex items-center gap-3 flex-shrink-0">
                     <span class="text-sm font-bold text-slate-400 hidden sm:block">
                       {{ skill.examples_practiced }} príkl. · {{ skill.solved_count }} správne

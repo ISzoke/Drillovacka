@@ -17,7 +17,7 @@ import Timer from '@/components/Example/Timer.vue';
 import SpeechRecorder from '@/components/Example/SpeechRecorder.vue';
 import Answer from '@/components/Example/Answer.vue';
 import Tips from '@/components/Example/Tips.vue';
-import { createRecord, skipExample, deleteRecord, checkAnswer, sendExampleReport } from '@/api/apiClient';
+import { createRecord, skipExample, deleteRecord, checkAnswer, sendExampleReport, revealAnswer } from '@/api/apiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
@@ -28,9 +28,6 @@ import { getSessionId } from '@/utils/sessionManager';
 const props = defineProps({
   example: {
     type: Object,
-  },
-  answer: {
-    type: String,
   },
   topics: {
     type: Array,
@@ -80,6 +77,7 @@ const record_date = ref('');
 
 let isWordProblem = ref(false);
 const showAnswer = ref(false);
+const revealedAnswer = ref('');
 
 const reportOptions = computed(() => ([
   { value: 'wrong_answer', label: dictionary[langStore.language].reportWrongAnswer },
@@ -281,12 +279,12 @@ const getStep = (mistakes) => {
   return null;
 };
 
-// Display correct answer to user
-const displayAnswer = () => {
+// Display correct answer to user (fetches from backend on demand)
+const displayAnswer = async () => {
+  revealedAnswer.value = await revealAnswer(props.example.id);
   showAnswer.value = true;
   nextTick(() => {
     setTimeout(() => {
-
       showAnswer.value = false;
     }, 1500);
   });
@@ -338,7 +336,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
               <!-- Equal sign for inline and fraction examples -->
               <p v-if="props.example.input_type == 'INLINE' || props.example.input_type == 'FRAC'" class="mr-2">=</p>
 
-              <VariableInput v-if="props.example.input_type == 'VAR'" ref="variableInput" :answer="props.answer"
+              <VariableInput v-if="props.example.input_type == 'VAR'" ref="variableInput" :variableKeys="props.example.variable_keys || []"
                 @answerSent="checkVariables">
               </VariableInput>
 
@@ -469,7 +467,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
 
   <!-- Correct answer -->
   <Answer v-if="showAnswer" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
-    :answer="props.example.answers[0].answer">
+    :answer="revealedAnswer">
   </Answer>
 
 </template>

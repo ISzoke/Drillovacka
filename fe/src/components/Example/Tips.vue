@@ -87,6 +87,12 @@ onBeforeUnmount(() => {
                     </span>
                 </li>
 
+                <li class="flex flex-col space-y-2 text-[15px] md:text-lg">
+                    <span class="font-semibold text-slate-500 dark:text-slate-400 text-sm">
+                        {{ t('micConsentText') }}
+                    </span>
+                </li>
+
             </ul>
 
         </div>

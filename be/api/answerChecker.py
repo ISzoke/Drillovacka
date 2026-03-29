@@ -95,14 +95,17 @@ class InlineAnswerChecker(AnswerChecker):
 
         correct_answer = Answer.objects.get(example_id=example_id).answer
         
+        # Normalize decimal format first (strip spaces e.g. '3 500' -> '3500', commas -> dots)
+        student_answer_norm = student_answer.replace(' ', '').replace(',', '.') if student_answer else ''
+        correct_answer_norm = correct_answer.replace(' ', '').replace(',', '.')
+
         # Validate both answers
-        if not InlineAnswerChecker.is_valid_answer(correct_answer) or not InlineAnswerChecker.is_valid_answer(student_answer) or not student_answer:
+        if not InlineAnswerChecker.is_valid_answer(correct_answer_norm) or not InlineAnswerChecker.is_valid_answer(student_answer_norm) or not student_answer_norm:
             continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next)
-        
-        # Normalize decimal format (strip spaces e.g. '3 500' -> '3500')
-        correct_answer = float(correct_answer.replace(' ', '').replace(',', '.'))
-        student_answer = float(student_answer.replace(' ', '').replace(',', '.'))
+
+        correct_answer = float(correct_answer_norm)
+        student_answer = float(student_answer_norm)
         
         # Compare and update record
         if AnswerChecker.compareAnswers(student_answer, correct_answer):

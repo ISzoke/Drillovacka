@@ -194,6 +194,16 @@ export const getTaskExamples = async (taskId) => {
   }
 };
 
+export const revealAnswer = async (exampleId) => {
+  try {
+    const response = await apiClient.get(`examples/${exampleId}/answer/`);
+    return response.data.answer;
+  } catch (error) {
+    console.error('Error revealing answer:', error);
+    return '';
+  }
+};
+
 /**
  * Retrieves all tasks.
  * 

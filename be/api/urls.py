@@ -25,6 +25,7 @@ urlpatterns = [
     path('tasks/<int:task_id>/delete/', views.delete_task, name='delete_task'),
     
     path('examples/', views.get_examples, name='get-examples'),
+    path('examples/<int:example_id>/answer/', views.reveal_example_answer, name='reveal-example-answer'),
     path('example/<int:example_id>/delete/', views.delete_example, name='delete_example'),
 
     path('create-record/', views.create_example_record, name='create-example-record'),
