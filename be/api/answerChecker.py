@@ -99,14 +99,28 @@ class InlineAnswerChecker(AnswerChecker):
         student_answer_norm = student_answer.replace(' ', '').replace(',', '.') if student_answer else ''
         correct_answer_norm = correct_answer.replace(' ', '').replace(',', '.')
 
-        # Validate both answers
-        if not InlineAnswerChecker.is_valid_answer(correct_answer_norm) or not InlineAnswerChecker.is_valid_answer(student_answer_norm) or not student_answer_norm:
+        # If correct answer is not numeric (e.g. Roman numerals, yes/no), do text comparison
+        if not InlineAnswerChecker.is_valid_answer(correct_answer_norm):
+            def normalize_text(s):
+                s = s.strip().lower()
+                s = s.replace('á', 'a').replace('é', 'e').replace('í', 'i')
+                s = s.replace('ó', 'o').replace('ú', 'u').replace('č', 'c')
+                s = s.replace('š', 's').replace('ž', 'z').replace('ľ', 'l')
+                if s in ('ano', 'je', 'yes', 'true', '1', 'pravda'): s = 'ano'
+                if s in ('nie', 'nie je', 'neni', 'no', 'false', '0', 'nepravda'): s = 'nie'
+                return s
+            is_correct = bool(student_answer_norm) and normalize_text(student_answer_norm) == normalize_text(correct_answer_norm)
+            continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct, session_id=session_id)
+            return (is_correct, continue_with_next)
+
+        # Validate numeric answer
+        if not InlineAnswerChecker.is_valid_answer(student_answer_norm) or not student_answer_norm:
             continue_with_next = AnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
             return (False, continue_with_next)
 
         correct_answer = float(correct_answer_norm)
         student_answer = float(student_answer_norm)
-        
+
         # Compare and update record
         if AnswerChecker.compareAnswers(student_answer, correct_answer):
             # Correct answer

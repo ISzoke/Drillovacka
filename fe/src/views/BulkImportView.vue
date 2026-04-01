@@ -116,6 +116,7 @@ const handleImport = async () => {
       task_form: t.task_form || taskForm.value,
       skill_ids: t.skill_ids?.length ? t.skill_ids : selectedSkillIds.value,
       grade_ids: t.grade_ids?.length ? t.grade_ids : selectedGradeIds.value,
+      skill_name: t.skill_name || "",
       examples: t.examples || [],
     }));
     const response = await bulkImportTasks(tasks);
