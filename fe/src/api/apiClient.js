@@ -962,4 +962,191 @@ export const deleteGeneratedBatch = async (batchId, studentId) => {
   }
 };
 
+// ── Teacher Auth ────────────────────────────────────────────────────────────
+
+export const registerTeacher = async (email, password, firstName, lastName) => {
+  try {
+    const response = await apiClient.post('/register/teacher', {
+      email,
+      password,
+      first_name: firstName,
+      last_name: lastName,
+    });
+    return response;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      return { error: error.response.data.error };
+    }
+  }
+};
+
+export const loginTeacher = async (email, password) => {
+  try {
+    const response = await apiClient.post('/login/teacher', {
+      email,
+      password,
+    });
+    return response;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      return { error: error.response.data.error };
+    }
+  }
+};
+
+// ── Classrooms ──────────────────────────────────────────────────────────────
+
+export const getTeacherClassrooms = async (teacherId) => {
+  const response = await apiClient.get('classrooms/', { params: { teacher_id: teacherId } });
+  return response.data;
+};
+
+export const createClassroom = async (teacherId, name, description = '') => {
+  const response = await apiClient.post('classrooms/', {
+    teacher_id: teacherId,
+    name,
+    description,
+  });
+  return response.data;
+};
+
+export const getClassroomDetail = async (classroomId, { teacherId, studentId } = {}) => {
+  const params = {};
+  if (teacherId) params.teacher_id = teacherId;
+  if (studentId) params.student_id = studentId;
+  const response = await apiClient.get(`classrooms/${classroomId}/`, { params });
+  return response.data;
+};
+
+export const updateClassroom = async (classroomId, teacherId, data) => {
+  const response = await apiClient.patch(`classrooms/${classroomId}/`, {
+    teacher_id: teacherId,
+    ...data,
+  });
+  return response.data;
+};
+
+export const deleteClassroom = async (classroomId, teacherId) => {
+  await apiClient.delete(`classrooms/${classroomId}/`, {
+    params: { teacher_id: teacherId },
+  });
+};
+
+// ── Student Classroom Join ──────────────────────────────────────────────────
+
+export const joinClassroom = async (studentId, code) => {
+  const response = await apiClient.post('classrooms/join/', {
+    student_id: studentId,
+    code,
+  });
+  return response.data;
+};
+
+export const getStudentClassrooms = async (studentId) => {
+  const response = await apiClient.get('classrooms/student/', {
+    params: { student_id: studentId },
+  });
+  return response.data;
+};
+
+export const leaveClassroom = async (classroomId, studentId) => {
+  await apiClient.delete(`classrooms/${classroomId}/leave/`, {
+    data: { student_id: studentId },
+  });
+};
+
+export const getClassroomByCode = async (code) => {
+  const response = await apiClient.get('classrooms/info/', { params: { code } });
+  return response.data;
+};
+
+// ── Classroom Tasks ─────────────────────────────────────────────────────────
+
+export const getClassroomTasks = async (classroomId, { teacherId, studentId } = {}) => {
+  const params = {};
+  if (teacherId) params.teacher_id = teacherId;
+  if (studentId) params.student_id = studentId;
+  const response = await apiClient.get(`classrooms/${classroomId}/tasks/`, { params });
+  return response.data;
+};
+
+export const assignTaskToClassroom = async (classroomId, teacherId, taskId, isHomework = false, dueDate = null) => {
+  const response = await apiClient.post(`classrooms/${classroomId}/tasks/`, {
+    teacher_id: teacherId,
+    task_id: taskId,
+    is_homework: isHomework,
+    due_date: dueDate,
+  });
+  return response.data;
+};
+
+export const removeTaskFromClassroom = async (classroomId, taskId, teacherId) => {
+  await apiClient.delete(`classrooms/${classroomId}/tasks/${taskId}/`, {
+    data: { teacher_id: teacherId },
+  });
+};
+
+export const updateClassroomTask = async (classroomId, taskId, teacherId, data) => {
+  const response = await apiClient.patch(`classrooms/${classroomId}/tasks/${taskId}/`, {
+    teacher_id: teacherId,
+    ...data,
+  });
+  return response.data;
+};
+
+export const removeStudentFromClassroom = async (classroomId, teacherId, studentId) => {
+  await apiClient.post(`classrooms/${classroomId}/remove-student/`, {
+    teacher_id: teacherId,
+    student_id: studentId,
+  });
+};
+
+// ── Classroom Analytics ─────────────────────────────────────────────────────
+
+export const getClassroomAnalytics = async (classroomId, teacherId) => {
+  const response = await apiClient.get(`classrooms/${classroomId}/analytics/`, {
+    params: { teacher_id: teacherId },
+  });
+  return response.data;
+};
+
+export const getClassroomStudentDetail = async (classroomId, studentId, teacherId) => {
+  const response = await apiClient.get(`classrooms/${classroomId}/students/${studentId}/`, {
+    params: { teacher_id: teacherId },
+  });
+  return response.data;
+};
+
+export const getClassroomTaskHomeworkStats = async (classroomId, taskId, teacherId) => {
+  const response = await apiClient.get(`classrooms/${classroomId}/tasks/${taskId}/homework-stats/`, {
+    params: { teacher_id: teacherId },
+  });
+  return response.data;
+};
+
+export const teacherGenerateTaskPreview = async (teacherId, type, count, description, segments = null) => {
+  const response = await apiClient.post('teacher/generate-task/', {
+    teacher_id: teacherId, type, count, description,
+    ...(segments && { segments }),
+  });
+  return response.data;
+};
+
+export const teacherSaveTask = async (teacherId, taskName, form, grade, examples) => {
+  const response = await apiClient.post('teacher/save-task/', {
+    teacher_id: teacherId, task_name: taskName, form, grade, examples,
+  });
+  return response.data;
+};
+
+// ── Task Browsing ───────────────────────────────────────────────────────────
+
+export const browseTasks = async (grade = null, search = '') => {
+  const params = {};
+  if (grade) params.grade = grade;
+  if (search) params.search = search;
+  const response = await apiClient.get('tasks/browse/', { params });
+  return response.data;
+};
+
 export default apiClient;

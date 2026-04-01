@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -1524,6 +1524,65 @@ def login_admin(request):
         return Response({'message': 'Přihlášení proběhlo úspěšně!', 'role': 'admin'}, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# ─── Teacher Auth ────────────────────────────────────────────────────────────
+
+@api_view(['POST'])
+def register_teacher(request):
+    email = request.data.get('email', '').strip()
+    password = request.data.get('password')
+    first_name = request.data.get('first_name', '').strip()
+    last_name = request.data.get('last_name', '').strip()
+
+    if not email or not password or not first_name or not last_name:
+        return Response({'error': 'Všetky polia sú povinné'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if Teacher.objects.filter(email=email).exists():
+        return Response({'error': 'Tento email je už zaregistrovaný'}, status=status.HTTP_400_BAD_REQUEST)
+
+    teacher = Teacher.objects.create(
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+    )
+
+    return Response({
+        'id': teacher.id,
+        'role': 'teacher',
+        'email': teacher.email,
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'language': teacher.language,
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def login_teacher(request):
+    email = request.data.get('email', '').strip()
+    password = request.data.get('password')
+
+    if not email or not password:
+        return Response({'error': 'Nebyly zadány všechny potřebné údaje'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        teacher = Teacher.objects.get(email=email)
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if teacher.check_password(password):
+        return Response({
+            'id': teacher.id,
+            'role': 'teacher',
+            'email': teacher.email,
+            'first_name': teacher.first_name,
+            'last_name': teacher.last_name,
+            'language': teacher.language,
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 # Initialize or get anonymous session
 @api_view(['POST'])
@@ -3550,3 +3609,786 @@ def delete_generated_batch(request, batch_id):
         batch.delete()
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ─── Classroom Management ────────────────────────────────────────────────────
+
+import string as _string
+
+def generate_classroom_code(length=8):
+    chars = _string.ascii_uppercase + _string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=length))
+        if not Classroom.objects.filter(code=code).exists():
+            return code
+
+
+@api_view(['GET', 'POST'])
+def manage_classrooms(request):
+    if request.method == 'POST':
+        teacher_id = request.data.get('teacher_id')
+        name = request.data.get('name', '').strip()
+        description = request.data.get('description', '').strip()
+
+        if not teacher_id or not name:
+            return Response({'error': 'teacher_id and name are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+        except Teacher.DoesNotExist:
+            return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        code = generate_classroom_code()
+        classroom = Classroom.objects.create(
+            teacher=teacher,
+            name=name,
+            description=description,
+            code=code,
+        )
+
+        return Response({
+            'id': classroom.id,
+            'name': classroom.name,
+            'description': classroom.description,
+            'code': classroom.code,
+            'created_at': classroom.created_at,
+            'student_count': 0,
+        }, status=status.HTTP_201_CREATED)
+
+    # GET — list classrooms for teacher
+    teacher_id = request.GET.get('teacher_id')
+    if not teacher_id:
+        return Response({'error': 'teacher_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    classrooms = Classroom.objects.filter(teacher_id=teacher_id).annotate(
+        student_count=Count('memberships')
+    )
+
+    data = [{
+        'id': c.id,
+        'name': c.name,
+        'description': c.description,
+        'code': c.code,
+        'student_count': c.student_count,
+        'created_at': c.created_at,
+    } for c in classrooms]
+
+    return Response(data)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+def classroom_detail(request, classroom_id):
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'DELETE':
+        teacher_id = request.GET.get('teacher_id') or request.data.get('teacher_id')
+        if not teacher_id or classroom.teacher_id != int(teacher_id):
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        classroom.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    if request.method == 'PATCH':
+        teacher_id = request.data.get('teacher_id')
+        if not teacher_id or classroom.teacher_id != int(teacher_id):
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        name = request.data.get('name')
+        description = request.data.get('description')
+        if name is not None:
+            classroom.name = name.strip()
+        if description is not None:
+            classroom.description = description.strip()
+        classroom.save()
+
+        return Response({
+            'id': classroom.id,
+            'name': classroom.name,
+            'description': classroom.description,
+            'code': classroom.code,
+            'created_at': classroom.created_at,
+        })
+
+    # GET — full detail
+    teacher_id = request.GET.get('teacher_id')
+    student_id = request.GET.get('student_id')
+
+    # Authorization: teacher who owns it, or student who is a member
+    is_teacher = teacher_id and classroom.teacher_id == int(teacher_id)
+    is_member = student_id and ClassroomStudent.objects.filter(
+        classroom=classroom, student_id=student_id
+    ).exists()
+
+    if not is_teacher and not is_member:
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Students list
+    memberships = ClassroomStudent.objects.filter(classroom=classroom).select_related('student')
+    students = [{
+        'id': m.student.id,
+        'username': m.student.username,
+        'grade': m.student.grade,
+        'total_xp': m.student.total_xp,
+        'level': m.student.level,
+        'joined_at': m.joined_at,
+    } for m in memberships]
+
+    # Task assignments
+    assignments = ClassroomTask.objects.filter(classroom=classroom).select_related('task')
+    tasks = [{
+        'id': a.id,
+        'task_id': a.task.id,
+        'task_name': a.task.name,
+        'task_form': a.task.form,
+        'is_homework': a.is_homework,
+        'due_date': a.due_date,
+        'assigned_at': a.assigned_at,
+        'example_count': Example.objects.filter(task=a.task).count(),
+        'grade_levels': list(a.task.grade_levels.values_list('grade', flat=True)),
+    } for a in assignments]
+
+    return Response({
+        'id': classroom.id,
+        'name': classroom.name,
+        'description': classroom.description,
+        'code': classroom.code,
+        'created_at': classroom.created_at,
+        'teacher_name': f"{classroom.teacher.first_name} {classroom.teacher.last_name}",
+        'students': students,
+        'task_assignments': tasks,
+    })
+
+
+# ─── Student Join / Leave ────────────────────────────────────────────────────
+
+@api_view(['POST'])
+def join_classroom(request):
+    student_id = request.data.get('student_id')
+    code = request.data.get('code', '').strip().upper()
+
+    if not student_id or not code:
+        return Response({'error': 'student_id and code are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        classroom = Classroom.objects.get(code=code)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Trieda s týmto kódom neexistuje'}, status=status.HTTP_404_NOT_FOUND)
+
+    membership, created = ClassroomStudent.objects.get_or_create(
+        classroom=classroom,
+        student=student,
+    )
+
+    return Response({
+        'classroom_id': classroom.id,
+        'classroom_name': classroom.name,
+        'teacher_name': f"{classroom.teacher.first_name} {classroom.teacher.last_name}",
+        'joined_at': membership.joined_at,
+        'already_member': not created,
+    }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_student_classrooms(request):
+    student_id = request.GET.get('student_id')
+    if not student_id:
+        return Response({'error': 'student_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    memberships = ClassroomStudent.objects.filter(
+        student_id=student_id
+    ).select_related('classroom', 'classroom__teacher')
+
+    data = [{
+        'id': m.classroom.id,
+        'name': m.classroom.name,
+        'code': m.classroom.code,
+        'teacher_name': f"{m.classroom.teacher.first_name} {m.classroom.teacher.last_name}",
+        'joined_at': m.joined_at,
+        'task_count': ClassroomTask.objects.filter(classroom=m.classroom).count(),
+    } for m in memberships]
+
+    return Response(data)
+
+
+@api_view(['DELETE'])
+def leave_classroom(request, classroom_id):
+    student_id = request.data.get('student_id')
+    if not student_id:
+        return Response({'error': 'student_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    deleted, _ = ClassroomStudent.objects.filter(
+        classroom_id=classroom_id, student_id=student_id
+    ).delete()
+
+    if not deleted:
+        return Response({'error': 'Not a member'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+def remove_student_from_classroom(request, classroom_id):
+    teacher_id = request.data.get('teacher_id')
+    student_id = request.data.get('student_id')
+
+    if not teacher_id or not student_id:
+        return Response({'error': 'teacher_id and student_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    deleted, _ = ClassroomStudent.objects.filter(
+        classroom=classroom, student_id=student_id
+    ).delete()
+
+    if not deleted:
+        return Response({'error': 'Student is not a member'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ─── Classroom Task Assignment ───────────────────────────────────────────────
+
+@api_view(['GET', 'POST'])
+def manage_classroom_tasks(request, classroom_id):
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'POST':
+        teacher_id = request.data.get('teacher_id')
+        if not teacher_id or classroom.teacher_id != int(teacher_id):
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        task_id = request.data.get('task_id')
+        is_homework = request.data.get('is_homework', False)
+        due_date = request.data.get('due_date')
+
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        assignment, created = ClassroomTask.objects.get_or_create(
+            classroom=classroom,
+            task=task,
+            defaults={
+                'is_homework': is_homework,
+                'due_date': due_date,
+                'assigned_by': classroom.teacher,
+            }
+        )
+
+        if not created:
+            return Response({'error': 'Task already assigned'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'id': assignment.id,
+            'task_id': task.id,
+            'task_name': task.name,
+            'task_form': task.form,
+            'is_homework': assignment.is_homework,
+            'due_date': assignment.due_date,
+            'assigned_at': assignment.assigned_at,
+            'example_count': Example.objects.filter(task=task).count(),
+            'grade_levels': list(task.grade_levels.values_list('grade', flat=True)),
+        }, status=status.HTTP_201_CREATED)
+
+    # GET — list tasks for classroom
+    assignments = ClassroomTask.objects.filter(classroom=classroom).select_related('task')
+    data = [{
+        'id': a.id,
+        'task_id': a.task.id,
+        'task_name': a.task.name,
+        'task_form': a.task.form,
+        'is_homework': a.is_homework,
+        'due_date': a.due_date,
+        'assigned_at': a.assigned_at,
+        'example_count': Example.objects.filter(task=a.task).count(),
+        'grade_levels': list(a.task.grade_levels.values_list('grade', flat=True)),
+    } for a in assignments]
+
+    return Response(data)
+
+
+@api_view(['PATCH', 'DELETE'])
+def classroom_task_detail(request, classroom_id, task_id):
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    teacher_id = request.data.get('teacher_id') or request.GET.get('teacher_id')
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        assignment = ClassroomTask.objects.get(classroom=classroom, task_id=task_id)
+    except ClassroomTask.DoesNotExist:
+        return Response({'error': 'Assignment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'DELETE':
+        assignment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # PATCH
+    is_homework = request.data.get('is_homework')
+    due_date = request.data.get('due_date')
+
+    if is_homework is not None:
+        assignment.is_homework = is_homework
+    if due_date is not None:
+        assignment.due_date = due_date if due_date else None
+
+    assignment.save()
+
+    return Response({
+        'id': assignment.id,
+        'task_id': assignment.task_id,
+        'is_homework': assignment.is_homework,
+        'due_date': assignment.due_date,
+        'assigned_at': assignment.assigned_at,
+    })
+
+
+# ─── Task Browsing (for teachers) ───────────────────────────────────────────
+
+@api_view(['GET'])
+def browse_tasks(request):
+    qs = Task.objects.filter(is_private=False)
+
+    grade = request.GET.get('grade')
+    if grade:
+        qs = qs.filter(grade_levels__grade=int(grade))
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(name__icontains=search)
+
+    qs = qs.distinct().prefetch_related('grade_levels', 'skills')
+
+    data = [{
+        'task_id': t.id,
+        'task_name': t.name,
+        'task_form': t.form,
+        'grade_levels': list(t.grade_levels.values_list('grade', flat=True)),
+        'example_count': Example.objects.filter(task=t).count(),
+        'skills': list(t.skills.values_list('name', flat=True)),
+    } for t in qs[:200]]
+
+    return Response(data)
+
+
+# ─── Classroom Analytics ─────────────────────────────────────────────────────
+
+@api_view(['GET'])
+def get_classroom_analytics(request, classroom_id):
+    teacher_id = request.GET.get('teacher_id')
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    student_ids = list(ClassroomStudent.objects.filter(
+        classroom=classroom
+    ).values_list('student_id', flat=True))
+
+    total_students = len(student_ids)
+
+    # Active in last 7 days
+    seven_days_ago = timezone.now() - timezone.timedelta(days=7)
+    active_students = StudentExample.objects.filter(
+        student_id__in=student_ids,
+        date__gte=seven_days_ago,
+    ).values('student_id').distinct().count()
+
+    # Aggregate stats from StudentExample
+    records = StudentExample.objects.filter(student_id__in=student_ids)
+    total_examples = records.count()
+    solved_count = records.filter(solved=True).count()
+    avg_accuracy = (solved_count / total_examples * 100) if total_examples > 0 else 0
+
+    # Per-student summary
+    from .mastery import compute_final_mastery
+
+    student_summaries = []
+    students = Student.objects.filter(id__in=student_ids)
+    for student in students:
+        st_records = records.filter(student=student)
+        st_total = st_records.count()
+        st_solved = st_records.filter(solved=True).count()
+        st_accuracy = (st_solved / st_total * 100) if st_total > 0 else 0
+
+        # Average mastery across all skills
+        masteries = SkillMastery.objects.filter(student=student)
+        avg_mastery = 0
+        if masteries.exists():
+            mastery_values = [compute_final_mastery(m)['final_mastery'] for m in masteries]
+            avg_mastery = sum(mastery_values) / len(mastery_values) if mastery_values else 0
+
+        student_summaries.append({
+            'id': student.id,
+            'username': student.username,
+            'grade': student.grade,
+            'total_xp': student.total_xp,
+            'level': student.level,
+            'examples_practiced': st_total,
+            'solved_count': st_solved,
+            'accuracy': round(st_accuracy, 1),
+            'avg_mastery': round(avg_mastery * 100, 1),
+        })
+
+    # Sort by accuracy descending
+    student_summaries.sort(key=lambda s: s['accuracy'], reverse=True)
+
+    return Response({
+        'total_students': total_students,
+        'active_students': active_students,
+        'total_examples': total_examples,
+        'solved_count': solved_count,
+        'avg_accuracy': round(avg_accuracy, 1),
+        'student_summaries': student_summaries,
+    })
+
+
+@api_view(['GET'])
+def get_classroom_student_detail(request, classroom_id, student_id):
+    teacher_id = request.GET.get('teacher_id')
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Verify student is in this classroom
+    if not ClassroomStudent.objects.filter(classroom=classroom, student_id=student_id).exists():
+        return Response({'error': 'Student is not in this classroom'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    from .mastery import compute_final_mastery
+    from django.db.models import Avg
+
+    # Skill mastery
+    masteries = SkillMastery.objects.filter(student=student).select_related('skill')
+    skill_mastery = []
+    mastery_values = []
+    for m in masteries:
+        fm = compute_final_mastery(m)
+        mastery_values.append(fm['final_mastery'])
+        skill_mastery.append({
+            'skill_id': m.skill_id,
+            'skill_name': m.skill.name,
+            'mastery': round(fm['final_mastery'] * 100, 1),
+            'examples_count': fm['example_count'],
+        })
+
+    # Overall stats
+    all_records = StudentExample.objects.filter(student=student)
+    total_practiced = all_records.count()
+    total_solved = all_records.filter(solved=True).count()
+    accuracy = round(total_solved / total_practiced * 100, 1) if total_practiced > 0 else 0
+    avg_mastery = round(sum(mastery_values) / len(mastery_values) * 100, 1) if mastery_values else 0
+
+    # Task progress for tasks assigned in this classroom
+    assigned_task_ids = list(ClassroomTask.objects.filter(
+        classroom=classroom
+    ).values_list('task_id', flat=True))
+
+    task_progress = []
+    for task_id in assigned_task_ids:
+        task = Task.objects.get(id=task_id)
+        total_examples = Example.objects.filter(task=task).count()
+        records = StudentExample.objects.filter(student=student, task=task)
+        practiced = records.count()
+        correct = records.filter(solved=True).count()
+        incorrect = records.filter(solved=False).count()
+        avg_time = records.aggregate(avg=Avg('duration'))['avg']
+
+        task_progress.append({
+            'task_id': task.id,
+            'task_name': task.name,
+            'total_examples': total_examples,
+            'practiced': practiced,
+            'correct': correct,
+            'incorrect': incorrect,
+            'avg_time_ms': round(avg_time) if avg_time else None,
+            'completion': round(correct / total_examples * 100, 1) if total_examples > 0 else 0,
+        })
+
+    # Recent attempts
+    recent = ExampleAttempt.objects.filter(
+        student=student
+    ).select_related('example').order_by('-created_at')[:20]
+    recent_attempts = [{
+        'id': a.id,
+        'example_text': a.example_text or a.example.example,
+        'transcription': a.transcription,
+        'is_correct': a.is_correct,
+        'created_at': a.created_at,
+    } for a in recent]
+
+    # Badges
+    badges = student.earned_badges.select_related('badge').all()
+    badge_data = [{'key': sb.badge.key, 'name': sb.badge.name, 'icon': sb.badge.icon} for sb in badges]
+
+    return Response({
+        'classroom_name': classroom.name,
+        'student': {
+            'id': student.id,
+            'username': student.username,
+            'grade': student.grade,
+            'total_xp': student.total_xp,
+            'level': student.level,
+        },
+        'stats': {
+            'examples_practiced': total_practiced,
+            'accuracy': accuracy,
+            'avg_mastery': avg_mastery,
+            'streak_days': student.current_streak,
+        },
+        'skill_mastery': skill_mastery,
+        'task_progress': task_progress,
+        'recent_attempts': recent_attempts,
+        'badges': badge_data,
+    })
+
+
+# ─── Classroom Info (public, for join page) ──────────────────────────────────
+
+@api_view(['GET'])
+def get_classroom_by_code(request):
+    code = request.GET.get('code', '').strip().upper()
+    if not code:
+        return Response({'error': 'code is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        classroom = Classroom.objects.select_related('teacher').get(code=code)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Trieda s týmto kódom neexistuje'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({
+        'id': classroom.id,
+        'name': classroom.name,
+        'code': classroom.code,
+        'teacher_name': f"{classroom.teacher.first_name} {classroom.teacher.last_name}",
+        'student_count': classroom.memberships.count(),
+    })
+
+
+# ─── Classroom Task Details ───────────────────────────────────────────────────
+
+@api_view(['GET'])
+def get_classroom_task_details(request, classroom_id, task_id):
+    teacher_id = request.GET.get('teacher_id')
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        task = Task.objects.get(id=task_id)
+    except Task.DoesNotExist:
+        return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    student_ids = list(ClassroomStudent.objects.filter(
+        classroom=classroom
+    ).values_list('student_id', flat=True))
+
+    data = []
+    for ex in task.example_set.all().order_by('id'):
+        records = StudentExample.objects.filter(student_id__in=student_ids, example=ex)
+        total = records.count()
+        solved = records.filter(solved=True).count()
+        data.append({
+            'id': ex.id,
+            'question': ex.example,
+            'attempts': total,
+            'solved': solved,
+            'accuracy': round(solved / total * 100, 1) if total > 0 else None,
+        })
+
+    return Response({
+        'task_id': task.id,
+        'task_name': task.name,
+        'examples': data,
+    })
+
+
+# ─── Classroom Task Homework Stats ───────────────────────────────────────────
+
+@api_view(['GET'])
+def get_classroom_task_homework_stats(request, classroom_id, task_id):
+    teacher_id = request.GET.get('teacher_id')
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        ct = ClassroomTask.objects.get(classroom=classroom, task_id=task_id)
+    except ClassroomTask.DoesNotExist:
+        return Response({'error': 'Task not assigned'}, status=status.HTTP_404_NOT_FOUND)
+
+    task = ct.task
+    total_examples = Example.objects.filter(task=task).count()
+    student_ids = list(ClassroomStudent.objects.filter(
+        classroom=classroom
+    ).values_list('student_id', flat=True))
+    students = Student.objects.filter(id__in=student_ids).order_by('username')
+
+    data = []
+    for student in students:
+        records = StudentExample.objects.filter(student=student, task=task)
+        solved_count = records.filter(solved=True).count()
+        completed = total_examples > 0 and solved_count >= total_examples
+
+        on_time = None
+        if completed and ct.due_date:
+            last_solved = records.filter(solved=True).order_by('-date').first()
+            if last_solved:
+                on_time = last_solved.date <= ct.due_date
+
+        data.append({
+            'student_id': student.id,
+            'username': student.username,
+            'solved': solved_count,
+            'total': total_examples,
+            'completed': completed,
+            'on_time': on_time,
+        })
+
+    return Response({
+        'task_id': task.id,
+        'task_name': task.name,
+        'is_homework': ct.is_homework,
+        'due_date': ct.due_date,
+        'total_students': len(student_ids),
+        'completed_count': sum(1 for d in data if d['completed']),
+        'students': data,
+    })
+
+
+# ─── Teacher Task Generation ──────────────────────────────────────────────────
+
+@api_view(['POST'])
+def teacher_generate_task_preview(request):
+    teacher_id = request.data.get('teacher_id')
+    if not teacher_id:
+        return Response({'error': 'teacher_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        teacher = Teacher.objects.get(id=int(teacher_id))
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    task_type = request.data.get('type', 'arithmetic')
+    try:
+        count = min(max(int(request.data.get('count', 10)), 1), 30)
+    except (TypeError, ValueError):
+        count = 10
+    description = (request.data.get('description') or '').strip()
+    if not description:
+        return Response({'error': 'description is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if task_type == 'mix':
+        segments = request.data.get('segments', [])
+        if not segments:
+            return Response({'error': 'segments are required for mix type'}, status=status.HTTP_400_BAD_REQUEST)
+        from .generators.teacher_generator import generate_teacher_task_mix
+        try:
+            data = generate_teacher_task_mix(segments, description)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except RuntimeError as e:
+            return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    else:
+        from .generators.teacher_generator import generate_teacher_task
+        try:
+            data = generate_teacher_task(task_type, count, description)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except RuntimeError as e:
+            return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    return Response(data)
+
+
+@api_view(['POST'])
+def teacher_save_task(request):
+    teacher_id = request.data.get('teacher_id')
+    if not teacher_id:
+        return Response({'error': 'teacher_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        teacher = Teacher.objects.get(id=int(teacher_id))
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    task_name = (request.data.get('task_name') or '').strip()
+    if not task_name:
+        return Response({'error': 'task_name required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    examples_data = request.data.get('examples', [])
+    if not examples_data:
+        return Response({'error': 'At least one example required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    grade = request.data.get('grade')
+    form = request.data.get('form', 'classic')
+
+    with transaction.atomic():
+        task = Task.objects.create(
+            name=task_name,
+            form=form if form in ('classic', 'word-problem') else 'classic',
+            is_private=False,
+            owner_teacher=teacher,
+        )
+
+        if grade:
+            try:
+                gl = GradeLevel.objects.get(grade=int(grade))
+                task.grade_levels.add(gl)
+            except (GradeLevel.DoesNotExist, ValueError):
+                pass
+
+        for ex_data in examples_data:
+            ex_text = str(ex_data.get('example', '')).strip()
+            input_type = str(ex_data.get('input_type', 'INLINE')).upper()
+            answer_text = str(ex_data.get('answer', '')).strip()
+            if not ex_text or not answer_text:
+                continue
+            ex = Example.objects.create(example=ex_text, input_type=input_type, task=task)
+            Answer.objects.create(example=ex, answer=answer_text)
+
+    return Response({'task_id': task.id, 'task_name': task.name}, status=status.HTTP_201_CREATED)

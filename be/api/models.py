@@ -57,6 +57,10 @@ class Task(models.Model):
         'AnonymousSession', null=True, blank=True,
         on_delete=models.SET_NULL, related_name='private_tasks'
     )
+    owner_teacher = models.ForeignKey(
+        'Teacher', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='created_tasks'
+    )
 
 class Example(models.Model):
     example = models.CharField(max_length=255)
@@ -488,3 +492,73 @@ class SkillMastery(models.Model):
 
     def __str__(self):
         return f"{self.student.username} / {self.skill.name} — mastery n={self.example_count}"
+
+
+class Teacher(models.Model):
+    LANGUAGE_CHOICES = [
+        ('cs', 'Czech'),
+        ('sk', 'Slovak'),
+        ('en', 'English'),
+    ]
+
+    email = models.EmailField(unique=True)
+    password = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='sk')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
+
+    def check_password(self, raw_password):
+        return check_password(raw_password, self.password)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"
+
+
+class Classroom(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='classrooms')
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    code = models.CharField(max_length=8, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class ClassroomStudent(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='memberships')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='classroom_memberships')
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('classroom', 'student')
+        ordering = ['joined_at']
+
+    def __str__(self):
+        return f"{self.student.username} in {self.classroom.name}"
+
+
+class ClassroomTask(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='task_assignments')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='classroom_assignments')
+    is_homework = models.BooleanField(default=False)
+    due_date = models.DateTimeField(null=True, blank=True)
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(Teacher, null=True, on_delete=models.SET_NULL, related_name='task_assignments')
+
+    class Meta:
+        unique_together = ('classroom', 'task')
+        ordering = ['-assigned_at']
+
+    def __str__(self):
+        hw = " [HW]" if self.is_homework else ""
+        return f"{self.task.name} -> {self.classroom.name}{hw}"

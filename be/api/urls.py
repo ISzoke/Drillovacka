@@ -59,6 +59,8 @@ urlpatterns = [
     path('register/student', views.register_student, name='register_student'),
     path('login/student', views.login_student, name='login_student'),
     path('login/admin', views.login_admin, name='login_admin'),
+    path('register/teacher', views.register_teacher, name='register_teacher'),
+    path('login/teacher', views.login_teacher, name='login_teacher'),
 
     path('session/init/', views.init_session, name='init-session'),
     path('session/update-language/', views.update_session_language, name='update-session-language'),
@@ -103,6 +105,24 @@ urlpatterns = [
     path('generated-batches/<int:batch_id>/reject/', views.reject_generated_batch, name='generated-batch-reject'),
     path('my-generated-batches/', views.get_my_generated_batches, name='my-generated-batches'),
     path('generated-batches/<int:batch_id>/delete/', views.delete_generated_batch, name='generated-batch-delete'),
+
+    # Classrooms
+    path('classrooms/', views.manage_classrooms, name='manage-classrooms'),
+    path('classrooms/<int:classroom_id>/', views.classroom_detail, name='classroom-detail'),
+    path('classrooms/join/', views.join_classroom, name='join-classroom'),
+    path('classrooms/student/', views.get_student_classrooms, name='student-classrooms'),
+    path('classrooms/info/', views.get_classroom_by_code, name='classroom-by-code'),
+    path('classrooms/<int:classroom_id>/leave/', views.leave_classroom, name='leave-classroom'),
+    path('classrooms/<int:classroom_id>/remove-student/', views.remove_student_from_classroom, name='remove-student'),
+    path('classrooms/<int:classroom_id>/tasks/', views.manage_classroom_tasks, name='classroom-tasks'),
+    path('classrooms/<int:classroom_id>/tasks/<int:task_id>/', views.classroom_task_detail, name='classroom-task-detail'),
+    path('classrooms/<int:classroom_id>/analytics/', views.get_classroom_analytics, name='classroom-analytics'),
+    path('classrooms/<int:classroom_id>/tasks/<int:task_id>/details/', views.get_classroom_task_details, name='classroom-task-details'),
+    path('classrooms/<int:classroom_id>/tasks/<int:task_id>/homework-stats/', views.get_classroom_task_homework_stats, name='classroom-task-homework-stats'),
+    path('classrooms/<int:classroom_id>/students/<int:student_id>/', views.get_classroom_student_detail, name='classroom-student-detail'),
+    path('tasks/browse/', views.browse_tasks, name='browse-tasks'),
+    path('teacher/generate-task/', views.teacher_generate_task_preview, name='teacher-generate-task'),
+    path('teacher/save-task/', views.teacher_save_task, name='teacher-save-task'),
 ]
 
 websocket_urlpatterns = [

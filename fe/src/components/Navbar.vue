@@ -120,6 +120,9 @@ const handleLogoClick = () => {
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].contact }}
             </RouterLink>
+            <RouterLink to="/teacher" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              🏫 {{ dictionary[langStore.language].teacherLogin || 'Pre učiteľov' }}
+            </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].login }}
             </RouterLink>
@@ -144,13 +147,25 @@ const handleLogoClick = () => {
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
           </template>
 
-          <!-- Logged in user -->
+          <!-- Teacher menu -->
+          <template v-else-if="authStore.role == 'teacher'">
+            <RouterLink to="/teacher/dashboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              🏫 {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+            </RouterLink>
+            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].contact }}</RouterLink>
+            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
+          </template>
+
+          <!-- Logged in user (student) -->
           <template v-else>
             <RouterLink to="/" @click="handleLogoClick" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               📚 {{ dictionary[langStore.language].examples }}
             </RouterLink>
             <RouterLink to="/progress" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               <i class="fa-solid fa-chart-line mr-1"></i>{{ dictionary[langStore.language].progress }}
+            </RouterLink>
+            <RouterLink to="/my-classrooms" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              🏫 {{ dictionary[langStore.language].myClassrooms || 'Triedy' }}
             </RouterLink>
             <RouterLink to="/leaderboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               🏆 {{ dictionary[langStore.language].leaderboard }}
@@ -184,6 +199,9 @@ const handleLogoClick = () => {
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition" @click="isMenuOpen = false">
               {{ dictionary[langStore.language].contact }}
             </RouterLink>
+            <RouterLink to="/teacher" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              🏫 {{ dictionary[langStore.language].teacherLogin || 'Pre učiteľov' }}
+            </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ dictionary[langStore.language].login }}
             </RouterLink>
@@ -208,13 +226,25 @@ const handleLogoClick = () => {
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>
           </template>
 
-          <!-- Logged in user -->
+          <!-- Teacher menu (mobile) -->
+          <template v-else-if="authStore.role == 'teacher'">
+            <RouterLink to="/teacher/dashboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              🏫 {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+            </RouterLink>
+            <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].contact }}</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>
+          </template>
+
+          <!-- Logged in user (student) -->
           <template v-else>
             <RouterLink to="/" class="text-white text-xl font-semibold" @click="handleLogoClick; isMenuOpen = false">
               📚 {{ dictionary[langStore.language].examples }}
             </RouterLink>
             <RouterLink to="/progress" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               <i class="fa-solid fa-chart-line mr-2"></i>{{ dictionary[langStore.language].progress }}
+            </RouterLink>
+            <RouterLink to="/my-classrooms" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              🏫 {{ dictionary[langStore.language].myClassrooms || 'Triedy' }}
             </RouterLink>
             <RouterLink to="/leaderboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               🏆 {{ dictionary[langStore.language].leaderboard }}

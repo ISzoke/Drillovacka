@@ -22,9 +22,9 @@ const pinia = createPinia();
 app.use(pinia);
 app.use(router);
 
-app.mount('#app');
-
 const authStore = useAuthStore();
 authStore.loadStoredSession();
+
+app.mount('#app');
 
 

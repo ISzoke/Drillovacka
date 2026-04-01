@@ -22,6 +22,22 @@ import PracticeGeneratedView from '@/views/PracticeGeneratedView.vue'
 import TaskDetailView from '@/views/TaskDetailView.vue'
 import ContactView from '@/views/ContactView.vue'
 
+// Teacher views
+import TeacherLoginView from '@/views/TeacherLoginView.vue'
+import TeacherRegisterView from '@/views/TeacherRegisterView.vue'
+import TeacherDashboardView from '@/views/TeacherDashboardView.vue'
+import TeacherClassroomView from '@/views/TeacherClassroomView.vue'
+import TeacherStudentDetailView from '@/views/TeacherStudentDetailView.vue'
+import TeacherAssignTasksView from '@/views/TeacherAssignTasksView.vue'
+import TeacherTaskSetsView from '@/views/TeacherTaskSetsView.vue'
+import TeacherClassroomStudentView from '@/views/TeacherClassroomStudentView.vue'
+import TeacherCreateTaskView from '@/views/TeacherCreateTaskView.vue'
+
+// Student classroom views
+import JoinClassroomView from '@/views/JoinClassroomView.vue'
+import StudentClassroomsView from '@/views/StudentClassroomsView.vue'
+import StudentClassroomDetailView from '@/views/StudentClassroomDetailView.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -146,6 +162,92 @@ const router = createRouter({
       name: 'contact',
       component: ContactView,
     },
+
+    // Teacher routes
+    {
+      path: '/teacher',
+      name: 'teacher-login',
+      component: TeacherLoginView,
+    },
+    {
+      path: '/teacher/register',
+      name: 'teacher-register',
+      component: TeacherRegisterView,
+    },
+    {
+      path: '/teacher/dashboard',
+      name: 'teacher-dashboard',
+      component: TeacherDashboardView,
+      meta: { requiresTeacher: true },
+    },
+    {
+      path: '/teacher/classroom/:classroomId',
+      name: 'teacher-classroom',
+      component: TeacherClassroomView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
+      path: '/teacher/classroom/:classroomId/student/:studentId',
+      name: 'teacher-student-detail',
+      component: TeacherStudentDetailView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
+      path: '/teacher/classroom/:classroomId/assign',
+      name: 'teacher-assign-tasks',
+      component: TeacherAssignTasksView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
+      path: '/teacher/classroom/:classroomId/sets',
+      name: 'teacher-task-sets',
+      component: TeacherTaskSetsView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
+      path: '/teacher/classroom/:classroomId/student-view',
+      name: 'teacher-classroom-student-view',
+      component: TeacherClassroomStudentView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
+      path: '/teacher/classroom/:classroomId/create-task',
+      name: 'teacher-create-task',
+      component: TeacherCreateTaskView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+
+    // Student classroom routes
+    {
+      path: '/join',
+      name: 'join-classroom-manual',
+      component: JoinClassroomView,
+    },
+    {
+      path: '/join/:code',
+      name: 'join-classroom',
+      component: JoinClassroomView,
+      props: true,
+    },
+    {
+      path: '/my-classrooms',
+      name: 'student-classrooms',
+      component: StudentClassroomsView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/classroom/:classroomId',
+      name: 'student-classroom-detail',
+      component: StudentClassroomDetailView,
+      meta: { requiresAuth: true },
+      props: true,
+    },
   ]
 })
 
@@ -153,6 +255,18 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   if (to.meta.requiresAdmin) {
     if (authStore.isAuthenticated && authStore.role === 'admin') {
+      next();
+    } else {
+      next({ name: 'home' });
+    }
+  } else if (to.meta.requiresTeacher) {
+    if (authStore.isAuthenticated && authStore.role === 'teacher') {
+      next();
+    } else {
+      next({ name: 'teacher-login' });
+    }
+  } else if (to.meta.requiresAuth) {
+    if (authStore.isAuthenticated && authStore.role === 'student') {
       next();
     } else {
       next({ name: 'home' });
