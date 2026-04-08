@@ -107,15 +107,42 @@ const handleRemoveTask = async (taskId) => {
   }
 };
 
-const toggleHomework = async (assignment) => {
+const showHomeworkModal = ref(false);
+const pendingHomeworkAssignment = ref(null);
+const homeworkDueDate = ref('');
+
+const toggleHomework = (assignment) => {
+  if (assignment.is_homework) {
+    // Zrušiť DÚ priamo bez modalu
+    updateClassroomTask(props.classroomId, assignment.task_id, authStore.id, {
+      is_homework: false,
+      due_date: null,
+    }).then(() => {
+      assignment.is_homework = false;
+      assignment.due_date = null;
+    }).catch(e => console.error('Error toggling homework:', e));
+  } else {
+    // Označiť DÚ — ukázať modal s date pickerom
+    pendingHomeworkAssignment.value = assignment;
+    homeworkDueDate.value = '';
+    showHomeworkModal.value = true;
+  }
+};
+
+const confirmHomework = async () => {
+  const assignment = pendingHomeworkAssignment.value;
+  if (!assignment) return;
   try {
     await updateClassroomTask(props.classroomId, assignment.task_id, authStore.id, {
-      is_homework: !assignment.is_homework,
+      is_homework: true,
+      due_date: homeworkDueDate.value || null,
     });
-    assignment.is_homework = !assignment.is_homework;
+    assignment.is_homework = true;
+    assignment.due_date = homeworkDueDate.value || null;
   } catch (e) {
-    console.error('Error toggling homework:', e);
+    console.error('Error setting homework:', e);
   }
+  showHomeworkModal.value = false;
 };
 
 const toggleStudentExpand = async (student) => {
@@ -520,6 +547,38 @@ onMounted(fetchData);
           <button @click="handleDeleteClassroom"
                   class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-semibold">
             {{ d.delete || 'Vymazať' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Homework modal -->
+    <div v-if="showHomeworkModal"
+         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+         @click.self="showHomeworkModal = false">
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-sm shadow-xl">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1">
+          {{ pendingHomeworkAssignment?.task_name }}
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Označiť ako domácu úlohu</p>
+
+        <label class="block text-sm text-slate-700 dark:text-slate-300 mb-1">
+          Termín odovzdania (voliteľné)
+        </label>
+        <input type="date" v-model="homeworkDueDate"
+               class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600
+                      bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                      focus:outline-none focus:ring-2 focus:ring-secondary mb-4" />
+
+        <div class="flex gap-3 justify-end">
+          <button @click="showHomeworkModal = false"
+                  class="px-4 py-2 rounded-md text-gray-600 dark:text-gray-300
+                         hover:bg-gray-100 dark:hover:bg-slate-700">
+            Zrušiť
+          </button>
+          <button @click="confirmHomework"
+                  class="px-4 py-2 bg-secondary text-white rounded-md hover:bg-blue-600 font-semibold">
+            Označiť DÚ
           </button>
         </div>
       </div>
