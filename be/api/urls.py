@@ -123,6 +123,10 @@ urlpatterns = [
     path('tasks/browse/', views.browse_tasks, name='browse-tasks'),
     path('teacher/generate-task/', views.teacher_generate_task_preview, name='teacher-generate-task'),
     path('teacher/save-task/', views.teacher_save_task, name='teacher-save-task'),
+    path('analytics/activity/', views.get_recent_activity, name='recent-activity'),
+    path('admin/teachers/', views.get_all_teachers, name='admin-teachers'),
+    path('admin/tasks/<int:task_id>/examples/', views.admin_task_examples, name='admin-task-examples'),
+    path('admin/tasks/<int:task_id>/publish/', views.admin_publish_teacher_task, name='admin-publish-task'),
 ]
 
 websocket_urlpatterns = [

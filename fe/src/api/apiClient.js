@@ -1149,4 +1149,24 @@ export const browseTasks = async (grade = null, search = '') => {
   return response.data;
 };
 
+export const getRecentActivity = async (limit = 100) => {
+  const response = await apiClient.get('analytics/activity/', { params: { limit } });
+  return response.data;
+};
+
+export const getAllTeachers = async () => {
+  const response = await apiClient.get('admin/teachers/');
+  return response.data;
+};
+
+export const getAdminTaskExamples = async (taskId) => {
+  const response = await apiClient.get(`admin/tasks/${taskId}/examples/`);
+  return response.data;
+};
+
+export const publishTeacherTask = async (taskId, gradeIds) => {
+  const response = await apiClient.post(`admin/tasks/${taskId}/publish/`, { grade_ids: gradeIds });
+  return response.data;
+};
+
 export default apiClient;

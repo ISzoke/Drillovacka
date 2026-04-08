@@ -141,7 +141,8 @@ const handleLogoClick = () => {
             <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].tasks }}</RouterLink>
             <RouterLink to="/tasks/grades" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].tasksByGrade }}</RouterLink>
             <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].skills }}</RouterLink>
-            <RouterLink to="/analytics/skills" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
+            <RouterLink to="/analytics/activity" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Aktivita</RouterLink>
+            <RouterLink to="/admin/teachers" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Učitelia</RouterLink>
             <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].myData }}</RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
@@ -220,7 +221,8 @@ const handleLogoClick = () => {
             <RouterLink to="/tasks" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasks }}</RouterLink>
             <RouterLink to="/tasks/grades" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasksByGrade }}</RouterLink>
             <RouterLink to="/skill-creator" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skills }}</RouterLink>
-            <RouterLink to="/analytics/skills" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skillAnalytics }}</RouterLink>
+            <RouterLink to="/analytics/activity" class="text-white text-xl font-semibold" @click="isMenuOpen = false">Aktivita</RouterLink>
+            <RouterLink to="/admin/teachers" class="text-white text-xl font-semibold" @click="isMenuOpen = false">Učitelia</RouterLink>
             <RouterLink to="/analytics/my-data" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].myData }}</RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>

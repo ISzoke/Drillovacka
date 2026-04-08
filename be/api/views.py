@@ -2892,6 +2892,126 @@ def get_all_anonymous_sessions_stats(request):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Admin: activity feed + teachers list + publish teacher task
+# ──────────────────────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+def admin_task_examples(request, task_id):
+    try:
+        task = Task.objects.prefetch_related('example_set__answers').get(id=task_id)
+    except Task.DoesNotExist:
+        return Response({'error': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    data = []
+    for ex in task.example_set.all():
+        data.append({
+            'id': ex.id,
+            'example': ex.example,
+            'input_type': ex.input_type,
+            'answers': [a.answer for a in ex.answers.all()],
+        })
+    return Response(data)
+
+
+@api_view(['POST'])
+def admin_publish_teacher_task(request, task_id):
+    try:
+        task = Task.objects.get(id=task_id)
+    except Task.DoesNotExist:
+        return Response({'error': 'Task not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    grade_ids = request.data.get('grade_ids', [])
+
+    with transaction.atomic():
+        task.owner_teacher = None
+        task.is_private = False
+        task.save(update_fields=['owner_teacher', 'is_private'])
+
+        if grade_ids:
+            grades = GradeLevel.objects.filter(grade__in=grade_ids)
+            task.grade_levels.set(grades)
+
+    return Response({
+        'task_id': task.id,
+        'task_name': task.name,
+        'grade_levels': list(task.grade_levels.values_list('grade', flat=True)),
+    })
+
+@api_view(['GET'])
+def get_recent_activity(request):
+    try:
+        limit = min(int(request.GET.get('limit', 100)), 500)
+    except (TypeError, ValueError):
+        limit = 100
+    attempts = ExampleAttempt.objects.select_related(
+        'student', 'anonymous_session'
+    ).order_by('-created_at')[:limit]
+    data = []
+    for a in attempts:
+        if a.student:
+            user_type = 'student'
+            user_label = a.student.username
+        else:
+            sid = a.anonymous_session.session_id if a.anonymous_session else ''
+            user_type = 'anonymous'
+            user_label = sid[:8] + '...'
+        data.append({
+            'id': a.id,
+            'created_at': a.created_at,
+            'user_type': user_type,
+            'user_label': user_label,
+            'example_text': a.example_text,
+            'action': a.action,
+            'is_correct': a.is_correct,
+            'duration': a.duration,
+            'source': a.source,
+        })
+    return Response(data)
+
+
+@api_view(['GET'])
+def get_all_teachers(request):
+    teachers = Teacher.objects.prefetch_related('classrooms').order_by('-created_at')
+    data = []
+    for t in teachers:
+        classrooms = list(t.classrooms.all())
+        student_ids = ClassroomStudent.objects.filter(
+            classroom__in=classrooms
+        ).values_list('student_id', flat=True).distinct()
+
+        classrooms_data = []
+        for c in classrooms:
+            assignments = ClassroomTask.objects.filter(
+                classroom=c
+            ).select_related('task').order_by('assigned_at')
+            classrooms_data.append({
+                'id': c.id,
+                'name': c.name,
+                'student_count': ClassroomStudent.objects.filter(classroom=c).count(),
+                'tasks': [
+                    {
+                        'id': a.task.id,
+                        'name': a.task.name,
+                        'is_homework': a.is_homework,
+                        'assigned_at': a.assigned_at,
+                    }
+                    for a in assignments
+                ],
+            })
+
+        data.append({
+            'id': t.id,
+            'first_name': t.first_name,
+            'last_name': t.last_name,
+            'email': t.email,
+            'created_at': t.created_at,
+            'classroom_count': len(classrooms),
+            'student_count': len(set(student_ids)),
+            'classrooms': classrooms_data,
+        })
+    return Response(data)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Bulk task/example import
 # ──────────────────────────────────────────────────────────────────────────────
 

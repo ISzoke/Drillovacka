@@ -87,10 +87,14 @@ const handleDeleteClassroom = async () => {
   }
 };
 
-const handleRemoveStudent = async (studentId) => {
+const removeStudentConfirm = ref(null); // { id, username }
+
+const handleRemoveStudent = async () => {
+  const { id } = removeStudentConfirm.value;
+  removeStudentConfirm.value = null;
   try {
-    await removeStudentFromClassroom(props.classroomId, authStore.id, studentId);
-    classroom.value.students = classroom.value.students.filter(s => s.id !== studentId);
+    await removeStudentFromClassroom(props.classroomId, authStore.id, id);
+    classroom.value.students = classroom.value.students.filter(s => s.id !== id);
     toastStore.addToast({ message: d.studentRemoved || 'Študent odstránený', type: 'info', visible: true });
   } catch (e) {
     console.error('Error removing student:', e);
@@ -113,7 +117,6 @@ const homeworkDueDate = ref('');
 
 const toggleHomework = (assignment) => {
   if (assignment.is_homework) {
-    // Zrušiť DÚ priamo bez modalu
     updateClassroomTask(props.classroomId, assignment.task_id, authStore.id, {
       is_homework: false,
       due_date: null,
@@ -122,7 +125,6 @@ const toggleHomework = (assignment) => {
       assignment.due_date = null;
     }).catch(e => console.error('Error toggling homework:', e));
   } else {
-    // Označiť DÚ — ukázať modal s date pickerom
     pendingHomeworkAssignment.value = assignment;
     homeworkDueDate.value = '';
     showHomeworkModal.value = true;
@@ -300,7 +302,8 @@ onMounted(fetchData);
                   <td class="py-3 px-3 text-slate-600 dark:text-slate-300">{{ s.total_xp }}</td>
                   <td class="py-3 px-3 text-slate-600 dark:text-slate-300">{{ s.level }}</td>
                   <td class="py-3 px-3 text-right" @click.stop>
-                    <button @click="handleRemoveStudent(s.id)" class="text-red-500 hover:text-red-700 text-xs">
+                    <button @click="removeStudentConfirm = { id: s.id, username: s.username }"
+                            class="text-red-500 hover:text-red-700 text-xs">
                       Odstrániť
                     </button>
                   </td>
@@ -547,6 +550,31 @@ onMounted(fetchData);
           <button @click="handleDeleteClassroom"
                   class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-semibold">
             {{ d.delete || 'Vymazať' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Remove student confirm -->
+    <div v-if="removeStudentConfirm"
+         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+         @click.self="removeStudentConfirm = null">
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-sm shadow-xl">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">Odstrániť študenta?</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
+          Naozaj chcete odstrániť
+          <span class="font-semibold text-slate-800 dark:text-slate-100">{{ removeStudentConfirm.username }}</span>
+          z triedy?
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button @click="removeStudentConfirm = null"
+                  class="px-4 py-2 rounded-md text-gray-600 dark:text-gray-300
+                         hover:bg-gray-100 dark:hover:bg-slate-700">
+            Zrušiť
+          </button>
+          <button @click="handleRemoveStudent"
+                  class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 font-semibold">
+            Odstrániť
           </button>
         </div>
       </div>

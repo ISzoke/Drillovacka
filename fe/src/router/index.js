@@ -14,6 +14,8 @@ import AdminView from '@/views/AdminView.vue'
 import GradeTopicsView from '@/views/GradeTopicsView.vue'
 import SkillAnalyticsView from '@/views/SkillAnalyticsView.vue'
 import AdminMyDataView from '@/views/AdminMyDataView.vue'
+import AdminActivityView from '@/views/AdminActivityView.vue'
+import AdminTeachersView from '@/views/AdminTeachersView.vue'
 import BulkImportView from '@/views/BulkImportView.vue'
 import LeaderboardView from '@/views/LeaderboardView.vue'
 import PokrokView from '@/views/PokrokView.vue'
@@ -133,6 +135,18 @@ const router = createRouter({
       path: '/analytics/my-data',
       name: 'admin-my-data',
       component: AdminMyDataView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/analytics/activity',
+      name: 'admin-activity',
+      component: AdminActivityView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/admin/teachers',
+      name: 'admin-teachers',
+      component: AdminTeachersView,
       meta: { requiresAdmin: true }
     },
     {

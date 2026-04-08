@@ -48,13 +48,19 @@ const handleCreate = async () => {
 };
 
 onMounted(fetchClassrooms);
+
+const studentLabel = (count) => {
+  if (count === 1) return '1 študent';
+  if (count >= 2 && count <= 4) return `${count} študenti`;
+  return `${count} študentov`;
+};
 </script>
 
 <template>
   <div class="pt-24 px-4 max-w-5xl mx-auto">
     <div class="flex items-center justify-between mb-8">
-      <h1 class="text-3xl font-bold text-primary">
-        {{ d.teacherDashboard || 'Dashboard učiteľa' }}
+      <h1 class="text-3xl font-bold text-primary dark:text-slate-100">
+        {{ d.teacherDashboard || 'Vaše triedy' }}
       </h1>
       <button @click="showCreateModal = true"
               class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-blue-600
@@ -84,7 +90,7 @@ onMounted(fetchClassrooms);
           <span class="font-mono bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs">
             {{ c.code }}
           </span>
-          <span>{{ c.student_count }} {{ d.students || 'študentov' }}</span>
+          <span>{{ studentLabel(c.student_count) }}</span>
         </div>
       </router-link>
     </div>
@@ -94,7 +100,7 @@ onMounted(fetchClassrooms);
          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
          @click.self="showCreateModal = false">
       <div class="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl">
-        <h2 class="text-xl font-bold text-primary mb-4">
+        <h2 class="text-xl font-bold text-primary dark:text-slate-100 mb-4">
           {{ d.createClassroom || 'Vytvoriť triedu' }}
         </h2>
 

@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    command: uvicorn be.asgi:application --host 0.0.0.0 --port 8000 --limit-max-requests 1000
+    command: uvicorn be.asgi:application --host 0.0.0.0 --port 8000
     environment:
       - DJANGO_SETTINGS_MODULE=be.settings
       - MYSQLHOST=db
@@ -15,8 +15,8 @@ services:
       - MYSQLDATABASE=drillovacka-demo
       - MYSQLPORT=3306
       - SECRET_KEY=${SECRET_KEY}
-      - ALLOWED_HOSTS=192.168.54.198,superlectures.net,www.superlectures.net,57.128.223.205,localhost,127.0.0.1
-      - CSRF_TRUSTED_ORIGINS=http://192.168.54.198,http://superlectures.net,http://www.superlectures.net,http://57.128.223.205
+      - ALLOWED_HOSTS=192.168.54.198,superlectures.net,www.superlectures.net,57.128.223.205,localhost,127.0.0.1,rightable-georgann-soppingly.ngrok-free.dev,www.rightable-georgann-soppingly.ngrok-free.dev
+      - CSRF_TRUSTED_ORIGINS=http://192.168.54.198,http://superlectures.net,http://www.superlectures.net,http://57.128.223.205,https://rightable-georgann-soppingly.ngrok-free.dev/
     volumes:
       - .:/code
     ports:

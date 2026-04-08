@@ -48,7 +48,7 @@ const handleLogin = async () => {
     </div>
 
     <div v-else class="max-w-lg mx-auto p-6 bg-white dark:bg-slate-800 rounded-lg shadow-lg mb-4">
-      <h2 class="text-2xl font-bold text-primary mb-8 text-center">
+      <h2 class="text-2xl font-bold text-primary dark:text-slate-100 mb-8 text-center">
         {{ d.teacherLogin || 'Prihlásenie učiteľa' }}
       </h2>
 
@@ -60,6 +60,7 @@ const handleLogin = async () => {
           <input type="email" id="email" v-model="email" placeholder="Email"
                  class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md
                         bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                        placeholder:text-slate-400 dark:placeholder:text-slate-500
                         focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <span class="text-red-600 text-sm ml-1">{{ emailError }}</span>
         </div>
@@ -71,6 +72,7 @@ const handleLogin = async () => {
           <input type="password" id="password" v-model="password" :placeholder="d.password || 'Heslo'"
                  class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md
                         bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                        placeholder:text-slate-400 dark:placeholder:text-slate-500
                         focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <span class="text-red-600 text-sm ml-1">{{ passwordError }}</span>
         </div>
