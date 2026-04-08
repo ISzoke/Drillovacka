@@ -1159,6 +1159,11 @@ export const getAllTeachers = async () => {
   return response.data;
 };
 
+export const getAdminClassroomStudents = async (classroomId) => {
+  const response = await apiClient.get(`admin/classrooms/${classroomId}/students/`);
+  return response.data;
+};
+
 export const getAdminTaskExamples = async (taskId) => {
   const response = await apiClient.get(`admin/tasks/${taskId}/examples/`);
   return response.data;

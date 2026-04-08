@@ -2896,6 +2896,17 @@ def get_all_anonymous_sessions_stats(request):
 # ──────────────────────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
+def admin_classroom_students(request, classroom_id):
+    memberships = ClassroomStudent.objects.filter(
+        classroom_id=classroom_id
+    ).select_related('student').order_by('student__username')
+    return Response([
+        {'id': m.student.id, 'username': m.student.username}
+        for m in memberships
+    ])
+
+
+@api_view(['GET'])
 def admin_task_examples(request, task_id):
     try:
         task = Task.objects.prefetch_related('example_set__answers').get(id=task_id)

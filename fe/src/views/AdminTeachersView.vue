@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
-import { getAllTeachers, publishTeacherTask, getAdminTaskExamples } from '@/api/apiClient';
+import { getAllTeachers, publishTeacherTask, getAdminTaskExamples, getAdminClassroomStudents } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 
 const teachers = ref([]);
@@ -8,6 +8,25 @@ const loading = ref(true);
 const error = ref(null);
 const expandedTeacher = ref({});
 const expandedClassroom = ref({});
+
+// Classroom students lazy load
+const expandedStudents = reactive({});
+const classroomStudents = reactive({});
+const classroomStudentsLoading = reactive({});
+
+const toggleStudentList = async (classroom) => {
+  const id = classroom.id;
+  expandedStudents[id] = !expandedStudents[id];
+  if (expandedStudents[id] && classroomStudents[id] === undefined) {
+    classroomStudentsLoading[id] = true;
+    try {
+      classroomStudents[id] = await getAdminClassroomStudents(id);
+    } catch (e) {
+      classroomStudents[id] = [];
+    }
+    classroomStudentsLoading[id] = false;
+  }
+};
 
 // Task examples lazy load
 const expandedTask = reactive({});
@@ -147,8 +166,26 @@ const studentLabel = (n) => {
                 <path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
               </svg>
               <span class="font-medium text-slate-700 dark:text-slate-200 flex-1">{{ c.name }}</span>
-              <span class="text-xs text-slate-400">{{ studentLabel(c.student_count) }}</span>
+              <button class="text-xs text-secondary hover:underline flex-shrink-0"
+                      @click.stop="toggleStudentList(c)">
+                {{ studentLabel(c.student_count) }}
+                <span class="ml-0.5">{{ expandedStudents[c.id] ? '▲' : '▼' }}</span>
+              </button>
               <span class="text-xs text-slate-400 ml-3">{{ c.tasks?.length ?? 0 }} sád</span>
+            </div>
+
+            <!-- Student list -->
+            <div v-if="expandedStudents[c.id]"
+                 class="px-10 py-2 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
+              <div v-if="classroomStudentsLoading[c.id]" class="text-xs text-slate-400 py-1">Načítavam...</div>
+              <div v-else-if="!classroomStudents[c.id]?.length" class="text-xs text-slate-400 py-1">Žiadni študenti.</div>
+              <div v-else class="flex flex-wrap gap-2 py-1">
+                <span v-for="s in classroomStudents[c.id]" :key="s.id"
+                      class="text-xs bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600
+                             text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg">
+                  {{ s.username }}
+                </span>
+              </div>
             </div>
 
             <!-- Tasks -->
