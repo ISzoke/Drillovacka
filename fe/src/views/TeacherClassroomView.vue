@@ -499,7 +499,7 @@ onMounted(fetchData);
                   <th class="py-2 px-3">{{ d.username || 'Meno' }}</th>
                   <th class="py-2 px-3">{{ d.examplesPracticed || 'Príkladov' }}</th>
                   <th class="py-2 px-3">{{ d.accuracy || 'Úspešnosť' }}</th>
-                  <th class="py-2 px-3">{{ d.mastery || 'Mastery' }}</th>
+                  <th class="py-2 px-3">{{ d.mastery || 'Zvládnutie' }}</th>
                   <th class="py-2 px-3">XP</th>
                 </tr>
               </thead>
