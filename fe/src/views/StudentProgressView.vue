@@ -47,7 +47,7 @@
             <th class="p-2 border">Príklady</th>
             <th class="p-2 border">Správne</th>
             <th class="p-2 border">Presnosť</th>
-            <th class="p-2 border">Mastery</th>
+            <th class="p-2 border">Zvládnutie</th>
             <th class="p-2 border">Priem. čas (s)</th>
             <th class="p-2 border">Posledné cvičenie</th>
           </tr>

@@ -214,7 +214,7 @@
               <!-- Mastery Progress Bar -->
               <div class="mb-3">
                 <div class="flex justify-between text-sm mb-1">
-                  <span class="text-gray-600 font-medium">Zvládnutie (Mastery)</span>
+                  <span class="text-gray-600 font-medium">Zvládnutie</span>
                   <span :class="masteryColor(skill.mastery_mean)" class="font-bold">
                     {{ (skill.mastery_mean * 100).toFixed(1) }}%
                   </span>

@@ -59,7 +59,7 @@
             <th class="p-2 border">Pokusy</th>
             <th class="p-2 border">Správne</th>
             <th class="p-2 border">Presnosť</th>
-            <th class="p-2 border">Mastery</th>
+            <th class="p-2 border">Zvládnutie</th>
             <th class="p-2 border">Priem. pokusy</th>
             <th class="p-2 border">Priem. čas (ms)</th>
             <th class="p-2 border">Posledné cvičenie</th>

@@ -77,7 +77,7 @@ onMounted(fetchData);
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
           <div class="text-2xl font-bold text-amber-500">{{ data.stats.avg_mastery }}%</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mastery</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Zvládnutie</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
           <div class="text-2xl font-bold text-purple-500">{{ data.stats.streak_days }}</div>
@@ -126,7 +126,7 @@ onMounted(fetchData);
             <thead>
               <tr class="border-b border-slate-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-xs">
                 <th class="py-2 px-4 text-left">Zručnosť</th>
-                <th class="py-2 px-4 text-right">Mastery</th>
+                <th class="py-2 px-4 text-right">Zvládnutie</th>
                 <th class="py-2 px-4 text-right">Príkladov</th>
               </tr>
             </thead>
