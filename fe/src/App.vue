@@ -76,11 +76,7 @@ onBeforeUnmount(() => {
 watch(
    () => langStore.language,
   () => {
-    if (langStore.language === 'en') {
-      document.title = 'Drillapp';
-    } else {
-      document.title = 'Drillovačka';
-    }
+    document.title = 'aritmation';
   },
   { immediate: true }
 );
