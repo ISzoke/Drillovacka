@@ -145,6 +145,10 @@ export const dictionary = {
         contact: "Kontakt",
         contactTitle: "Kontakt",
         contactDesc: "Tato aplikace vznikla jako bakalářská práce. Pokud máš jakékoliv dotazy, připomínky nebo návrhy, neváhej se ozvat.",
+        surveyTitle: "Anketa",
+        surveyDesc: "Pomoz nám zlepšit aplikaci — vyplnění je dobrovolné a trvá pár minut.",
+        startSurvey: "Vyplnit anketu",
+        surveyThanks: "Děkujeme za zpětnou vazbu!",
     },
 
     en: {
@@ -285,6 +289,10 @@ export const dictionary = {
         contact: "Contact",
         contactTitle: "Contact",
         contactDesc: "This app was created as a bachelor's thesis. If you have any questions, feedback, or suggestions, feel free to reach out.",
+        surveyTitle: "Survey",
+        surveyDesc: "Help us improve the app — filling it in is optional and takes a few minutes.",
+        startSurvey: "Take the survey",
+        surveyThanks: "Thank you for your feedback!",
     },
 
     sk: {
@@ -423,6 +431,10 @@ export const dictionary = {
         contact: "Kontakt",
         contactTitle: "Kontakt",
         contactDesc: "Táto aplikácia vznikla ako bakalárska práca. Ak máš akékoľvek otázky, pripomienky alebo návrhy, neváhaj sa ozvať.",
+        surveyTitle: "Anketa",
+        surveyDesc: "Pomôž nám zlepšiť aplikáciu — vyplnenie je dobrovoľné a trvá pár minút.",
+        startSurvey: "Vyplniť anketu",
+        surveyThanks: "Ďakujeme za spätnú väzbu!",
     }
 };
 
