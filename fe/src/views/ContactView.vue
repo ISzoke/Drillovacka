@@ -1,32 +1,46 @@
 <script setup>
 import { ref } from 'vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { getSessionId } from '@/utils/sessionManager';
 import { dictionary } from '@/utils/dictionary';
-import Survey from '@/components/Example/Survey.vue';
+import { sendSurveyAnswer } from '@/api/apiClient';
 
 const langStore = useLanguageStore();
+const authStore = useAuthStore();
 const t = () => dictionary[langStore.language];
 
-const TOTAL_QUESTIONS = 9;
+const feedbackText = ref('');
+const submitting = ref(false);
+const submitted = ref(false);
 
-const showSurvey = ref(false);
-const surveyDone = ref(false);
-const answered = ref(0);
-
-const openSurvey = () => {
-  sessionStorage.removeItem('surveyIndex');
-  answered.value = 0;
-  surveyDone.value = false;
-  showSurvey.value = true;
+const feedbackQuestion = {
+  cs: 'Máš pro nás nějaký feedback?',
+  en: 'Do you have any feedback for us?',
+  sk: 'Máš pre nás nejaký feedback?',
 };
 
-const onHideSurvey = () => {
-  answered.value++;
-  if (answered.value >= TOTAL_QUESTIONS) {
-    showSurvey.value = false;
-    surveyDone.value = true;
-  }
-};
+async function submit() {
+  const trimmed = feedbackText.value.trim();
+  if (!trimmed) return;
+  submitting.value = true;
+  try {
+    const studentId = authStore.id || null;
+    const sessionId = studentId ? null : getSessionId();
+    await sendSurveyAnswer(
+      'final-feedback-text',
+      feedbackQuestion[langStore.language],
+      trimmed,
+      [],
+      studentId,
+      sessionId,
+      langStore.language,
+    );
+    submitted.value = true;
+    feedbackText.value = '';
+  } catch { /* best-effort */ }
+  submitting.value = false;
+}
 </script>
 
 <template>
@@ -66,55 +80,49 @@ const onHideSurvey = () => {
         </a>
       </div>
 
-      <!-- Survey card -->
+      <!-- Feedback card -->
       <div class="bg-white dark:bg-slate-800
                   rounded-3xl border-[3px] border-b-[8px]
                   border-slate-200 dark:border-slate-700
                   border-b-slate-300 dark:border-b-slate-600
-                  shadow-sm p-8 flex flex-col items-center text-center">
+                  shadow-sm p-8">
 
-        <div class="w-16 h-16 rounded-2xl bg-sky-100 dark:bg-sky-900/40
-                    flex items-center justify-center mb-5">
-          <i class="fa-solid fa-clipboard-list text-3xl text-sky-600 dark:text-sky-400"></i>
-        </div>
-
-        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-2">
-          {{ t().surveyTitle || 'Anketa' }}
+        <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 mb-1">
+          {{ t().feedbackTitle || 'Spätná väzba' }}
         </h2>
-        <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
-          {{ t().surveyDesc || 'Pomôž nám zlepšiť aplikáciu — vyplnenie je dobrovoľné a trvá pár minút.' }}
+        <p class="text-slate-500 dark:text-slate-400 text-sm mb-5">
+          {{ t().feedbackDesc || 'Napíš, čo sa ti páčilo alebo čo by si zmenil/a...' }}
         </p>
 
-        <!-- Thank you -->
-        <div v-if="surveyDone"
-             class="flex flex-col items-center gap-3 text-green-600 dark:text-green-400">
-          <i class="fa-solid fa-circle-check text-4xl"></i>
-          <p class="font-bold text-lg">{{ t().surveyThanks || 'Ďakujeme za spätnú väzbu!' }}</p>
+        <!-- Thank you state -->
+        <div v-if="submitted" class="flex items-center gap-3 text-green-600 dark:text-green-400 font-semibold">
+          <i class="fa-solid fa-circle-check text-2xl"></i>
+          <span>{{ t().feedbackSent || 'Ďakujeme za spätnú väzbu!' }}</span>
         </div>
 
-        <!-- Open button -->
-        <button v-else-if="!showSurvey" @click="openSurvey"
-                class="px-8 py-3 bg-secondary text-white font-bold rounded-2xl
-                       border-b-4 border-blue-700
-                       hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2
-                       transition-all text-lg">
-          {{ t().startSurvey || 'Vyplniť anketu' }}
-        </button>
+        <!-- Input form -->
+        <template v-else>
+          <textarea
+            v-model="feedbackText"
+            rows="4"
+            :placeholder="t().feedbackPlaceholder || 'Čo sa ti páčilo? Čo by si zmenil/a alebo pridal/a?'"
+            :disabled="submitting"
+            class="w-full border-[3px] border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-3 text-sm
+                   bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
+                   placeholder-slate-400 dark:placeholder-slate-500
+                   resize-none focus:outline-none focus:border-secondary dark:focus:border-secondary transition"
+          />
 
-        <!-- Progress while open -->
-        <p v-if="showSurvey" class="text-xs text-slate-400 dark:text-slate-500 mb-4">
-          {{ answered + 1 }} / {{ TOTAL_QUESTIONS }}
-        </p>
-      </div>
-
-      <!-- Survey questions (rendered below cards) -->
-      <div v-if="showSurvey"
-           class="bg-white dark:bg-slate-800
-                  rounded-3xl border-[3px] border-b-[8px]
-                  border-slate-200 dark:border-slate-700
-                  border-b-slate-300 dark:border-b-slate-600
-                  shadow-sm overflow-hidden">
-        <Survey :topics="[]" @hideSurvey="onHideSurvey" />
+          <button
+            @click="submit"
+            :disabled="submitting || !feedbackText.trim()"
+            class="mt-3 w-full py-3 bg-secondary text-white font-black rounded-2xl
+                   border-b-4 border-blue-700
+                   hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2
+                   transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4">
+            {{ submitting ? (t().saving || 'Odosielam...') : (t().confirm || 'Odoslať') }}
+          </button>
+        </template>
       </div>
 
     </div>
