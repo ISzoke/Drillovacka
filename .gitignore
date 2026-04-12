@@ -15,3 +15,6 @@ be/staticfiles/
 # Python cache
 **/__pycache__/
 **/*.pyc
+
+# Claude Code local config
+CLAUDE.md

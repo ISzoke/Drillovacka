@@ -222,23 +222,54 @@ const studentLabel = (n) => {
                     </div>
                   </div>
 
-                  <!-- Examples preview -->
+                  <!-- Task detail (prompt + examples) -->
                   <div v-if="expandedTask[task.id]"
-                       class="ml-5 mb-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3">
-                    <div v-if="taskExamplesLoading[task.id]" class="text-xs text-slate-400 py-1">
-                      Načítavam...
+                       class="ml-5 mb-2 space-y-2">
+
+                    <!-- AI generation prompt block -->
+                    <div v-if="task.generation_prompt"
+                         class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700
+                                rounded-lg p-3">
+                      <p class="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">
+                        Prompt učiteľa (AI generovanie)
+                      </p>
+                      <p class="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{{ task.generation_prompt }}</p>
+                      <div v-if="task.generation_params" class="mt-2 flex flex-wrap gap-2">
+                        <template v-if="task.generation_params.is_mix">
+                          <span class="text-xs bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300
+                                       px-2 py-0.5 rounded-full">Mix</span>
+                          <span v-for="(seg, si) in task.generation_params.segments" :key="si"
+                                class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
+                                       px-2 py-0.5 rounded-full">
+                            {{ seg.type }} × {{ seg.count }}
+                          </span>
+                        </template>
+                        <template v-else>
+                          <span class="text-xs bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300
+                                       px-2 py-0.5 rounded-full">{{ task.generation_params.type }}</span>
+                          <span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
+                                       px-2 py-0.5 rounded-full">{{ task.generation_params.count }} príkladov</span>
+                        </template>
+                      </div>
                     </div>
-                    <div v-else-if="!taskExamples[task.id]?.length" class="text-xs text-slate-400 py-1">
-                      Žiadne príklady.
-                    </div>
-                    <div v-else class="space-y-1.5">
-                      <div v-for="ex in taskExamples[task.id]" :key="ex.id"
-                           class="flex items-baseline gap-2 text-sm">
-                        <span class="text-slate-700 dark:text-slate-300 font-mono">{{ ex.example }}</span>
-                        <span class="text-slate-400 text-xs">→</span>
-                        <span class="text-green-700 dark:text-green-400 font-semibold font-mono">
-                          {{ ex.answers.join(' / ') }}
-                        </span>
+
+                    <!-- Examples list -->
+                    <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3">
+                      <div v-if="taskExamplesLoading[task.id]" class="text-xs text-slate-400 py-1">
+                        Načítavam...
+                      </div>
+                      <div v-else-if="!taskExamples[task.id]?.length" class="text-xs text-slate-400 py-1">
+                        Žiadne príklady.
+                      </div>
+                      <div v-else class="space-y-1.5">
+                        <div v-for="ex in taskExamples[task.id]" :key="ex.id"
+                             class="flex items-baseline gap-2 text-sm">
+                          <span class="text-slate-700 dark:text-slate-300 font-mono">{{ ex.example }}</span>
+                          <span class="text-slate-400 text-xs">→</span>
+                          <span class="text-green-700 dark:text-green-400 font-semibold font-mono">
+                            {{ ex.answers.join(' / ') }}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

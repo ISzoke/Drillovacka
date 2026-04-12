@@ -62,6 +62,10 @@ class Task(models.Model):
         on_delete=models.SET_NULL, related_name='created_tasks'
     )
 
+    # AI generation log — stored only when teacher used AI to generate the task
+    generation_prompt = models.TextField(blank=True, default='')
+    generation_params = models.JSONField(null=True, blank=True)
+
 class Example(models.Model):
     example = models.CharField(max_length=255)
     input_type = models.CharField(max_length=255)

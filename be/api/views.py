@@ -3004,6 +3004,9 @@ def get_all_teachers(request):
                         'name': a.task.name,
                         'is_homework': a.is_homework,
                         'assigned_at': a.assigned_at,
+                        'grade_levels': list(a.task.grade_levels.values_list('grade', flat=True)),
+                        'generation_prompt': a.task.generation_prompt,
+                        'generation_params': a.task.generation_params,
                     }
                     for a in assignments
                 ],
@@ -4497,6 +4500,8 @@ def teacher_save_task(request):
 
     grade = request.data.get('grade')
     form = request.data.get('form', 'classic')
+    generation_prompt = (request.data.get('generation_prompt') or '').strip()
+    generation_params = request.data.get('generation_params') or None
 
     with transaction.atomic():
         task = Task.objects.create(
@@ -4504,6 +4509,8 @@ def teacher_save_task(request):
             form=form if form in ('classic', 'word-problem') else 'classic',
             is_private=False,
             owner_teacher=teacher,
+            generation_prompt=generation_prompt,
+            generation_params=generation_params,
         )
 
         if grade:
@@ -4521,5 +4528,15 @@ def teacher_save_task(request):
                 continue
             ex = Example.objects.create(example=ex_text, input_type=input_type, task=task)
             Answer.objects.create(example=ex, answer=answer_text)
+
+    # Save prompt + result JSON locally and upload to MEGA (background, only for AI-generated tasks)
+    if generation_prompt:
+        import threading
+        from .attempt_cloud_sync import sync_teacher_prompt_to_mega
+        threading.Thread(
+            target=sync_teacher_prompt_to_mega,
+            args=(task, teacher, examples_data),
+            daemon=True,
+        ).start()
 
     return Response({'task_id': task.id, 'task_name': task.name}, status=status.HTTP_201_CREATED)

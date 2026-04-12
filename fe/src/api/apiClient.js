@@ -1132,9 +1132,11 @@ export const teacherGenerateTaskPreview = async (teacherId, type, count, descrip
   return response.data;
 };
 
-export const teacherSaveTask = async (teacherId, taskName, form, grade, examples) => {
+export const teacherSaveTask = async (teacherId, taskName, form, grade, examples, generationPrompt = '', generationParams = null) => {
   const response = await apiClient.post('teacher/save-task/', {
     teacher_id: teacherId, task_name: taskName, form, grade, examples,
+    generation_prompt: generationPrompt,
+    generation_params: generationParams,
   });
   return response.data;
 };

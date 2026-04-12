@@ -203,6 +203,9 @@ def _do_sync(attempt):
 WRITE_ATTEMPT_DIR = "write_attempts"
 os.makedirs(WRITE_ATTEMPT_DIR, exist_ok=True)
 
+TEACHER_PROMPTS_DIR = "teacher_prompts"
+os.makedirs(TEACHER_PROMPTS_DIR, exist_ok=True)
+
 
 def _should_delete_local():
     return str(os.getenv("MEGA_DELETE_LOCAL_AFTER_UPLOAD", "false")).strip().lower() in {
@@ -266,6 +269,62 @@ def _do_write_sync(attempt):
         "json_uploaded": uploaded,
         "json_error": upload_result.get("error", ""),
     }
+
+
+def sync_teacher_prompt_to_mega(task, teacher, examples):
+    """
+    Save teacher AI generation prompt + result as a JSON file locally and upload to MEGA.
+    Called after teacher_save_task in a background thread.
+    File saved to teacher_prompts/task_{id}_{timestamp}.json regardless of MEGA status.
+    """
+    from datetime import timezone as tz
+    timestamp = datetime.now(tz.utc).strftime("%Y%m%dT%H%M%SZ")
+    filename = f"task_{task.id}_{timestamp}.json"
+    local_path = os.path.join(TEACHER_PROMPTS_DIR, filename)
+
+    payload = {
+        "task_id": task.id,
+        "task_name": task.name,
+        "form": task.form,
+        "created_at": task.id,  # placeholder — teacher just created it
+        "teacher": {
+            "id": teacher.id,
+            "email": teacher.email,
+            "name": f"{teacher.first_name} {teacher.last_name}",
+        },
+        "generation_prompt": task.generation_prompt,
+        "generation_params": task.generation_params,
+        "examples": [
+            {
+                "example": ex.get("example", ""),
+                "input_type": ex.get("input_type", ""),
+                "answer": ex.get("answer", ""),
+            }
+            for ex in examples
+        ],
+    }
+
+    try:
+        with open(local_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+    except Exception as exc:
+        return {"saved": False, "reason": f"json_write_failed: {exc}"}
+
+    result = {"saved": True, "local_path": local_path}
+
+    if mega_upload_enabled():
+        upload = upload_file_to_mega(local_path, dest_folder="teacher_prompts")
+        result["mega_uploaded"] = upload.get("uploaded", False)
+        result["mega_url"] = upload.get("public_url", "")
+        result["mega_error"] = upload.get("error", "")
+
+        if _should_delete_local() and upload.get("uploaded"):
+            try:
+                os.remove(local_path)
+            except Exception:
+                pass
+
+    return result
 
 
 def _retry_pending(source, sync_fn, done_check, limit):

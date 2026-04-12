@@ -119,8 +119,17 @@ const save = async () => {
     const hasWord = validExamples.some(e => e.input_type === 'WORD');
     const allWord = validExamples.every(e => e.input_type === 'WORD');
     const form = allWord ? 'word-problem' : 'classic';
+
+    // If AI-generated, record the prompt + params for admin research purposes
+    const genPrompt = mode.value === 'ai' ? aiDescription.value : '';
+    const genParams = mode.value === 'ai' ? (isMix.value
+      ? { is_mix: true, segments: mixSegments.value }
+      : { is_mix: false, type: aiType.value, count: aiCount.value }
+    ) : null;
+
     const result = await teacherSaveTask(
       authStore.id, taskName.value, form, taskGrade.value || null, validExamples,
+      genPrompt, genParams,
     );
     if (props.classroomId) {
       await assignTaskToClassroom(props.classroomId, authStore.id, result.task_id, false, null);
