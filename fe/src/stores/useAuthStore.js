@@ -74,7 +74,6 @@ export const useAuthStore = defineStore('auth', {
           localStorage.setItem('grade_change_used', JSON.stringify(this.grade_change_used));
 
           if (result.data.role === 'admin') this.startInactivityTimer(router);
-          if (result.data.role === 'teacher') this.startInactivityTimer(router);
 
           // Set language from profile if available
           if (result.data.language) {
