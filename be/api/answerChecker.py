@@ -284,16 +284,33 @@ class InlineSpeechAnswerChecker(AnswerChecker):
             )
             return (is_correct, continue_with_next, extracted_symbol)
 
+        # Check if correct answer is a text answer (e.g. yes/no for prime number questions)
+        correct_answer_norm = correct_answer.strip().replace(' ', '').replace(',', '.')
+        if not InlineSpeechAnswerChecker.is_valid_answer(correct_answer_norm):
+            def normalize_yesno(s):
+                s = s.strip().lower()
+                for src, dst in [('á','a'),('é','e'),('í','i'),('ó','o'),('ú','u'),('č','c'),('š','s'),('ž','z'),('ľ','l')]:
+                    s = s.replace(src, dst)
+                if s in ('ano', 'je', 'yes', 'true', '1', 'pravda'): return 'ano'
+                if s in ('nie', 'nie je', 'neni', 'no', 'false', '0', 'nepravda'): return 'nie'
+                return s
+            is_correct = bool(student_answer.strip()) and normalize_yesno(student_answer) == normalize_yesno(correct_answer)
+            continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, is_correct, session_id=session_id)
+            return (is_correct, continue_with_next, student_answer.strip())
+
         # Original numeric answer logic
         try:
             correct_answer = float(correct_answer.replace(",", "."))
         except ValueError:
-            return (False, False)
+            continue_with_next = InlineSpeechAnswerChecker.updateRecord(student_id, example_id, date, duration, False, session_id=session_id)
+            return (False, continue_with_next, None)
 
+        # Handle spoken "minus"/"mínus" before extracting numbers
+        student_answer = re.sub(r'\b(minus|mínus)\s*', '-', student_answer, flags=re.IGNORECASE)
         student_answer = student_answer.replace(",", ".")
 
-        # Extract all numbers from the spoken answer
-        numbers_in_answer = re.findall(r'\d+\.\d+|\d+', student_answer)
+        # Extract all numbers from the spoken answer (including negative)
+        numbers_in_answer = re.findall(r'-?\d+\.\d+|-?\d+', student_answer)
         extracted_numbers = [float(num) for num in numbers_in_answer]
 
         # Use only the last extracted number from Azure transcription string
