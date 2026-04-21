@@ -40,6 +40,11 @@ from datetime import datetime
 import uuid
 import os
 import json as pyjson
+import logging
+from django.core.mail import EmailMessage
+from django.conf import settings as django_settings
+
+logger = logging.getLogger(__name__)
 
 # Helper function to get student or anonymous session from request
 def get_user_identity(request):
@@ -1528,6 +1533,46 @@ def login_admin(request):
 
 # ─── Teacher Auth ────────────────────────────────────────────────────────────
 
+def _send_teacher_welcome_email(teacher_email, first_name):
+    """Send a welcome email with the teacher guide PDF. Runs in a background thread."""
+    if not django_settings.EMAIL_HOST_USER:
+        logger.warning('EMAIL_HOST_USER not set — skipping welcome email')
+        return
+    try:
+        pdf_path = os.path.join(os.path.dirname(__file__), '..', 'docs', 'Navod_pre_ucitelov.pdf')
+        pdf_path = os.path.normpath(pdf_path)
+
+        subject = 'Vitajte v Drillovačke!'
+        body = (
+            f'Dobrý deň, {first_name},\n\n'
+            'Ďakujeme za registráciu v aplikácii Drillovačka.\n\n'
+            'V prílohe nájdete stručný návod, ktorý vám pomôže začať — '
+            'ako vytvoriť triedu, pridať žiakov a priradiť príkladové sady.\n\n'
+            'Ak budete mať akékoľvek otázky, neváhajte nás kontaktovať.\n\n'
+            'Prajeme veľa úspechov,\n'
+            'tím Drillovačka\n'
+            'superlectures.net'
+        )
+
+        msg = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=f'Drillovačka <{django_settings.DEFAULT_FROM_EMAIL}>',
+            to=[teacher_email],
+        )
+
+        if os.path.exists(pdf_path):
+            with open(pdf_path, 'rb') as f:
+                msg.attach('Navod_pre_ucitelov.pdf', f.read(), 'application/pdf')
+        else:
+            logger.warning(f'Teacher guide PDF not found at {pdf_path}')
+
+        msg.send()
+        logger.info(f'Welcome email sent to {teacher_email}')
+    except Exception as e:
+        logger.error(f'Failed to send welcome email to {teacher_email}: {e}')
+
+
 @api_view(['POST'])
 def register_teacher(request):
     email = request.data.get('email', '').strip()
@@ -1547,6 +1592,12 @@ def register_teacher(request):
         first_name=first_name,
         last_name=last_name,
     )
+
+    threading.Thread(
+        target=_send_teacher_welcome_email,
+        args=(teacher.email, teacher.first_name),
+        daemon=True,
+    ).start()
 
     return Response({
         'id': teacher.id,

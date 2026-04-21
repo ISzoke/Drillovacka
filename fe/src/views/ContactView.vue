@@ -13,12 +13,19 @@ const t = () => dictionary[langStore.language];
 const feedbackText = ref('');
 const submitting = ref(false);
 const submitted = ref(false);
+const copied = ref(false);
 
 const feedbackQuestion = {
   cs: 'Máš pro nás nějaký feedback?',
   en: 'Do you have any feedback for us?',
   sk: 'Máš pre nás nejaký feedback?',
 };
+
+function copyEmail() {
+  navigator.clipboard.writeText('martin.it2442@gmail.com');
+  copied.value = true;
+  setTimeout(() => { copied.value = false; }, 2000);
+}
 
 async function submit() {
   const trimmed = feedbackText.value.trim();
@@ -67,17 +74,28 @@ async function submit() {
           {{ t().contactDesc }}
         </p>
 
-        <a href="mailto:martin.it2442@gmail.com"
-           class="w-full flex items-center gap-4 px-5 py-4
-                  rounded-2xl border-[3px] border-violet-200 dark:border-violet-800
-                  bg-violet-50 dark:bg-violet-900/20
-                  hover:bg-violet-100 dark:hover:bg-violet-900/40
-                  transition-colors group">
-          <i class="fa-solid fa-paper-plane text-xl text-violet-500 dark:text-violet-400 group-hover:translate-x-0.5 transition-transform"></i>
-          <span class="font-black text-violet-700 dark:text-violet-300 text-lg">
-            martin.it2442@gmail.com
-          </span>
-        </a>
+        <div class="w-full flex items-center gap-2">
+          <a href="mailto:martin.it2442@gmail.com"
+             class="flex-1 flex items-center gap-4 px-5 py-4
+                    rounded-2xl border-[3px] border-violet-200 dark:border-violet-800
+                    bg-violet-50 dark:bg-violet-900/20
+                    hover:bg-violet-100 dark:hover:bg-violet-900/40
+                    transition-colors group">
+            <i class="fa-solid fa-paper-plane text-xl text-violet-500 dark:text-violet-400 group-hover:translate-x-0.5 transition-transform"></i>
+            <span class="font-black text-violet-700 dark:text-violet-300 text-lg">
+              martin.it2442@gmail.com
+            </span>
+          </a>
+          <button @click="copyEmail"
+                  class="flex-shrink-0 w-12 h-12 flex items-center justify-center
+                         rounded-2xl border-[3px] transition-all
+                         border-violet-200 dark:border-violet-800
+                         bg-violet-50 dark:bg-violet-900/20
+                         hover:bg-violet-100 dark:hover:bg-violet-900/40"
+                  :title="copied ? 'Skopírované!' : 'Kopírovať email'">
+            <i :class="copied ? 'fa-solid fa-check text-green-500' : 'fa-regular fa-copy text-violet-500 dark:text-violet-400'"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Feedback card -->

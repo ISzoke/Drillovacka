@@ -42,7 +42,7 @@ const props = defineProps({
 const emits = defineEmits(['answerSent', 'skipped', 'finished']);
 
 // Rendered latex form of example text
-const renderedExample = computed(() => `\\(${props.example.example}\\)`);
+const renderedExample = computed(() => `\\(${props.example.example.replace(/\*/g, '\\cdot')}\\)`);
 
 // Input values
 const inlineInput = ref(null);

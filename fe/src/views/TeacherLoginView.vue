@@ -94,6 +94,16 @@ const handleLogin = async () => {
           {{ d.registerHere || 'Zaregistrujte sa' }}
         </router-link>
       </p>
+
+      <div class="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+        <a href="/manual.pdf" download
+           class="w-full flex items-center justify-center gap-2 py-3 px-4
+                  bg-amber-50 dark:bg-slate-700 text-amber-700 dark:text-amber-400
+                  border-2 border-amber-400 dark:border-amber-500 rounded-md
+                  hover:bg-amber-100 dark:hover:bg-slate-600 font-semibold transition-colors text-sm">
+          📖 {{ d.teacherManual || 'Manuál pre učiteľov' }}
+        </a>
+      </div>
     </div>
   </div>
 </template>
