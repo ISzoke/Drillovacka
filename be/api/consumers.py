@@ -592,7 +592,8 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                             # for evaluation, but keep the recording in logs with a non-evaluated status.
                             # Applies only to INLINE/WORD answers. Fraction/variable speech may be
                             # recognized in forms where digits are not present in transcription.
-                            if input_type in ('INLINE', 'WORD') and not re.search(r'\d', student_answer) and not _is_comparison_answer(student_answer):
+                            _correct_is_text = correct_answer and not re.match(r'^[0-9,.\-\s]+$', correct_answer.strip())
+                            if input_type in ('INLINE', 'WORD') and not re.search(r'\d', student_answer) and not _is_comparison_answer(student_answer) and not _correct_is_text:
                                 print(f"[DEBUG] Word-only answer filtered (no digits, no comparison): '{student_answer}'")
                                 response_data = {
                                     "isCorrect": None,
