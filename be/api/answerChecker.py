@@ -288,7 +288,7 @@ class InlineSpeechAnswerChecker(AnswerChecker):
         correct_answer_norm = correct_answer.strip().replace(' ', '').replace(',', '.')
         if not InlineSpeechAnswerChecker.is_valid_answer(correct_answer_norm):
             def normalize_yesno(s):
-                s = s.strip().lower()
+                s = s.strip().lower().strip('.,!?')
                 for src, dst in [('á','a'),('é','e'),('í','i'),('ó','o'),('ú','u'),('č','c'),('š','s'),('ž','z'),('ľ','l')]:
                     s = s.replace(src, dst)
                 if s in ('ano', 'je', 'yes', 'true', '1', 'pravda'): return 'ano'
