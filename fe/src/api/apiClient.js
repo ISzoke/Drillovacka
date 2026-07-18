@@ -1143,12 +1143,41 @@ export const teacherSaveTask = async (teacherId, taskName, form, grade, examples
 
 // ── Teacher Example Library ─────────────────────────────────────────────────
 
-export const teacherListExamples = async (teacherId, { search = '', unattachedOnly = false, grade = null } = {}) => {
+export const teacherListExamples = async (teacherId, { search = '', unattachedOnly = false, grade = null, taskId = null } = {}) => {
   const params = { teacher_id: teacherId };
   if (search) params.search = search;
   if (unattachedOnly) params.unattached_only = 1;
   if (grade) params.grade = grade;
+  if (taskId) params.task_id = taskId;
   const response = await apiClient.get('teacher/examples/', { params });
+  return response.data;
+};
+
+export const teacherBulkSetGrade = async (teacherId, exampleIds, grade) => {
+  const response = await apiClient.post('teacher/examples/bulk-set-grade/', {
+    teacher_id: teacherId, example_ids: exampleIds, grade,
+  });
+  return response.data;
+};
+
+export const teacherBulkDelete = async (teacherId, exampleIds) => {
+  const response = await apiClient.post('teacher/examples/bulk-delete/', {
+    teacher_id: teacherId, example_ids: exampleIds,
+  });
+  return response.data;
+};
+
+export const teacherBulkAddToTask = async (teacherId, exampleIds, taskId) => {
+  const response = await apiClient.post('teacher/examples/bulk-add-to-task/', {
+    teacher_id: teacherId, example_ids: exampleIds, task_id: taskId,
+  });
+  return response.data;
+};
+
+export const teacherBulkCreateTask = async (teacherId, exampleIds, taskName) => {
+  const response = await apiClient.post('teacher/examples/bulk-create-task/', {
+    teacher_id: teacherId, example_ids: exampleIds, task_name: taskName,
+  });
   return response.data;
 };
 

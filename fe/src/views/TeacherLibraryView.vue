@@ -4,10 +4,12 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import {
   getMyTeacherTasks, teacherListExamples, teacherCreateExample, teacherUpdateExample, teacherDeleteExample,
+  teacherBulkSetGrade, teacherBulkDelete,
 } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
 import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
+import TeacherBulkOrganizeModal from '@/components/TeacherBulkOrganizeModal.vue';
 
 const authStore = useAuthStore();
 const toastStore = useToastStore();
@@ -18,8 +20,24 @@ const myTasks = ref([]);
 const loadingExamples = ref(true);
 const examples = ref([]);
 const gradeFilter = ref(null);
+const locationFilter = ref(null); // null = all, 'unattached' = voľné, else a task id
 const searchQuery = ref('');
 let searchDebounce = null;
+
+const selectedIds = ref(new Set());
+const toggleSelect = (id) => {
+  const s = new Set(selectedIds.value);
+  s.has(id) ? s.delete(id) : s.add(id);
+  selectedIds.value = s;
+};
+const selectAllVisible = () => { selectedIds.value = new Set(examples.value.map(e => e.id)); };
+const clearSelection = () => { selectedIds.value = new Set(); };
+
+const showOrganizeModal = ref(false);
+const organizeDefaultHomework = ref(false);
+const bulkGradeChoice = ref(null);
+const bulkGrading = ref(false);
+const bulkDeleting = ref(false);
 
 const expandedId = ref(null);
 const editingId = ref(null);
@@ -48,7 +66,12 @@ const loadTasks = async () => {
 const loadExamples = async () => {
   loadingExamples.value = true;
   try {
-    examples.value = await teacherListExamples(authStore.id, { grade: gradeFilter.value, search: searchQuery.value });
+    examples.value = await teacherListExamples(authStore.id, {
+      grade: gradeFilter.value,
+      search: searchQuery.value,
+      unattachedOnly: locationFilter.value === 'unattached',
+      taskId: (locationFilter.value && locationFilter.value !== 'unattached') ? locationFilter.value : null,
+    });
   } catch (e) {
     examples.value = [];
   }
@@ -57,10 +80,52 @@ const loadExamples = async () => {
 
 onMounted(() => { loadTasks(); loadExamples(); });
 watch(gradeFilter, loadExamples);
+watch(locationFilter, loadExamples);
 watch(searchQuery, () => {
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(loadExamples, 300);
 });
+watch(examples, clearSelection);
+
+const openOrganizeModal = (defaultHomework) => {
+  organizeDefaultHomework.value = defaultHomework;
+  showOrganizeModal.value = true;
+};
+
+const onOrganizeSuccess = () => {
+  showOrganizeModal.value = false;
+  clearSelection();
+  loadTasks();
+  loadExamples();
+};
+
+const bulkApplyGrade = async () => {
+  bulkGrading.value = true;
+  try {
+    await teacherBulkSetGrade(authStore.id, [...selectedIds.value], bulkGradeChoice.value);
+    toastStore.addToast({ message: 'Ročník nastavený pre vybrané príklady.', type: 'success', visible: true });
+    clearSelection();
+    await loadExamples();
+  } catch (e) {
+    toastStore.addToast({ message: 'Chyba pri nastavovaní ročníka.', type: 'error', visible: true });
+  }
+  bulkGrading.value = false;
+};
+
+const bulkDeleteSelected = async () => {
+  const n = selectedIds.value.size;
+  if (!confirm(`Natrvalo zmazať ${n} príkladov? Zmaže sa aj história precvičovania žiakmi.`)) return;
+  bulkDeleting.value = true;
+  try {
+    await teacherBulkDelete(authStore.id, [...selectedIds.value]);
+    toastStore.addToast({ message: `${n} príkladov zmazaných.`, type: 'success', visible: true });
+    clearSelection();
+    await loadExamples();
+  } catch (e) {
+    toastStore.addToast({ message: 'Chyba pri mazaní.', type: 'error', visible: true });
+  }
+  bulkDeleting.value = false;
+};
 
 const toggleExpand = (ex) => {
   if (editingId.value === ex.id) return;
@@ -192,17 +257,62 @@ const submitNewExample = async () => {
             <option :value="null">Všetky ročníky</option>
             <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. ročník</option>
           </select>
+          <select v-model="locationFilter"
+                  class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
+                         bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
+                         focus:outline-none focus:ring-1 focus:ring-secondary">
+            <option :value="null">Všetky umiestnenia</option>
+            <option value="unattached">Voľné (mimo sady)</option>
+            <option v-for="t in myTasks" :key="t.id" :value="t.id">{{ t.name }}</option>
+          </select>
         </div>
+      </div>
+
+      <!-- Selection toolbar -->
+      <div v-if="selectedIds.size" class="flex items-center flex-wrap gap-2 mb-3 px-3 py-2 rounded-xl bg-secondary/10">
+        <span class="text-xs font-semibold text-secondary mr-1">{{ selectedIds.size }} vybraných</span>
+        <button @click="openOrganizeModal(false)"
+                class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
+          <TeacherIcon name="library" :size="12" /> Vytvoriť sadu
+        </button>
+        <button @click="openOrganizeModal(true)"
+                class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
+          <TeacherIcon name="calendar" :size="12" /> Priradiť ako DÚ
+        </button>
+        <div class="flex items-center gap-1">
+          <select v-model="bulkGradeChoice"
+                  class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
+                         bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs">
+            <option :value="null">roč. —</option>
+            <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. roč.</option>
+          </select>
+          <button @click="bulkApplyGrade" :disabled="bulkGrading"
+                  class="text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium disabled:opacity-50">
+            {{ bulkGrading ? '...' : 'Nastaviť ročník' }}
+          </button>
+        </div>
+        <button @click="bulkDeleteSelected" :disabled="bulkDeleting"
+                class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-accent rounded-lg hover:bg-accent/10 font-medium disabled:opacity-50">
+          <TeacherIcon name="delete" :size="12" /> {{ bulkDeleting ? '...' : 'Zmazať' }}
+        </button>
+        <button @click="clearSelection" class="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600 ml-auto">
+          Zrušiť výber
+        </button>
       </div>
 
       <div v-if="loadingExamples" class="flex justify-center py-6"><Spinner /></div>
 
       <div v-else class="space-y-2 mb-4">
+        <div v-if="examples.length" class="flex justify-end -mt-1">
+          <button @click="selectAllVisible" class="text-xs text-secondary hover:underline">Vybrať všetky zobrazené</button>
+        </div>
         <div v-for="ex in examples" :key="ex.id"
              class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
 
           <!-- Collapsed row (click to expand) -->
           <div class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none" @click="toggleExpand(ex)">
+            <input type="checkbox" :checked="selectedIds.has(ex.id)" @click.stop="toggleSelect(ex.id)"
+                   class="w-4 h-4 accent-secondary flex-shrink-0" />
             <TeacherIcon name="chevronDown" :size="13"
                          class="text-slate-400 flex-shrink-0 transition-transform"
                          :class="expandedId === ex.id ? 'rotate-180' : '-rotate-90'" />
@@ -349,6 +459,13 @@ const submitNewExample = async () => {
         </button>
       </div>
     </section>
+
+    <TeacherBulkOrganizeModal v-if="showOrganizeModal"
+                              :example-ids="[...selectedIds]"
+                              :my-tasks="myTasks"
+                              :default-homework="organizeDefaultHomework"
+                              @close="showOrganizeModal = false"
+                              @success="onOrganizeSuccess" />
 
   </div>
 </template>

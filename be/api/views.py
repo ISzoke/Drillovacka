@@ -4650,10 +4650,18 @@ def teacher_examples(request):
 
         search = request.GET.get('search', '').strip()
         if search:
-            qs = qs.filter(example__icontains=search)
+            qs = qs.filter(
+                Q(example__icontains=search) |
+                Q(task__name__icontains=search) |
+                Q(answers__answer__icontains=search)
+            ).distinct()
 
         if request.GET.get('unattached_only') in ('1', 'true', 'True'):
             qs = qs.filter(task__isnull=True)
+
+        task_id = request.GET.get('task_id')
+        if task_id:
+            qs = qs.filter(task_id=task_id)
 
         grade = _parse_grade(request.GET.get('grade'))
         if grade is not None:
@@ -4731,6 +4739,75 @@ def teacher_example_detail(request, example_id):
                 Step.objects.create(example=example, text=step_text, order=index)
 
     return Response(_serialize_teacher_example(example))
+
+
+@api_view(['POST'])
+def teacher_examples_bulk_set_grade(request):
+    teacher_id = request.data.get('teacher_id')
+    example_ids = request.data.get('example_ids') or []
+    if not teacher_id or not example_ids:
+        return Response({'error': 'teacher_id and example_ids required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    grade = _parse_grade(request.data.get('grade'))
+    with transaction.atomic():
+        updated = Example.objects.filter(id__in=example_ids, owner_teacher_id=teacher_id).update(grade=grade)
+    return Response({'updated': updated})
+
+
+@api_view(['POST'])
+def teacher_examples_bulk_delete(request):
+    teacher_id = request.data.get('teacher_id')
+    example_ids = request.data.get('example_ids') or []
+    if not teacher_id or not example_ids:
+        return Response({'error': 'teacher_id and example_ids required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        qs = Example.objects.filter(id__in=example_ids, owner_teacher_id=teacher_id)
+        deleted = qs.count()
+        qs.delete()
+    return Response({'deleted': deleted})
+
+
+@api_view(['POST'])
+def teacher_examples_bulk_add_to_task(request):
+    teacher_id = request.data.get('teacher_id')
+    example_ids = request.data.get('example_ids') or []
+    task_id = request.data.get('task_id')
+    if not teacher_id or not example_ids or not task_id:
+        return Response({'error': 'teacher_id, example_ids and task_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    task = get_object_or_404(Task, id=task_id)
+    if task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    with transaction.atomic():
+        updated = Example.objects.filter(id__in=example_ids, owner_teacher_id=teacher_id).update(task=task)
+    return Response({'task_id': task.id, 'task_name': task.name, 'updated': updated})
+
+
+@api_view(['POST'])
+def teacher_examples_bulk_create_task(request):
+    teacher_id = request.data.get('teacher_id')
+    example_ids = request.data.get('example_ids') or []
+    task_name = (request.data.get('task_name') or '').strip()
+    if not teacher_id or not example_ids or not task_name:
+        return Response({'error': 'teacher_id, example_ids and task_name required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        teacher = Teacher.objects.get(id=int(teacher_id))
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    with transaction.atomic():
+        task = Task.objects.create(name=task_name, form='classic', owner_teacher=teacher, is_private=True)
+
+        owned = Example.objects.filter(id__in=example_ids, owner_teacher_id=teacher_id)
+        grades = set(owned.exclude(grade__isnull=True).values_list('grade', flat=True))
+        if grades:
+            task.grade_levels.set(GradeLevel.objects.filter(grade__in=grades))
+
+        updated = owned.update(task=task)
+
+    return Response({'task_id': task.id, 'task_name': task.name, 'updated': updated}, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
