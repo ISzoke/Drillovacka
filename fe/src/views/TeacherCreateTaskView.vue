@@ -5,6 +5,8 @@ import { useToastStore } from '@/stores/useToastStore';
 import { useRouter } from 'vue-router';
 import { teacherGenerateTaskPreview, teacherSaveTask, assignTaskToClassroom } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
+import TeacherIcon from '@/components/TeacherIcon.vue';
+import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
 
 const props = defineProps({ classroomId: [String, Number] });
 
@@ -146,14 +148,10 @@ const save = async () => {
 <template>
   <div class="pt-20 px-4 max-w-3xl mx-auto pb-16">
 
-    <div class="flex items-center gap-2 mb-5">
-      <router-link :to="{ name: 'teacher-task-sets', params: { classroomId } }"
-                   class="text-secondary hover:underline text-sm">
-        ← Späť na sady
-      </router-link>
-    </div>
-
-    <h1 class="text-2xl font-bold text-primary dark:text-white mb-6">Vytvoriť novú sadu</h1>
+    <TeacherPageHeader
+      :crumbs="[{ label: 'Príkladové sady', to: { name: 'teacher-task-sets', params: { classroomId } } }]"
+      current="Nová sada"
+      title="Vytvoriť novú sadu" />
 
     <!-- ── Mode selection ────────────────────────────────────────────────────── -->
     <div v-if="!hasPreview && mode === null" class="grid sm:grid-cols-2 gap-4">
@@ -161,7 +159,9 @@ const save = async () => {
               class="p-6 bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700
                      border-b-[6px] border-b-slate-300 dark:border-b-slate-600
                      hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 transition-all text-left">
-        <div class="text-3xl mb-3">✏️</div>
+        <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-3">
+          <TeacherIcon name="edit" :size="20" />
+        </div>
         <div class="font-bold text-primary dark:text-white text-lg">Manuálne zadať</div>
         <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Zadaj príklady a odpovede ručne.</div>
       </button>
@@ -170,7 +170,9 @@ const save = async () => {
               class="p-6 bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700
                      border-b-[6px] border-b-slate-300 dark:border-b-slate-600
                      hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 transition-all text-left">
-        <div class="text-3xl mb-3">🤖</div>
+        <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-3">
+          <TeacherIcon name="sparkle" :size="20" />
+        </div>
         <div class="font-bold text-primary dark:text-white text-lg">Generovať pomocou AI</div>
         <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Opíš čo chceš a Gemini vygeneruje príklady.</div>
       </button>
@@ -289,7 +291,8 @@ const save = async () => {
                        border-b-4 border-blue-700 hover:-translate-y-0.5 active:translate-y-0.5
                        active:border-b-2 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
           <Spinner v-if="aiGenerating" class="w-4 h-4" />
-          <span>{{ aiGenerating ? 'Generujem...' : '🤖 Generovať' }}</span>
+          <TeacherIcon v-else name="sparkle" :size="13" />
+          <span>{{ aiGenerating ? 'Generujem...' : 'Generovať' }}</span>
         </button>
       </div>
     </div>

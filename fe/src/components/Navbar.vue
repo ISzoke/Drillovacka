@@ -19,6 +19,7 @@ import csFlag from '@/assets/img/cs-flag.png';
 import enFlag from '@/assets/img/en-flag.png';
 import skFlag from '@/assets/img/sk-flag.png';
 import { useDarkStore } from '@/stores/useDarkStore';
+import TeacherIcon from '@/components/TeacherIcon.vue';
 
 // Stores
 const authStore = useAuthStore();
@@ -140,8 +141,13 @@ const handleLogoClick = () => {
 
           <!-- Teacher menu -->
           <template v-else-if="authStore.role == 'teacher'">
-            <RouterLink to="/teacher/dashboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🏫 {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+            <RouterLink to="/teacher/dashboard" active-class="border-white"
+              class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+            </RouterLink>
+            <RouterLink to="/teacher/library" active-class="border-white"
+              class="flex items-center gap-1.5 text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              <TeacherIcon name="library" :size="14" /> Moja knižnica
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
@@ -221,7 +227,10 @@ const handleLogoClick = () => {
           <!-- Teacher menu (mobile) -->
           <template v-else-if="authStore.role == 'teacher'">
             <RouterLink to="/teacher/dashboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🏫 {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+              {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+            </RouterLink>
+            <RouterLink to="/teacher/library" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              Moja knižnica
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>

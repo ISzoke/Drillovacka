@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { getTasksByGrade, assignTaskToClassroom, getClassroomDetail, getTaskExamples, copyTaskForTeacher } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
 import Spinner from '@/components/Spinner.vue';
+import TeacherIcon from '@/components/TeacherIcon.vue';
+import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
 
 const props = defineProps({ classroomId: [String, Number] });
 
@@ -111,25 +113,19 @@ onMounted(loadAssigned);
 <template>
   <div class="pt-24 px-4 max-w-4xl mx-auto">
 
-    <div class="flex items-center gap-2 mb-4">
-      <router-link :to="{ name: 'teacher-classroom', params: { classroomId } }"
-                   class="text-secondary hover:underline text-sm">
-        &larr; Späť do triedy
-      </router-link>
-    </div>
-
-    <div class="flex items-center justify-between mb-1">
-      <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">Príkladové sady</h1>
-      <router-link :to="{ name: 'teacher-create-task', params: { classroomId } }"
-                   class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600
-                          font-semibold transition-colors text-sm">
-        + Vytvoriť novú sadu
-      </router-link>
-    </div>
-    <p v-if="classroom" class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-      {{ classroom.name }}
-    </p>
-    <div v-else class="mb-6" />
+    <TeacherPageHeader
+      :crumbs="[{ label: classroom?.name || 'Trieda', to: { name: 'teacher-classroom', params: { classroomId } } }]"
+      current="Príkladové sady"
+      title="Príkladové sady"
+      :subtitle="classroom?.name">
+      <template #action>
+        <router-link :to="{ name: 'teacher-create-task', params: { classroomId } }"
+                     class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white rounded-full
+                            hover:bg-blue-600 font-semibold transition-colors text-sm">
+          <TeacherIcon name="plus" :size="13" /> Vytvoriť novú sadu
+        </router-link>
+      </template>
+    </TeacherPageHeader>
 
     <!-- Grade accordion -->
     <div class="space-y-2">
@@ -188,9 +184,9 @@ onMounted(loadAssigned);
                       {{ copyingId === task.id ? '...' : 'Kopírovať a upraviť' }}
                     </button>
                     <span v-if="assignedTaskIds.includes(task.id)"
-                          class="text-xs px-3 py-1 bg-green-50 dark:bg-green-900/30
+                          class="flex items-center gap-1 text-xs px-3 py-1 bg-green-50 dark:bg-green-900/30
                                  text-green-600 dark:text-green-400 rounded-full font-medium">
-                      Priradené
+                      <TeacherIcon name="check" :size="10" /> Priradené
                     </span>
                     <button v-else
                             @click="openModal(task)"

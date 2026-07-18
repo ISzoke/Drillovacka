@@ -6,6 +6,7 @@ import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useToastStore } from '@/stores/useToastStore';
 import Spinner from '@/components/Spinner.vue';
+import TeacherIcon from '@/components/TeacherIcon.vue';
 
 const authStore = useAuthStore();
 const langStore = useLanguageStore();
@@ -58,22 +59,20 @@ const studentLabel = (count) => {
 
 <template>
   <div class="pt-24 px-4 max-w-5xl mx-auto">
-    <div class="flex items-center justify-between mb-8">
-      <h1 class="text-3xl font-bold text-primary dark:text-slate-100">
-        {{ d.teacherDashboard || 'Vaše triedy' }}
-      </h1>
-      <div class="flex items-center gap-3">
-        <router-link :to="{ name: 'teacher-library' }"
-                     class="px-4 py-2 border-2 border-secondary text-secondary rounded-lg hover:bg-secondary/10
-                            font-semibold transition-colors">
-          📚 Moja knižnica
-        </router-link>
-        <button @click="showCreateModal = true"
-                class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-blue-600
-                       font-semibold transition-colors">
-          + {{ d.createClassroom || 'Vytvoriť triedu' }}
-        </button>
+    <div class="flex items-start justify-between mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-bold text-primary dark:text-slate-100">
+          {{ d.teacherDashboard || 'Vaše triedy' }}
+        </h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Knižnicu vlastných sád a príkladov nájdeš v navigácii hore.
+        </p>
       </div>
+      <button @click="showCreateModal = true"
+              class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white rounded-full hover:bg-blue-600
+                     font-semibold transition-colors flex-shrink-0">
+        <TeacherIcon name="plus" :size="14" /> {{ d.createClassroom || 'Vytvoriť triedu' }}
+      </button>
     </div>
 
     <Spinner v-if="loading" />
@@ -94,10 +93,12 @@ const studentLabel = (count) => {
           {{ c.description }}
         </p>
         <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-          <span class="font-mono bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs">
+          <span class="font-mono bg-tertiary/50 dark:bg-tertiary/20 text-primary dark:text-tertiary px-2 py-1 rounded-md text-xs font-semibold">
             {{ c.code }}
           </span>
-          <span>{{ studentLabel(c.student_count) }}</span>
+          <span class="flex items-center gap-1 text-xs">
+            <TeacherIcon name="person" :size="12" /> {{ studentLabel(c.student_count) }}
+          </span>
         </div>
       </router-link>
     </div>
