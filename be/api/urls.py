@@ -125,6 +125,7 @@ urlpatterns = [
     path('teacher/save-task/', views.teacher_save_task, name='teacher-save-task'),
     path('teacher/examples/', views.teacher_examples, name='teacher-examples'),
     path('teacher/examples/<int:example_id>/', views.teacher_example_detail, name='teacher-example-detail'),
+    path('teacher/tasks/mine/', views.teacher_my_tasks, name='teacher-my-tasks'),
     path('teacher/tasks/copy/', views.teacher_copy_task, name='teacher-copy-task'),
     path('teacher/tasks/<int:task_id>/delete/', views.teacher_delete_task, name='teacher-delete-task'),
     path('teacher/tasks/<int:task_id>/examples/', views.teacher_task_examples, name='teacher-task-examples'),

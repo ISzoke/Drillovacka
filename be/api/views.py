@@ -4609,7 +4609,18 @@ def _serialize_teacher_example(example):
         'steps': [s.text for s in example.steps.order_by('order')],
         'task_id': example.task_id,
         'task_name': example.task.name if example.task_id else None,
+        'grade': example.grade,
     }
+
+
+def _parse_grade(value):
+    if value in (None, ''):
+        return None
+    try:
+        grade = int(value)
+    except (TypeError, ValueError):
+        return None
+    return grade if 1 <= grade <= 9 else None
 
 
 def _clone_example(source_example, target_task, teacher):
@@ -4644,6 +4655,10 @@ def teacher_examples(request):
         if request.GET.get('unattached_only') in ('1', 'true', 'True'):
             qs = qs.filter(task__isnull=True)
 
+        grade = _parse_grade(request.GET.get('grade'))
+        if grade is not None:
+            qs = qs.filter(grade=grade)
+
         data = [_serialize_teacher_example(ex) for ex in qs.order_by('-id')]
         return Response(data)
 
@@ -4668,7 +4683,8 @@ def teacher_examples(request):
 
     with transaction.atomic():
         example = Example.objects.create(
-            example=example_text, input_type=input_type, task=None, owner_teacher=teacher
+            example=example_text, input_type=input_type, task=None, owner_teacher=teacher,
+            grade=_parse_grade(request.data.get('grade')),
         )
         Answer.objects.create(example=example, answer=answer_text)
         for index, step_text in enumerate(steps, start=1):
@@ -4701,6 +4717,8 @@ def teacher_example_detail(request, example_id):
         example.example = example_text.strip()
     if input_type is not None:
         example.input_type = input_type.upper()
+    if 'grade' in request.data:
+        example.grade = _parse_grade(request.data.get('grade'))
     example.save()
 
     if answer_text is not None:
@@ -4713,6 +4731,23 @@ def teacher_example_detail(request, example_id):
                 Step.objects.create(example=example, text=step_text, order=index)
 
     return Response(_serialize_teacher_example(example))
+
+
+@api_view(['GET'])
+def teacher_my_tasks(request):
+    teacher_id = request.GET.get('teacher_id')
+    if not teacher_id:
+        return Response({'error': 'teacher_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    tasks = Task.objects.filter(owner_teacher_id=teacher_id).prefetch_related('grade_levels').order_by('-id')
+    data = [{
+        'id': t.id,
+        'name': t.name,
+        'form': t.form,
+        'example_count': t.example_set.count(),
+        'grade_levels': list(t.grade_levels.values_list('grade', flat=True)),
+    } for t in tasks]
+    return Response(data)
 
 
 @api_view(['GET'])

@@ -35,6 +35,7 @@ import TeacherTaskSetsView from '@/views/TeacherTaskSetsView.vue'
 import TeacherClassroomStudentView from '@/views/TeacherClassroomStudentView.vue'
 import TeacherCreateTaskView from '@/views/TeacherCreateTaskView.vue'
 import TeacherEditTaskView from '@/views/TeacherEditTaskView.vue'
+import TeacherLibraryView from '@/views/TeacherLibraryView.vue'
 
 // Student classroom views
 import JoinClassroomView from '@/views/JoinClassroomView.vue'
@@ -244,6 +245,19 @@ const router = createRouter({
       meta: { requiresTeacher: true },
       props: true,
     },
+    {
+      path: '/teacher/library',
+      name: 'teacher-library',
+      component: TeacherLibraryView,
+      meta: { requiresTeacher: true },
+    },
+    {
+      path: '/teacher/library/task/:taskId/edit',
+      name: 'teacher-edit-task-standalone',
+      component: TeacherEditTaskView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
 
     // Student classroom routes
     {
@@ -293,6 +307,8 @@ router.beforeEach((to, from, next) => {
     } else {
       next({ name: 'home' });
     }
+  } else if (to.name === 'home' && authStore.isAuthenticated && authStore.role === 'teacher') {
+    next({ name: 'teacher-dashboard' });
   } else {
     next();
   }

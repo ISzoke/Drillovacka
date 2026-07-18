@@ -1,60 +1,57 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import {
-  getTeacherTaskExamples, teacherCreateExample, teacherUpdateExample, teacherDeleteExample,
-  attachExampleToTask, detachExampleFromTask, teacherListExamples, deleteTeacherTask,
+  getMyTeacherTasks, teacherListExamples, teacherCreateExample, teacherUpdateExample, teacherDeleteExample,
 } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 
-const props = defineProps({ classroomId: [String, Number], taskId: [String, Number] });
-
-const router = useRouter();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
 
-const loading = ref(true);
-const taskName = ref('');
+const loadingTasks = ref(true);
+const myTasks = ref([]);
+
+const loadingExamples = ref(true);
 const examples = ref([]);
+const gradeFilter = ref(null);
+
 const editingId = ref(null);
 const editDraft = reactive({ example: '', input_type: 'INLINE', answer: '', steps: [], grade: null });
 const saving = ref(false);
-const deletingTask = ref(false);
 
 const showNewForm = ref(false);
 const newExample = reactive({ example: '', input_type: 'INLINE', answer: '', steps: [], grade: null });
 const creating = ref(false);
-
-const backTarget = () => props.classroomId
-  ? { name: 'teacher-task-sets', params: { classroomId: props.classroomId } }
-  : { name: 'teacher-library' };
-
-const showLibrary = ref(false);
-const libraryLoading = ref(false);
-const libraryExamples = ref([]);
-const attachingId = ref(null);
 
 watch([examples, editDraft, newExample], async () => {
   await nextTick();
   window.MathJax?.typeset();
 }, { deep: true });
 
-const load = async () => {
-  loading.value = true;
+const loadTasks = async () => {
+  loadingTasks.value = true;
   try {
-    const data = await getTeacherTaskExamples(props.taskId, authStore.id);
-    taskName.value = data.task_name;
-    examples.value = data.examples;
+    myTasks.value = await getMyTeacherTasks(authStore.id);
   } catch (e) {
-    toastStore.addToast({ message: 'Toto nie je vaša sada.', type: 'error', visible: true });
-    router.push({ name: 'teacher-task-sets', params: { classroomId: props.classroomId } });
+    myTasks.value = [];
   }
-  loading.value = false;
+  loadingTasks.value = false;
 };
 
-onMounted(load);
+const loadExamples = async () => {
+  loadingExamples.value = true;
+  try {
+    examples.value = await teacherListExamples(authStore.id, { grade: gradeFilter.value });
+  } catch (e) {
+    examples.value = [];
+  }
+  loadingExamples.value = false;
+};
+
+onMounted(() => { loadTasks(); loadExamples(); });
+watch(gradeFilter, loadExamples);
 
 const startEdit = (ex) => {
   editingId.value = ex.id;
@@ -66,6 +63,9 @@ const startEdit = (ex) => {
 };
 
 const cancelEdit = () => { editingId.value = null; };
+
+const addStep = (target) => target.steps.push('');
+const removeStep = (target, i) => target.steps.splice(i, 1);
 
 const saveEdit = async (ex) => {
   saving.value = true;
@@ -83,20 +83,6 @@ const saveEdit = async (ex) => {
     toastStore.addToast({ message: 'Chyba pri ukladaní príkladu.', type: 'error', visible: true });
   }
   saving.value = false;
-};
-
-const addStep = (target) => target.steps.push('');
-const removeStep = (target, i) => target.steps.splice(i, 1);
-
-const detach = async (ex) => {
-  if (!confirm(`Odstrániť "${ex.example}" z tejto sady? (ostane v tvojej knižnici)`)) return;
-  try {
-    await detachExampleFromTask(props.taskId, authStore.id, ex.id);
-    examples.value = examples.value.filter(e => e.id !== ex.id);
-    toastStore.addToast({ message: 'Príklad odstránený zo sady.', type: 'success', visible: true });
-  } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri odstraňovaní.', type: 'error', visible: true });
-  }
 };
 
 const deleteForever = async (ex) => {
@@ -122,52 +108,16 @@ const submitNewExample = async () => {
       answer: newExample.answer, steps: newExample.steps.filter(s => s.trim()),
       grade: newExample.grade,
     });
-    const attached = await attachExampleToTask(props.taskId, authStore.id, created.id);
-    examples.value.push(attached);
+    if (gradeFilter.value === null || gradeFilter.value === created.grade) {
+      examples.value.unshift(created);
+    }
     newExample.example = ''; newExample.answer = ''; newExample.steps = []; newExample.grade = null;
     showNewForm.value = false;
-    toastStore.addToast({ message: 'Príklad pridaný.', type: 'success', visible: true });
+    toastStore.addToast({ message: 'Príklad pridaný do knižnice.', type: 'success', visible: true });
   } catch (e) {
     toastStore.addToast({ message: 'Chyba pri vytváraní príkladu.', type: 'error', visible: true });
   }
   creating.value = false;
-};
-
-const openLibrary = async () => {
-  showLibrary.value = true;
-  libraryLoading.value = true;
-  try {
-    libraryExamples.value = await teacherListExamples(authStore.id, { unattachedOnly: true });
-  } catch (e) {
-    libraryExamples.value = [];
-  }
-  libraryLoading.value = false;
-};
-
-const attachFromLibrary = async (ex) => {
-  attachingId.value = ex.id;
-  try {
-    const attached = await attachExampleToTask(props.taskId, authStore.id, ex.id);
-    examples.value.push(attached);
-    libraryExamples.value = libraryExamples.value.filter(e => e.id !== ex.id);
-    toastStore.addToast({ message: 'Príklad pridaný zo knižnice.', type: 'success', visible: true });
-  } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri pridávaní.', type: 'error', visible: true });
-  }
-  attachingId.value = null;
-};
-
-const deleteTask = async () => {
-  if (!confirm(`Natrvalo zmazať celú sadu "${taskName.value}"?`)) return;
-  deletingTask.value = true;
-  try {
-    await deleteTeacherTask(props.taskId, authStore.id);
-    toastStore.addToast({ message: 'Sada zmazaná.', type: 'success', visible: true });
-    router.push({ name: 'teacher-task-sets', params: { classroomId: props.classroomId } });
-  } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri mazaní sady.', type: 'error', visible: true });
-    deletingTask.value = false;
-  }
 };
 </script>
 
@@ -175,33 +125,64 @@ const deleteTask = async () => {
   <div class="pt-20 px-4 max-w-3xl mx-auto pb-16">
 
     <div class="flex items-center gap-2 mb-5">
-      <router-link :to="backTarget()" class="text-secondary hover:underline text-sm">
-        ← {{ classroomId ? 'Späť na sady' : 'Späť do knižnice' }}
+      <router-link :to="{ name: 'teacher-dashboard' }" class="text-secondary hover:underline text-sm">
+        ← Späť na triedy
       </router-link>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-16"><Spinner /></div>
+    <h1 class="text-2xl font-bold text-primary dark:text-white mb-6">Moja knižnica</h1>
 
-    <template v-else>
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-primary dark:text-white">{{ taskName }}</h1>
-        <button @click="deleteTask" :disabled="deletingTask"
-                class="text-xs px-3 py-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg disabled:opacity-50">
-          {{ deletingTask ? '...' : 'Zmazať sadu' }}
-        </button>
+    <!-- Moje sady -->
+    <section class="mb-8">
+      <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+        Moje sady
+      </h2>
+      <div v-if="loadingTasks" class="flex justify-center py-6"><Spinner /></div>
+      <div v-else-if="!myTasks.length" class="text-sm text-gray-400 text-center py-6">
+        Zatiaľ nemáš žiadne vlastné sady. Vytvor si novú, alebo si skopíruj existujúcu z prehľadu sád v triede.
+      </div>
+      <div v-else class="space-y-2">
+        <router-link v-for="t in myTasks" :key="t.id"
+                     :to="{ name: 'teacher-edit-task-standalone', params: { taskId: t.id } }"
+                     class="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 rounded-xl
+                            border border-slate-200 dark:border-slate-700 hover:border-secondary transition-colors">
+          <span class="font-medium text-slate-800 dark:text-slate-100 text-sm">{{ t.name }}</span>
+          <span class="text-xs text-gray-400">
+            {{ t.example_count }} príkladov
+            <template v-if="t.grade_levels.length"> · {{ t.grade_levels.join(', ') }}. roč.</template>
+          </span>
+        </router-link>
+      </div>
+    </section>
+
+    <!-- Moje príklady -->
+    <section>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+          Moje príklady
+        </h2>
+        <select v-model="gradeFilter"
+                class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
+                       bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs
+                       focus:outline-none focus:ring-1 focus:ring-secondary">
+          <option :value="null">Všetky ročníky</option>
+          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. ročník</option>
+        </select>
       </div>
 
-      <div class="space-y-3 mb-5">
+      <div v-if="loadingExamples" class="flex justify-center py-6"><Spinner /></div>
+
+      <div v-else class="space-y-3 mb-4">
         <div v-for="ex in examples" :key="ex.id"
              class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-3">
 
-          <!-- Read-only row -->
           <div v-if="editingId !== ex.id" class="flex gap-2 items-start">
             <div class="flex-1 min-w-0">
               <div class="font-mono text-sm text-slate-800 dark:text-slate-100">{{ ex.example }}</div>
               <div class="text-xs text-gray-400 mt-1">
                 {{ ex.input_type }} · odpoveď: <span class="font-mono">{{ ex.answer }}</span>
-                <span v-if="ex.steps.length"> · {{ ex.steps.length }} krokov</span>
+                <span v-if="ex.task_name"> · v sade "{{ ex.task_name }}"</span>
+                <span v-else> · voľný (nie je v žiadnej sade)</span>
                 <span v-if="ex.grade"> · {{ ex.grade }}. roč.</span>
               </div>
             </div>
@@ -209,15 +190,10 @@ const deleteTask = async () => {
                     class="text-xs px-2.5 py-1.5 text-secondary hover:bg-secondary/10 rounded-lg flex-shrink-0">
               Upraviť
             </button>
-            <button @click="detach(ex)"
-                    class="text-xs px-2.5 py-1.5 text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex-shrink-0">
-              Odstrániť zo sady
-            </button>
             <button @click="deleteForever(ex)"
                     class="text-red-400 hover:text-red-600 flex-shrink-0 text-xl leading-none px-1">×</button>
           </div>
 
-          <!-- Edit form -->
           <div v-else class="space-y-2">
             <input v-model="editDraft.example" type="text" placeholder="Príklad"
                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
@@ -268,23 +244,16 @@ const deleteTask = async () => {
         </div>
 
         <div v-if="!examples.length" class="text-sm text-gray-400 text-center py-6">
-          Táto sada zatiaľ nemá žiadne príklady.
+          {{ gradeFilter ? `Žiadne príklady pre ${gradeFilter}. ročník.` : 'Knižnica je zatiaľ prázdna.' }}
         </div>
       </div>
 
-      <!-- Add example -->
-      <div class="flex gap-3 mb-4">
-        <button @click="showNewForm = !showNewForm"
-                class="text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
-          + Nový príklad
-        </button>
-        <button @click="openLibrary"
-                class="text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
-          + Z mojej knižnice
-        </button>
-      </div>
+      <button @click="showNewForm = !showNewForm"
+              class="text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
+        + Nový príklad do knižnice
+      </button>
 
-      <div v-if="showNewForm" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 space-y-2 mb-4">
+      <div v-if="showNewForm" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 space-y-2 mt-3">
         <input v-model="newExample.example" type="text" placeholder="Príklad"
                class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                       bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm
@@ -323,35 +292,10 @@ const deleteTask = async () => {
         </div>
         <button @click="submitNewExample" :disabled="creating"
                 class="w-full py-2 bg-secondary text-white rounded-lg font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
-          {{ creating ? 'Pridávam...' : 'Pridať do sady' }}
+          {{ creating ? 'Pridávam...' : 'Pridať do knižnice' }}
         </button>
       </div>
-    </template>
-
-    <!-- Library modal -->
-    <div v-if="showLibrary" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-         @click.self="showLibrary = false">
-      <div class="bg-white dark:bg-slate-800 rounded-xl p-5 w-full max-w-lg max-h-[80vh] overflow-y-auto shadow-xl">
-        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-3">Moja knižnica (voľné príklady)</h3>
-        <div v-if="libraryLoading" class="flex justify-center py-8"><Spinner /></div>
-        <div v-else-if="!libraryExamples.length" class="text-sm text-gray-400 text-center py-8">
-          Žiadne voľné príklady v knižnici.
-        </div>
-        <div v-else class="space-y-2">
-          <div v-for="ex in libraryExamples" :key="ex.id"
-               class="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <div class="flex-1 min-w-0 font-mono text-sm text-slate-800 dark:text-slate-100 truncate">{{ ex.example }}</div>
-            <button @click="attachFromLibrary(ex)" :disabled="attachingId === ex.id"
-                    class="text-xs px-2.5 py-1.5 bg-secondary text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 flex-shrink-0">
-              {{ attachingId === ex.id ? '...' : 'Pridať' }}
-            </button>
-          </div>
-        </div>
-        <button @click="showLibrary = false" class="mt-4 w-full py-2 rounded-lg text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm">
-          Zavrieť
-        </button>
-      </div>
-    </div>
+    </section>
 
   </div>
 </template>

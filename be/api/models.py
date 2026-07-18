@@ -78,6 +78,10 @@ class Example(models.Model):
         on_delete=models.SET_NULL, related_name='owned_examples'
     )
 
+    # Manual grade tag for organizing a teacher's own example library — never
+    # auto-derived from a Task's grade_levels, the teacher sets it themselves.
+    grade = models.IntegerField(null=True, blank=True)
+
 class Step(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name='steps')
     text = models.TextField()

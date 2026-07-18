@@ -1143,25 +1143,31 @@ export const teacherSaveTask = async (teacherId, taskName, form, grade, examples
 
 // ── Teacher Example Library ─────────────────────────────────────────────────
 
-export const teacherListExamples = async (teacherId, { search = '', unattachedOnly = false } = {}) => {
+export const teacherListExamples = async (teacherId, { search = '', unattachedOnly = false, grade = null } = {}) => {
   const params = { teacher_id: teacherId };
   if (search) params.search = search;
   if (unattachedOnly) params.unattached_only = 1;
+  if (grade) params.grade = grade;
   const response = await apiClient.get('teacher/examples/', { params });
   return response.data;
 };
 
-export const teacherCreateExample = async (teacherId, { example, inputType, answer, steps = [] }) => {
+export const teacherCreateExample = async (teacherId, { example, inputType, answer, steps = [], grade = null }) => {
   const response = await apiClient.post('teacher/examples/', {
-    teacher_id: teacherId, example, input_type: inputType, answer, steps,
+    teacher_id: teacherId, example, input_type: inputType, answer, steps, grade,
   });
   return response.data;
 };
 
-export const teacherUpdateExample = async (exampleId, teacherId, { example, inputType, answer, steps }) => {
+export const teacherUpdateExample = async (exampleId, teacherId, { example, inputType, answer, steps, grade }) => {
   const response = await apiClient.patch(`teacher/examples/${exampleId}/`, {
-    teacher_id: teacherId, example, input_type: inputType, answer, steps,
+    teacher_id: teacherId, example, input_type: inputType, answer, steps, grade,
   });
+  return response.data;
+};
+
+export const getMyTeacherTasks = async (teacherId) => {
+  const response = await apiClient.get('teacher/tasks/mine/', { params: { teacher_id: teacherId } });
   return response.data;
 };
 
