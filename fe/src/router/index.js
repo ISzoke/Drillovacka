@@ -34,6 +34,7 @@ import TeacherAssignTasksView from '@/views/TeacherAssignTasksView.vue'
 import TeacherTaskSetsView from '@/views/TeacherTaskSetsView.vue'
 import TeacherClassroomStudentView from '@/views/TeacherClassroomStudentView.vue'
 import TeacherCreateTaskView from '@/views/TeacherCreateTaskView.vue'
+import TeacherEditTaskView from '@/views/TeacherEditTaskView.vue'
 
 // Student classroom views
 import JoinClassroomView from '@/views/JoinClassroomView.vue'
@@ -233,6 +234,13 @@ const router = createRouter({
       path: '/teacher/classroom/:classroomId/create-task',
       name: 'teacher-create-task',
       component: TeacherCreateTaskView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
+      path: '/teacher/classroom/:classroomId/task/:taskId/edit',
+      name: 'teacher-edit-task',
+      component: TeacherEditTaskView,
       meta: { requiresTeacher: true },
       props: true,
     },

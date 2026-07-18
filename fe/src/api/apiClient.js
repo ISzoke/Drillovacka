@@ -1141,6 +1141,72 @@ export const teacherSaveTask = async (teacherId, taskName, form, grade, examples
   return response.data;
 };
 
+// ── Teacher Example Library ─────────────────────────────────────────────────
+
+export const teacherListExamples = async (teacherId, { search = '', unattachedOnly = false } = {}) => {
+  const params = { teacher_id: teacherId };
+  if (search) params.search = search;
+  if (unattachedOnly) params.unattached_only = 1;
+  const response = await apiClient.get('teacher/examples/', { params });
+  return response.data;
+};
+
+export const teacherCreateExample = async (teacherId, { example, inputType, answer, steps = [] }) => {
+  const response = await apiClient.post('teacher/examples/', {
+    teacher_id: teacherId, example, input_type: inputType, answer, steps,
+  });
+  return response.data;
+};
+
+export const teacherUpdateExample = async (exampleId, teacherId, { example, inputType, answer, steps }) => {
+  const response = await apiClient.patch(`teacher/examples/${exampleId}/`, {
+    teacher_id: teacherId, example, input_type: inputType, answer, steps,
+  });
+  return response.data;
+};
+
+export const teacherDeleteExample = async (exampleId, teacherId) => {
+  await apiClient.delete(`teacher/examples/${exampleId}/`, { data: { teacher_id: teacherId } });
+};
+
+export const getTeacherTaskExamples = async (taskId, teacherId) => {
+  const response = await apiClient.get(`teacher/tasks/${taskId}/examples/`, {
+    params: { teacher_id: teacherId },
+  });
+  return response.data;
+};
+
+export const attachExampleToTask = async (taskId, teacherId, exampleId) => {
+  const response = await apiClient.post(`teacher/tasks/${taskId}/examples/attach/`, {
+    teacher_id: teacherId, example_id: exampleId,
+  });
+  return response.data;
+};
+
+export const detachExampleFromTask = async (taskId, teacherId, exampleId) => {
+  await apiClient.post(`teacher/tasks/${taskId}/examples/detach/`, {
+    teacher_id: teacherId, example_id: exampleId,
+  });
+};
+
+export const copyExampleIntoTask = async (taskId, teacherId, sourceExampleId) => {
+  const response = await apiClient.post(`teacher/tasks/${taskId}/examples/copy-in/`, {
+    teacher_id: teacherId, source_example_id: sourceExampleId,
+  });
+  return response.data;
+};
+
+export const copyTaskForTeacher = async (teacherId, sourceTaskId, newName = '') => {
+  const response = await apiClient.post('teacher/tasks/copy/', {
+    teacher_id: teacherId, source_task_id: sourceTaskId, new_name: newName,
+  });
+  return response.data;
+};
+
+export const deleteTeacherTask = async (taskId, teacherId) => {
+  await apiClient.delete(`teacher/tasks/${taskId}/delete/`, { data: { teacher_id: teacherId } });
+};
+
 // ── Task Browsing ───────────────────────────────────────────────────────────
 
 export const browseTasks = async (grade = null, search = '') => {

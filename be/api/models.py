@@ -69,7 +69,14 @@ class Task(models.Model):
 class Example(models.Model):
     example = models.CharField(max_length=255)
     input_type = models.CharField(max_length=255)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
+
+    # Teacher-owned examples: null = platform/admin content (read-only to teachers).
+    # Set = created by this teacher, who may freely edit/delete it.
+    owner_teacher = models.ForeignKey(
+        'Teacher', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='owned_examples'
+    )
 
 class Step(models.Model):
     example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name='steps')

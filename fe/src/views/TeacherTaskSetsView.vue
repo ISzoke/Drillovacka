@@ -1,14 +1,35 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { getTasksByGrade, assignTaskToClassroom, getClassroomDetail, getTaskExamples } from '@/api/apiClient';
+import { getTasksByGrade, assignTaskToClassroom, getClassroomDetail, getTaskExamples, copyTaskForTeacher } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
 import Spinner from '@/components/Spinner.vue';
 
 const props = defineProps({ classroomId: [String, Number] });
 
+const router = useRouter();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
+const copyingId = ref(null);
+
+const isMine = (task) => Number(task.owner_teacher_id) === Number(authStore.id);
+
+const editTask = (task) => {
+  router.push({ name: 'teacher-edit-task', params: { classroomId: props.classroomId, taskId: task.id } });
+};
+
+const copyAndEdit = async (task) => {
+  copyingId.value = task.id;
+  try {
+    const result = await copyTaskForTeacher(authStore.id, task.id);
+    toastStore.addToast({ message: 'Sada skopírovaná do tvojej knižnice.', type: 'success', visible: true });
+    router.push({ name: 'teacher-edit-task', params: { classroomId: props.classroomId, taskId: result.task_id } });
+  } catch (e) {
+    toastStore.addToast({ message: 'Chyba pri kopírovaní sady.', type: 'error', visible: true });
+  }
+  copyingId.value = null;
+};
 
 const classroom = ref(null);
 const expanded = reactive({});
@@ -157,7 +178,15 @@ onMounted(loadAssigned);
                       {{ task.example_count ?? 0 }} príkladov
                     </div>
                   </div>
-                  <div class="flex-shrink-0" @click.stop>
+                  <div class="flex-shrink-0 flex items-center gap-1.5" @click.stop>
+                    <button v-if="isMine(task)" @click="editTask(task)"
+                            class="px-2.5 py-1.5 text-secondary hover:bg-secondary/10 text-xs rounded-lg font-medium">
+                      Upraviť
+                    </button>
+                    <button v-else @click="copyAndEdit(task)" :disabled="copyingId === task.id"
+                            class="px-2.5 py-1.5 text-secondary hover:bg-secondary/10 text-xs rounded-lg font-medium disabled:opacity-50">
+                      {{ copyingId === task.id ? '...' : 'Kopírovať a upraviť' }}
+                    </button>
                     <span v-if="assignedTaskIds.includes(task.id)"
                           class="text-xs px-3 py-1 bg-green-50 dark:bg-green-900/30
                                  text-green-600 dark:text-green-400 rounded-full font-medium">

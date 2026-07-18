@@ -2408,6 +2408,7 @@ def get_tasks_by_grade(request, grade_id):
                 "example_count": task.example_set.count(),
                 "is_private": task.is_private,
                 "generated_batch_id": batch_map.get(task.id),
+                "owner_teacher_id": task.owner_teacher_id,
             }
             for task in tasks
         ]
@@ -4577,7 +4578,7 @@ def teacher_save_task(request):
             answer_text = str(ex_data.get('answer', '')).strip()
             if not ex_text or not answer_text:
                 continue
-            ex = Example.objects.create(example=ex_text, input_type=input_type, task=task)
+            ex = Example.objects.create(example=ex_text, input_type=input_type, task=task, owner_teacher=teacher)
             Answer.objects.create(example=ex, answer=answer_text)
 
     # Save prompt + result JSON locally and upload to MEGA (background, only for AI-generated tasks)
@@ -4591,3 +4592,250 @@ def teacher_save_task(request):
         ).start()
 
     return Response({'task_id': task.id, 'task_name': task.name}, status=status.HTTP_201_CREATED)
+
+
+# ─── Teacher Example Library ─────────────────────────────────────────────────
+# Teacher-owned examples (Example.owner_teacher set) live independently of any
+# sada (task=None) until attached. Platform/admin examples (owner_teacher=None)
+# are always read-only to teachers and are never mutated here — only cloned.
+
+def _serialize_teacher_example(example):
+    answer = example.answers.first()
+    return {
+        'id': example.id,
+        'example': example.example,
+        'input_type': example.input_type,
+        'answer': answer.answer if answer else '',
+        'steps': [s.text for s in example.steps.order_by('order')],
+        'task_id': example.task_id,
+        'task_name': example.task.name if example.task_id else None,
+    }
+
+
+def _clone_example(source_example, target_task, teacher):
+    """Duplicate an Example (+ its Answer + Steps) into target_task, owned by teacher. Source is never modified."""
+    new_example = Example.objects.create(
+        example=source_example.example,
+        input_type=source_example.input_type,
+        task=target_task,
+        owner_teacher=teacher,
+    )
+    answer = source_example.answers.first()
+    if answer:
+        Answer.objects.create(example=new_example, answer=answer.answer)
+    for step in source_example.steps.order_by('order'):
+        Step.objects.create(example=new_example, text=step.text, order=step.order)
+    return new_example
+
+
+@api_view(['GET', 'POST'])
+def teacher_examples(request):
+    if request.method == 'GET':
+        teacher_id = request.GET.get('teacher_id')
+        if not teacher_id:
+            return Response({'error': 'teacher_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        qs = Example.objects.filter(owner_teacher_id=teacher_id).select_related('task').prefetch_related('answers', 'steps')
+
+        search = request.GET.get('search', '').strip()
+        if search:
+            qs = qs.filter(example__icontains=search)
+
+        if request.GET.get('unattached_only') in ('1', 'true', 'True'):
+            qs = qs.filter(task__isnull=True)
+
+        data = [_serialize_teacher_example(ex) for ex in qs.order_by('-id')]
+        return Response(data)
+
+    # POST — create a standalone example, not attached to any sada yet
+    teacher_id = request.data.get('teacher_id')
+    if not teacher_id:
+        return Response({'error': 'teacher_id required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        teacher = Teacher.objects.get(id=int(teacher_id))
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    example_text = (request.data.get('example') or '').strip()
+    answer_text = (request.data.get('answer') or '').strip()
+    input_type = (request.data.get('input_type') or 'INLINE').upper()
+    steps = request.data.get('steps', [])
+
+    if not example_text:
+        return Response({'error': 'Nebyl zadán text příkladu'}, status=status.HTTP_400_BAD_REQUEST)
+    if not answer_text:
+        return Response({'error': 'Nebyla zadána odpověď'}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        example = Example.objects.create(
+            example=example_text, input_type=input_type, task=None, owner_teacher=teacher
+        )
+        Answer.objects.create(example=example, answer=answer_text)
+        for index, step_text in enumerate(steps, start=1):
+            if step_text:
+                Step.objects.create(example=example, text=step_text, order=index)
+
+    return Response(_serialize_teacher_example(example), status=status.HTTP_201_CREATED)
+
+
+@api_view(['PATCH', 'DELETE'])
+def teacher_example_detail(request, example_id):
+    example = get_object_or_404(Example, id=example_id)
+    teacher_id = request.data.get('teacher_id') or request.GET.get('teacher_id')
+
+    if not teacher_id or example.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == 'DELETE':
+        with transaction.atomic():
+            example.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # PATCH
+    example_text = request.data.get('example')
+    input_type = request.data.get('input_type')
+    answer_text = request.data.get('answer')
+    steps = request.data.get('steps')
+
+    if example_text is not None:
+        example.example = example_text.strip()
+    if input_type is not None:
+        example.input_type = input_type.upper()
+    example.save()
+
+    if answer_text is not None:
+        Answer.objects.update_or_create(example=example, defaults={'answer': answer_text.strip()})
+
+    if steps is not None:
+        Step.objects.filter(example=example).delete()
+        for index, step_text in enumerate(steps, start=1):
+            if step_text:
+                Step.objects.create(example=example, text=step_text, order=index)
+
+    return Response(_serialize_teacher_example(example))
+
+
+@api_view(['GET'])
+def teacher_task_examples(request, task_id):
+    teacher_id = request.GET.get('teacher_id')
+    task = get_object_or_404(Task, id=task_id)
+
+    if not teacher_id or task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    examples = task.example_set.select_related('task').prefetch_related('answers', 'steps').order_by('id')
+    return Response({
+        'task_id': task.id,
+        'task_name': task.name,
+        'examples': [_serialize_teacher_example(ex) for ex in examples],
+    })
+
+
+@api_view(['POST'])
+def teacher_attach_example(request, task_id):
+    teacher_id = request.data.get('teacher_id')
+    example_id = request.data.get('example_id')
+    task = get_object_or_404(Task, id=task_id)
+
+    if not teacher_id or task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    example = get_object_or_404(Example, id=example_id)
+    if example.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    if example.task_id is not None:
+        return Response({'error': 'Príklad je už priradený do sady.'}, status=status.HTTP_409_CONFLICT)
+
+    example.task = task
+    example.save(update_fields=['task'])
+
+    return Response(_serialize_teacher_example(example))
+
+
+@api_view(['POST'])
+def teacher_detach_example(request, task_id):
+    teacher_id = request.data.get('teacher_id')
+    example_id = request.data.get('example_id')
+    task = get_object_or_404(Task, id=task_id)
+
+    if not teacher_id or task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    example = get_object_or_404(Example, id=example_id, task=task)
+    if example.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    example.task = None
+    example.save(update_fields=['task'])
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+def teacher_copy_example_in(request, task_id):
+    teacher_id = request.data.get('teacher_id')
+    source_example_id = request.data.get('source_example_id')
+    task = get_object_or_404(Task, id=task_id)
+
+    if not teacher_id or task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        teacher = Teacher.objects.get(id=int(teacher_id))
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    source_example = get_object_or_404(Example, id=source_example_id)
+
+    with transaction.atomic():
+        new_example = _clone_example(source_example, task, teacher)
+
+    return Response(_serialize_teacher_example(new_example), status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def teacher_copy_task(request):
+    teacher_id = request.data.get('teacher_id')
+    source_task_id = request.data.get('source_task_id')
+    new_name = (request.data.get('new_name') or '').strip()
+
+    if not teacher_id:
+        return Response({'error': 'teacher_id required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        teacher = Teacher.objects.get(id=int(teacher_id))
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    source_task = get_object_or_404(Task, id=source_task_id)
+
+    with transaction.atomic():
+        new_task = Task.objects.create(
+            name=new_name or f"{source_task.name} (kópia)",
+            form=source_task.form,
+            owner_teacher=teacher,
+            is_private=True,
+        )
+        new_task.grade_levels.set(source_task.grade_levels.all())
+
+        for source_example in source_task.example_set.order_by('id'):
+            _clone_example(source_example, new_task, teacher)
+
+    return Response({'task_id': new_task.id, 'task_name': new_task.name}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['DELETE'])
+def teacher_delete_task(request, task_id):
+    teacher_id = request.data.get('teacher_id') or request.GET.get('teacher_id')
+    task = get_object_or_404(Task, id=task_id)
+
+    if not teacher_id or task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        with transaction.atomic():
+            task.skills.clear()
+            task.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        return Response({'error': f"Error deleting task: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
