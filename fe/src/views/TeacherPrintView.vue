@@ -23,6 +23,8 @@ const myTasks = ref([]);
 const taskSearch = ref('');
 const addedTaskIds = ref(new Set());
 const addingTaskId = ref(null);
+const unattached = ref([]);
+const unattachedOpen = ref(false);
 
 // items = [{ key, id|null, example, answer, points, dot }] in print order
 const items = ref([]);
@@ -44,29 +46,33 @@ const settings = ref({
 
 const generating = ref(false);
 
-// ── Generator (Vytvoriť príklady) ────────────────────────────────────────────
+// ── Generator (Vytvoriť príklady) — same flow as "Vytvoriť novú sadu" ────────
 const genOpen = ref(false);
 const genType = ref('arithmetic');
-const genDifficulty = ref('medium');
 const genCount = ref(10);
 const genDescription = ref('');
 const genRunning = ref(false);
+const genError = ref('');
+const isMix = ref(false);
+const mixSegments = ref([
+  { type: 'arithmetic', count: 10 },
+  { type: 'fractions', count: 10 },
+]);
 
-const GEN_TYPES = [
-  { value: 'arithmetic', label: 'Aritmetika' },
-  { value: 'fractions', label: 'Zlomky' },
-  { value: 'algebra', label: 'Algebra' },
-  { value: 'word', label: 'Slovné úlohy' },
-];
-const DIFFICULTIES = [
-  { value: 'easy', label: 'Ľahká', points: 1 },
-  { value: 'medium', label: 'Stredná', points: 2 },
-  { value: 'hard', label: 'Ťažká', points: 3 },
+const AI_TYPES = [
+  { value: 'arithmetic', label: 'Aritmetika', icon: '±' },
+  { value: 'fractions', label: 'Zlomky', icon: '½' },
+  { value: 'word', label: 'Slovná úloha', icon: '📖' },
+  { value: 'algebra', label: 'Algebra', icon: 'x' },
 ];
 
-const genPoints = computed(() =>
-  genCount.value * (DIFFICULTIES.find(d => d.value === genDifficulty.value)?.points || 1)
-);
+const mixTotal = computed(() => mixSegments.value.reduce((s, seg) => s + Number(seg.count), 0));
+const genTotal = computed(() => (isMix.value ? mixTotal.value : genCount.value));
+
+const addMixSegment = () => { mixSegments.value.push({ type: 'arithmetic', count: 5 }); };
+const removeMixSegment = (i) => {
+  if (mixSegments.value.length > 1) mixSegments.value.splice(i, 1);
+};
 
 // ── Palette for source dots (per sada) ───────────────────────────────────────
 const DOTS = ['bg-blue-500', 'bg-amber-500', 'bg-purple-500', 'bg-green-500', 'bg-rose-500'];
@@ -108,23 +114,41 @@ watch(items, async () => {
   window.MathJax?.typeset();
 }, { deep: false });
 
-const toItem = (ex, dotIdx) => ({
+watch(unattachedOpen, async (open) => {
+  if (open) {
+    await nextTick();
+    window.MathJax?.typeset();
+  }
+});
+
+const toItem = (ex, dot = DOTS[0]) => ({
   key: `db-${ex.id}-${itemKey++}`,
   id: ex.id,
   example: ex.example,
   answer: ex.answer,
   points: 1,
-  dot: DOTS[dotIdx ?? 0],
+  dot,
 });
+
+const itemIds = computed(() => new Set(items.value.filter(it => it.id).map(it => it.id)));
+
+const addUnattachedExample = (ex) => {
+  if (itemIds.value.has(ex.id)) return;
+  items.value = [...items.value, toItem(ex, 'bg-slate-400')];
+};
+
+const addAllUnattached = () => {
+  const fresh = unattached.value.filter(ex => !itemIds.value.has(ex.id));
+  items.value = [...items.value, ...fresh.map(ex => toItem(ex, 'bg-slate-400'))];
+};
 
 const addTask = async (task) => {
   if (addedTaskIds.value.has(task.id) || addingTaskId.value) return;
   addingTaskId.value = task.id;
   try {
     const data = await getTeacherTaskExamples(task.id, authStore.id);
-    const existing = new Set(items.value.filter(it => it.id).map(it => it.id));
-    const fresh = data.examples.filter(ex => !existing.has(ex.id));
-    items.value = [...items.value, ...fresh.map(ex => toItem(ex, taskColorIdx(task.id)))];
+    const fresh = data.examples.filter(ex => !itemIds.value.has(ex.id));
+    items.value = [...items.value, ...fresh.map(ex => toItem(ex, DOTS[taskColorIdx(task.id)]))];
     addedTaskIds.value = new Set([...addedTaskIds.value, task.id]);
     if (items.value.length && settings.value.title === 'Písomná práca') {
       settings.value.title = task.name;
@@ -151,6 +175,11 @@ onMounted(async () => {
   } catch (e) {
     myTasks.value = [];
   }
+  try {
+    unattached.value = await teacherListExamples(authStore.id, { unattachedOnly: true });
+  } catch (e) {
+    unattached.value = [];
+  }
   const ids = (route.query.ids || '').split(',').map(Number).filter(Boolean);
   const taskId = Number(route.query.taskId) || null;
   if (taskId) {
@@ -167,27 +196,38 @@ onMounted(async () => {
 
 const generateExamples = async () => {
   if (genRunning.value) return;
+  genError.value = '';
+  if (!genDescription.value.trim()) {
+    genError.value = 'Popis je povinný.';
+    return;
+  }
   genRunning.value = true;
-  const diff = DIFFICULTIES.find(d => d.value === genDifficulty.value);
-  const typeLabel = GEN_TYPES.find(t => t.value === genType.value)?.label || '';
-  const description = genDescription.value.trim()
-    || `${typeLabel}, ${diff.label.toLowerCase()} obtiažnosť, pre základnú školu`;
   try {
-    const data = await teacherGenerateTaskPreview(authStore.id, genType.value, genCount.value, description);
+    let data;
+    if (isMix.value) {
+      data = await teacherGenerateTaskPreview(
+        authStore.id, 'mix', null, genDescription.value,
+        mixSegments.value.map(s => ({ type: s.type, count: Number(s.count) })),
+      );
+    } else {
+      data = await teacherGenerateTaskPreview(
+        authStore.id, genType.value, genCount.value, genDescription.value,
+      );
+    }
     const generated = (data.examples || []).map(e => ({
       key: `gen-${itemKey++}`,
       id: null,
       example: e.example,
       answer: e.answer,
-      points: diff.points,
+      points: 1,
       dot: 'bg-secondary',
     }));
-    if (!generated.length) throw new Error('empty');
+    if (!generated.length) throw new Error('Generátor nevrátil žiadne príklady.');
     items.value = [...items.value, ...generated];
     genOpen.value = false;
     toastStore.addToast({ message: `Pridaných ${generated.length} vygenerovaných príkladov.`, type: 'success', visible: true });
   } catch (e) {
-    toastStore.addToast({ message: e?.response?.data?.error || e?.message || 'Chyba pri generovaní príkladov.', type: 'error', visible: true });
+    genError.value = e?.response?.data?.error || e?.message || 'Chyba pri generovaní.';
   }
   genRunning.value = false;
 };
@@ -306,82 +346,118 @@ const generatePdf = async (openInTab) => {
           </button>
 
           <div v-if="genOpen" class="border-t border-slate-100 dark:border-slate-700 px-5 pt-4 pb-5 space-y-5">
-            <div>
-              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
-                Typ príkladov
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <button v-for="t in GEN_TYPES" :key="t.value" @click="genType = t.value"
-                        class="px-3 py-1 rounded-full text-xs border transition-all"
-                        :class="genType === t.value
-                          ? 'bg-secondary text-white border-secondary'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'">
-                  {{ t.label }}
-                </button>
-              </div>
+
+            <!-- Jeden typ / Mix -->
+            <div class="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 dark:bg-slate-700/40
+                        border border-slate-200 dark:border-slate-700">
+              <button @click="isMix = false"
+                      :class="['flex-1 py-2 rounded-lg text-sm font-semibold transition-all',
+                               !isMix ? 'bg-primary text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700']">
+                Jeden typ
+              </button>
+              <button @click="isMix = true"
+                      :class="['flex-1 py-2 rounded-lg text-sm font-semibold transition-all',
+                               isMix ? 'bg-primary text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700']">
+                🎲 Mix / Písomka
+              </button>
             </div>
 
-            <div>
-              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
-                Obtiažnosť
-              </p>
-              <div class="flex rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden w-fit">
-                <button v-for="(d, di) in DIFFICULTIES" :key="d.value" @click="genDifficulty = d.value"
-                        class="px-4 py-1.5 text-xs transition-colors"
-                        :class="[
-                          di > 0 && 'border-l border-slate-200 dark:border-slate-600',
-                          genDifficulty === d.value
-                            ? 'bg-secondary text-white'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700',
-                        ]">
-                  {{ d.label }}
-                </button>
+            <!-- Single type -->
+            <template v-if="!isMix">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Typ príkladov</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button v-for="t in AI_TYPES" :key="t.value"
+                          @click="genType = t.value"
+                          :class="[
+                            'py-2.5 px-3 rounded-xl text-sm font-medium border-2 transition-all',
+                            genType === t.value
+                              ? 'border-secondary bg-secondary/10 dark:bg-secondary/20 text-secondary'
+                              : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                          ]">
+                    <span class="mr-1">{{ t.icon }}</span> {{ t.label }}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
-                Počet príkladov
-              </p>
-              <div class="flex items-center gap-3">
-                <button @click="genCount = Math.max(1, genCount - 1)"
-                        class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center
-                               text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  <TeacherIcon name="minus" :size="12" />
-                </button>
-                <span class="text-sm font-medium w-8 text-center tabular-nums text-slate-800 dark:text-slate-100">
-                  {{ genCount }}
-                </span>
-                <button @click="genCount = Math.min(30, genCount + 1)"
-                        class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center
-                               text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  <TeacherIcon name="plus" :size="12" />
-                </button>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Počet príkladov <span class="text-secondary font-bold ml-1">{{ genCount }}</span>
+                </label>
+                <input type="range" v-model.number="genCount" min="3" max="30" step="1"
+                       class="w-full accent-secondary" />
+                <div class="flex justify-between text-xs text-gray-400 mt-0.5"><span>3</span><span>30</span></div>
               </div>
-            </div>
+            </template>
 
+            <!-- Mix segments -->
+            <template v-else>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Typy príkladov
+                    <span class="ml-2 text-xs text-gray-400">celkom: {{ mixTotal }} príkladov</span>
+                  </label>
+                  <button @click="addMixSegment"
+                          class="text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary
+                                 rounded-lg hover:bg-secondary/20 font-medium">
+                    + Pridať typ
+                  </button>
+                </div>
+                <div class="space-y-2">
+                  <div v-for="(seg, i) in mixSegments" :key="i"
+                       class="flex items-center gap-2 p-3 bg-white dark:bg-slate-800 rounded-xl
+                              border border-slate-200 dark:border-slate-700">
+                    <select v-model="seg.type"
+                            class="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                                   bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm
+                                   focus:outline-none focus:ring-1 focus:ring-secondary">
+                      <option v-for="t in AI_TYPES" :key="t.value" :value="t.value">
+                        {{ t.icon }} {{ t.label }}
+                      </option>
+                    </select>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                      <button @click="seg.count = Math.max(1, seg.count - 1)"
+                              class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
+                                     hover:bg-slate-200 font-bold text-sm flex items-center justify-center">−</button>
+                      <span class="w-8 text-center font-bold text-slate-800 dark:text-slate-100 text-sm">{{ seg.count }}</span>
+                      <button @click="seg.count = Math.min(30, seg.count + 1)"
+                              class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
+                                     hover:bg-slate-200 font-bold text-sm flex items-center justify-center">+</button>
+                    </div>
+                    <button v-if="mixSegments.length > 1" @click="removeMixSegment(i)"
+                            class="text-red-400 hover:text-red-600 text-xl leading-none flex-shrink-0">×</button>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Description -->
             <div>
-              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
-                Popis (voliteľné)
-              </p>
-              <input v-model="genDescription" type="text" placeholder="napr. sčítanie a odčítanie do 100"
-                     class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
-                            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
-                            focus:outline-none focus:ring-1 focus:ring-secondary" />
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {{ isMix ? 'Téma / kontext písomky' : 'Popis príkladov' }}
+              </label>
+              <textarea v-model="genDescription" rows="3"
+                        :placeholder="isMix
+                          ? 'Napr: 5. ročník, precvičiť zlomky a slovné úlohy z geometrie...'
+                          : 'Napr: násobilka 7, príklady so zvyškom, rovnice s dvoma premennými...'"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600
+                               bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
+                               focus:outline-none focus:ring-2 focus:ring-secondary resize-none text-sm" />
+              <p v-if="genError" class="text-red-500 text-sm mt-1">{{ genError }}</p>
             </div>
 
             <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
               <p class="text-xs text-gray-400">
                 Vygeneruje sa
-                <span class="font-medium text-slate-700 dark:text-slate-200">{{ genCount }} príkladov</span>
-                ·
-                <span class="font-medium text-slate-700 dark:text-slate-200">{{ genPoints }} bodov</span>
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ genTotal }} príkladov</span>
               </p>
               <button @click="generateExamples" :disabled="genRunning"
                       class="flex items-center gap-1.5 px-3 py-2 bg-secondary text-white rounded-lg
                              font-semibold text-xs hover:bg-blue-600 disabled:opacity-50">
-                <TeacherIcon v-if="!genRunning" name="plus" :size="13" />
-                {{ genRunning ? 'Generujem…' : 'Pridať do zoznamu' }}
+                <Spinner v-if="genRunning" class="w-3.5 h-3.5" />
+                <TeacherIcon v-else name="sparkle" :size="13" />
+                {{ genRunning ? 'Generujem…' : 'Generovať a pridať' }}
               </button>
             </div>
           </div>
@@ -487,6 +563,49 @@ const generatePdf = async (openInTab) => {
             <p v-if="!filteredTasks.length" class="py-8 text-center text-sm text-gray-400">
               Žiadne sady neboli nájdené
             </p>
+          </div>
+
+          <!-- Unattached examples (not in any sada) -->
+          <div v-if="unattached.length" class="border-t border-slate-200 dark:border-slate-700">
+            <div role="button" tabindex="0" @click="unattachedOpen = !unattachedOpen"
+                 @keydown.enter="unattachedOpen = !unattachedOpen"
+                 class="w-full px-5 py-3 flex items-center gap-3 cursor-pointer select-none
+                        hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+              <span class="w-2 h-2 rounded-full flex-shrink-0 bg-slate-400" />
+              <div class="flex-1 min-w-0 text-left">
+                <p class="text-sm text-slate-800 dark:text-slate-100">Nezaradené príklady</p>
+                <p class="text-xs text-gray-400">{{ unattached.length }} príkladov mimo sád</p>
+              </div>
+              <button v-if="unattachedOpen" @click.stop="addAllUnattached"
+                      class="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-lg text-xs font-medium border transition-colors
+                             border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200
+                             hover:bg-slate-50 dark:hover:bg-slate-700">
+                <TeacherIcon name="plus" :size="12" />
+                Pridať všetky
+              </button>
+              <TeacherIcon name="chevronDown" :size="15"
+                           class="text-gray-400 transition-transform flex-shrink-0"
+                           :class="unattachedOpen && 'rotate-180'" />
+            </div>
+
+            <div v-if="unattachedOpen" class="divide-y divide-slate-100 dark:divide-slate-700 border-t border-slate-100 dark:border-slate-700">
+              <div v-for="ex in unattached" :key="ex.id"
+                   class="flex items-center gap-3 pl-10 pr-5 py-2.5 transition-colors"
+                   :class="itemIds.has(ex.id) ? 'opacity-40' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'">
+                <div class="flex-1 min-w-0 font-mono text-sm text-slate-800 dark:text-slate-100 truncate">
+                  {{ ex.example }}
+                  <span class="text-secondary font-semibold">= {{ ex.answer }}</span>
+                </div>
+                <button @click="addUnattachedExample(ex)" :disabled="itemIds.has(ex.id)"
+                        class="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-lg text-xs font-medium border transition-colors"
+                        :class="itemIds.has(ex.id)
+                          ? 'bg-slate-100 dark:bg-slate-700 border-transparent text-slate-500 dark:text-slate-400'
+                          : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                  <TeacherIcon :name="itemIds.has(ex.id) ? 'check' : 'plus'" :size="12" />
+                  {{ itemIds.has(ex.id) ? 'Pridaný' : 'Pridať' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
