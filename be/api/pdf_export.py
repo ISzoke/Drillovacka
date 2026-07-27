@@ -207,15 +207,28 @@ def teacher_print_test(request):
     if not isinstance(items, list) or not items:
         return Response({'error': 'items required'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Each item is either {example_id, points} (library example) or
+    # {example, answer, points} (ad-hoc, e.g. freshly generated, not stored).
+    entries = []
     try:
-        ordered_ids = [int(it['example_id']) for it in items]
-        points_by_id = {
-            int(it['example_id']): float(1 if it.get('points') in (None, '') else it['points'])
-            for it in items
-        }
+        for it in items:
+            points = float(1 if it.get('points') in (None, '') else it['points'])
+            if it.get('example_id') is not None:
+                entries.append({'id': int(it['example_id']), 'points': points})
+            else:
+                entries.append({
+                    'id': None,
+                    'example': str(it['example']),
+                    'answer': str(it.get('answer') or ''),
+                    'points': points,
+                })
     except (KeyError, TypeError, ValueError):
-        return Response({'error': 'items must be [{example_id, points}]'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'error': 'items must be [{example_id, points}] or [{example, answer, points}]'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
+    ordered_ids = [e['id'] for e in entries if e['id'] is not None]
     examples = Example.objects.filter(id__in=ordered_ids).prefetch_related('answers')
     by_id = {ex.id: ex for ex in examples}
     missing = [eid for eid in ordered_ids if eid not in by_id]
@@ -233,6 +246,9 @@ def teacher_print_test(request):
     note = (data.get('note') or '').strip()
     show_points = bool(data.get('show_points', True))
     answer_key = bool(data.get('answer_key', False))
+    cover_page = bool(data.get('cover_page', False))
+    show_header = bool(data.get('show_header', True))
+    header_text = (data.get('header_text') or '').strip()
 
     try:
         groups = max(1, min(4, int(data.get('groups', 1))))
@@ -240,31 +256,44 @@ def teacher_print_test(request):
         groups = 1
     per_page = 2 if str(data.get('per_page', 1)) == '2' else 1
 
-    def build_item(eid, number):
-        ex = by_id[eid]
-        answer = ex.answers.first()
-        text = ex.example or ''
+    # Vertical spacing between examples: 8–64 "px", 24 = the original layout.
+    try:
+        spacing = max(8, min(64, int(data.get('spacing', 24))))
+    except (TypeError, ValueError):
+        spacing = 24
+    spacing_factor = spacing / 24.0
+
+    def build_item(entry, number):
+        if entry['id'] is not None:
+            ex = by_id[entry['id']]
+            answer = ex.answers.first()
+            text = ex.example or ''
+            answer_text = answer.answer if answer else ''
+        else:
+            text = entry['example']
+            answer_text = entry['answer']
         # the sheet draws its own "= ______" answer blank
         text = re.sub(r'=\s*\?\s*$', '', text).rstrip()
         return {
             'number': number,
-            'points': _fmt_points(points_by_id[eid]),
+            'points': _fmt_points(entry['points']),
             'html': latex_to_html(text),
-            'answer_html': latex_to_html(answer.answer if answer else ''),
+            'answer_html': latex_to_html(answer_text),
             'wide': _plain_len(text) > 45,
         }
 
-    total_points = _fmt_points(sum(points_by_id[eid] for eid in ordered_ids))
+    total_points = _fmt_points(sum(e['points'] for e in entries))
 
     # Group A keeps the teacher's order; B–D are deterministic reshuffles.
+    shuffle_seed = [e['id'] if e['id'] is not None else e.get('example', '') for e in entries]
     sheets = []
     for gi in range(groups):
-        ids = list(ordered_ids)
+        ordered = list(entries)
         if gi > 0:
-            random.Random(f'{sorted(ordered_ids)}-{gi}').shuffle(ids)
+            random.Random(f'{sorted(map(str, shuffle_seed))}-{gi}').shuffle(ordered)
         sheets.append({
             'group': _GROUP_LETTERS[gi] if groups > 1 else '',
-            'items': [build_item(eid, n) for n, eid in enumerate(ids, start=1)],
+            'items': [build_item(e, n) for n, e in enumerate(ordered, start=1)],
         })
 
     if per_page == 2:
@@ -298,6 +327,15 @@ def teacher_print_test(request):
         'pages': pages,
         'key_sheets': key_sheets,
         'has_groups': groups > 1,
+        'cover_page': cover_page,
+        'show_header': show_header,
+        'header_text': header_text,
+        'item_pad_mm': round(2 * spacing_factor, 2),
+        'item_minh_mm': round(13 * spacing_factor, 1),
+        'item_minh_wide_mm': round(26 * spacing_factor, 1),
+        'compact_pad_mm': round(1.2 * spacing_factor, 2),
+        'compact_minh_mm': round(9 * spacing_factor, 1),
+        'compact_minh_wide_mm': round(18 * spacing_factor, 1),
     }
     html = render_to_string('pdf/test_sheet.html', context)
 

@@ -75,13 +75,13 @@
   }
   .item {
     width: 50%;
-    padding: 2mm 4mm 2mm 0;
+    padding: {{ item_pad_mm }}mm 4mm {{ item_pad_mm }}mm 0;
     page-break-inside: avoid;
-    min-height: 13mm;
+    min-height: {{ item_minh_mm }}mm;
   }
-  .compact .item { min-height: 9mm; padding: 1.2mm 3mm 1.2mm 0; }
-  .item.wide { width: 100%; min-height: 26mm; }
-  .compact .item.wide { min-height: 18mm; }
+  .compact .item { min-height: {{ compact_minh_mm }}mm; padding: {{ compact_pad_mm }}mm 3mm {{ compact_pad_mm }}mm 0; }
+  .item.wide { width: 100%; min-height: {{ item_minh_wide_mm }}mm; }
+  .compact .item.wide { min-height: {{ compact_minh_wide_mm }}mm; }
   .item .num {
     font-weight: bold;
     margin-right: 1.5mm;
@@ -118,6 +118,28 @@
   }
   .rootidx { font-size: 7pt; }
 
+  /* cover page */
+  .cover {
+    height: 250mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .cover h1 {
+    font-size: 26pt;
+    margin: 0 0 6mm 0;
+    border-bottom: 0.6mm solid #111;
+    padding-bottom: 4mm;
+  }
+  .cover .cover-meta {
+    font-size: 12pt;
+    color: #333;
+    line-height: 2.2;
+  }
+  .cover .blank { min-width: 55mm; }
+
   /* answer key */
   .key h2 { font-size: 13pt; margin: 0 0 3mm 0; }
   .key h3 { font-size: 11pt; margin: 4mm 0 2mm 0; }
@@ -133,22 +155,44 @@
 </head>
 <body>
 
+{% if cover_page %}
+<div class="page">
+  <div class="cover">
+    <h1>{{ title }}</h1>
+    <div class="cover-meta">
+      <div>Meno: <span class="blank"></span></div>
+      <div>Trieda: {% if class_name %}<strong>{{ class_name }}</strong>{% else %}<span class="blank short"></span>{% endif %}</div>
+      <div>Dátum: <span class="blank short"></span></div>
+      {% if show_points %}<div>Body: <span class="blank short"></span> / {{ total_points }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {% for pair in pages %}
 <div class="page">
   {% for sheet in pair %}
   <div class="{% if per_page == 2 %}half compact{% else %}full{% endif %}">
+    {% if show_header %}
     <div class="head">
       <div>
         <h1>{{ title }}</h1>
         <div class="meta">
+          {% if header_text %}
+          <span>{{ header_text }}</span>
+          {% else %}
           <span>Meno: <span class="blank"></span></span>
           <span>Trieda: {% if class_name %}<strong>{{ class_name }}</strong>{% else %}<span class="blank short"></span>{% endif %}</span>
           <span>Dátum: <span class="blank short"></span></span>
           {% if show_points %}<span>Body: <span class="blank short"></span> / {{ total_points }}</span>{% endif %}
+          {% endif %}
         </div>
       </div>
       {% if sheet.group %}<div class="group-badge">{{ sheet.group }}</div>{% endif %}
     </div>
+    {% elif sheet.group %}
+    <div class="head"><div></div><div class="group-badge">{{ sheet.group }}</div></div>
+    {% endif %}
     {% if note %}<p class="note">{{ note }}</p>{% endif %}
     <div class="items">
       {% for item in sheet.items %}

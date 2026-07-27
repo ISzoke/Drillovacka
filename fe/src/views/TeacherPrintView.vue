@@ -5,21 +5,28 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import {
   getMyTeacherTasks, teacherListExamples, getTeacherTaskExamples, teacherPrintTest,
+  teacherGenerateTaskPreview,
 } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
 import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
 
+const RECOMMENDED_SPACING = 24;
+
 const loading = ref(true);
 const myTasks = ref([]);
-const sourceTaskId = ref(null);
+const taskSearch = ref('');
+const addedTaskIds = ref(new Set());
+const addingTaskId = ref(null);
 
-// items = [{ id, example, answer, points }] in print order
+// items = [{ key, id|null, example, answer, points, dot }] in print order
 const items = ref([]);
+let itemKey = 0;
 
 const settings = ref({
   title: 'Písomná práca',
@@ -29,34 +36,106 @@ const settings = ref({
   per_page: 1,
   show_points: true,
   answer_key: true,
+  cover_page: false,
+  show_header: true,
+  header_text: '',
+  spacing: RECOMMENDED_SPACING,
 });
 
 const generating = ref(false);
 
+// ── Generator (Vytvoriť príklady) ────────────────────────────────────────────
+const genOpen = ref(false);
+const genType = ref('arithmetic');
+const genDifficulty = ref('medium');
+const genCount = ref(10);
+const genDescription = ref('');
+const genRunning = ref(false);
+
+const GEN_TYPES = [
+  { value: 'arithmetic', label: 'Aritmetika' },
+  { value: 'fractions', label: 'Zlomky' },
+  { value: 'algebra', label: 'Algebra' },
+  { value: 'word', label: 'Slovné úlohy' },
+];
+const DIFFICULTIES = [
+  { value: 'easy', label: 'Ľahká', points: 1 },
+  { value: 'medium', label: 'Stredná', points: 2 },
+  { value: 'hard', label: 'Ťažká', points: 3 },
+];
+
+const genPoints = computed(() =>
+  genCount.value * (DIFFICULTIES.find(d => d.value === genDifficulty.value)?.points || 1)
+);
+
+// ── Palette for source dots (per sada) ───────────────────────────────────────
+const DOTS = ['bg-blue-500', 'bg-amber-500', 'bg-purple-500', 'bg-green-500', 'bg-rose-500'];
+const PILLS = [
+  'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/30',
+  'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30',
+  'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/30',
+  'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-300 dark:border-green-500/30',
+  'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/30',
+];
+const taskColorIdx = (taskId) => Math.abs(Number(taskId) || 0) % DOTS.length;
+
 const totalPoints = computed(() =>
   items.value.reduce((sum, it) => sum + (Number(it.points) || 0), 0)
 );
+
+const filteredTasks = computed(() => {
+  const q = taskSearch.value.trim().toLowerCase();
+  if (!q) return myTasks.value;
+  return myTasks.value.filter(t => t.name.toLowerCase().includes(q));
+});
+
+// Rough page estimate: 2-col rows, row height scales with spacing.
+const estimatedPages = computed(() => {
+  const n = items.value.length;
+  if (!n) return 0;
+  const rowH = 13 * (settings.value.spacing / RECOMMENDED_SPACING);
+  const avail = settings.value.per_page === 2 ? 110 : 240;
+  const sheetPages = Math.max(1, Math.ceil((Math.ceil(n / 2) * rowH + 25) / avail));
+  let pages = settings.value.groups * sheetPages;
+  if (settings.value.per_page === 2) pages = Math.ceil(pages / 2);
+  if (settings.value.cover_page) pages += 1;
+  if (settings.value.answer_key) pages += 1;
+  return pages;
+});
 
 watch(items, async () => {
   await nextTick();
   window.MathJax?.typeset();
 }, { deep: false });
 
-const toItem = (ex) => ({ id: ex.id, example: ex.example, answer: ex.answer, points: 1 });
+const toItem = (ex, dotIdx) => ({
+  key: `db-${ex.id}-${itemKey++}`,
+  id: ex.id,
+  example: ex.example,
+  answer: ex.answer,
+  points: 1,
+  dot: DOTS[dotIdx ?? 0],
+});
 
-const loadFromTask = async (taskId) => {
-  loading.value = true;
+const addTask = async (task) => {
+  if (addedTaskIds.value.has(task.id) || addingTaskId.value) return;
+  addingTaskId.value = task.id;
   try {
-    const data = await getTeacherTaskExamples(taskId, authStore.id);
-    items.value = data.examples.map(toItem);
+    const data = await getTeacherTaskExamples(task.id, authStore.id);
+    const existing = new Set(items.value.filter(it => it.id).map(it => it.id));
+    const fresh = data.examples.filter(ex => !existing.has(ex.id));
+    items.value = [...items.value, ...fresh.map(ex => toItem(ex, taskColorIdx(task.id)))];
+    addedTaskIds.value = new Set([...addedTaskIds.value, task.id]);
+    if (items.value.length && settings.value.title === 'Písomná práca') {
+      settings.value.title = task.name;
+    }
   } catch (e) {
     toastStore.addToast({ message: 'Chyba pri načítaní sady.', type: 'error', visible: true });
   }
-  loading.value = false;
+  addingTaskId.value = null;
 };
 
 const loadFromIds = async (ids) => {
-  loading.value = true;
   try {
     const all = await teacherListExamples(authStore.id);
     const byId = new Map(all.map(e => [e.id, e]));
@@ -64,7 +143,6 @@ const loadFromIds = async (ids) => {
   } catch (e) {
     toastStore.addToast({ message: 'Chyba pri načítaní príkladov.', type: 'error', visible: true });
   }
-  loading.value = false;
 };
 
 onMounted(async () => {
@@ -76,34 +154,71 @@ onMounted(async () => {
   const ids = (route.query.ids || '').split(',').map(Number).filter(Boolean);
   const taskId = Number(route.query.taskId) || null;
   if (taskId) {
-    sourceTaskId.value = taskId;
     const task = myTasks.value.find(t => t.id === taskId);
-    if (task) settings.value.title = task.name;
-    await loadFromTask(taskId);
+    if (task) {
+      settings.value.title = task.name;
+      await addTask(task);
+    }
   } else if (ids.length) {
     await loadFromIds(ids);
-  } else {
-    loading.value = false;
   }
+  loading.value = false;
 });
 
-watch(sourceTaskId, (taskId) => {
-  if (!taskId) return;
-  const task = myTasks.value.find(t => t.id === taskId);
-  if (task) settings.value.title = task.name;
-  loadFromTask(taskId);
-});
-
-const moveItem = (i, dir) => {
-  const j = i + dir;
-  if (j < 0 || j >= items.value.length) return;
-  const arr = [...items.value];
-  [arr[i], arr[j]] = [arr[j], arr[i]];
-  items.value = arr;
+const generateExamples = async () => {
+  if (genRunning.value) return;
+  genRunning.value = true;
+  const diff = DIFFICULTIES.find(d => d.value === genDifficulty.value);
+  const typeLabel = GEN_TYPES.find(t => t.value === genType.value)?.label || '';
+  const description = genDescription.value.trim()
+    || `${typeLabel}, ${diff.label.toLowerCase()} obtiažnosť, pre základnú školu`;
+  try {
+    const data = await teacherGenerateTaskPreview(authStore.id, genType.value, genCount.value, description);
+    const generated = (data.examples || []).map(e => ({
+      key: `gen-${itemKey++}`,
+      id: null,
+      example: e.example,
+      answer: e.answer,
+      points: diff.points,
+      dot: 'bg-secondary',
+    }));
+    if (!generated.length) throw new Error('empty');
+    items.value = [...items.value, ...generated];
+    genOpen.value = false;
+    toastStore.addToast({ message: `Pridaných ${generated.length} vygenerovaných príkladov.`, type: 'success', visible: true });
+  } catch (e) {
+    toastStore.addToast({ message: e?.response?.data?.error || e?.message || 'Chyba pri generovaní príkladov.', type: 'error', visible: true });
+  }
+  genRunning.value = false;
 };
+
+// ── Drag & drop reorder ──────────────────────────────────────────────────────
+const dragIdx = ref(null);
+
+const onDragStart = (i, event) => {
+  dragIdx.value = i;
+  event.dataTransfer.effectAllowed = 'move';
+};
+
+const onDragEnter = (i) => {
+  if (dragIdx.value === null || dragIdx.value === i) return;
+  const arr = [...items.value];
+  const [moved] = arr.splice(dragIdx.value, 1);
+  arr.splice(i, 0, moved);
+  items.value = arr;
+  dragIdx.value = i;
+};
+
+const onDragEnd = () => { dragIdx.value = null; };
 
 const removeItem = (i) => { items.value = items.value.filter((_, idx) => idx !== i); };
 
+const clearItems = () => {
+  items.value = [];
+  addedTaskIds.value = new Set();
+};
+
+// ── PDF ──────────────────────────────────────────────────────────────────────
 const buildPayload = () => ({
   title: settings.value.title,
   class_name: settings.value.class_name,
@@ -112,7 +227,16 @@ const buildPayload = () => ({
   per_page: settings.value.per_page,
   show_points: settings.value.show_points,
   answer_key: settings.value.answer_key,
-  items: items.value.map(it => ({ example_id: it.id, points: Number.isFinite(Number(it.points)) ? Number(it.points) : 1 })),
+  cover_page: settings.value.cover_page,
+  show_header: settings.value.show_header,
+  header_text: settings.value.header_text,
+  spacing: settings.value.spacing,
+  items: items.value.map(it => {
+    const points = Number.isFinite(Number(it.points)) ? Number(it.points) : 1;
+    return it.id
+      ? { example_id: it.id, points }
+      : { example: it.example, answer: it.answer, points };
+  }),
 });
 
 const generatePdf = async (openInTab) => {
@@ -141,168 +265,395 @@ const generatePdf = async (openInTab) => {
 </script>
 
 <template>
-  <div class="pt-20 px-4 max-w-4xl mx-auto pb-16">
+  <div class="pt-20 px-4 max-w-6xl mx-auto pb-16">
 
-    <TeacherPageHeader
-      title="Tlač písomky"
-      subtitle="Vyber príklady, nastav body a skupiny a stiahni hotové PDF na tlač." />
+    <div class="flex items-start justify-between gap-3">
+      <TeacherPageHeader
+        title="Generovanie PDF"
+        subtitle="Vyberte príklady a nakonfigurujte nastavenia tlače." />
+      <button @click="generatePdf(true)" :disabled="generating || !items.length"
+              class="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+                     border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200
+                     bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40">
+        <TeacherIcon name="eye" :size="15" />
+        Náhľad
+      </button>
+    </div>
 
-    <div class="grid md:grid-cols-[1fr,290px] gap-5">
+    <div v-if="loading" class="flex justify-center py-16"><Spinner /></div>
 
-      <!-- Examples list -->
-      <section>
-        <div class="flex items-center justify-between mb-3 gap-2">
-          <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            Príklady v písomke
-          </h2>
-          <select v-model="sourceTaskId"
-                  class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
-                         bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
-                         focus:outline-none focus:ring-1 focus:ring-secondary">
-            <option :value="null">Načítať zo sady...</option>
-            <option v-for="t in myTasks" :key="t.id" :value="t.id">{{ t.name }} ({{ t.example_count }})</option>
-          </select>
-        </div>
+    <div v-else class="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-5 items-start">
 
-        <div v-if="loading" class="flex justify-center py-10"><Spinner /></div>
+      <!-- ════════ Left column ════════ -->
+      <div class="space-y-4 min-w-0">
 
-        <div v-else-if="!items.length"
-             class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 text-center">
-          <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mx-auto mb-3">
-            <TeacherIcon name="print" :size="22" />
-          </div>
-          <p class="font-semibold text-sm text-slate-700 dark:text-slate-200">Zatiaľ žiadne príklady</p>
-          <p class="text-xs text-gray-400 mt-1">
-            Vyber sadu vyššie, alebo označ príklady v
-            <router-link :to="{ name: 'teacher-library' }" class="text-secondary hover:underline">knižnici</router-link>
-            a klikni na „Tlačiť PDF".
-          </p>
-        </div>
-
-        <div v-else class="space-y-1.5">
-          <div v-for="(it, i) in items" :key="it.id"
-               class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 rounded-xl
-                      border border-slate-200 dark:border-slate-700">
-            <span class="text-xs font-bold text-slate-400 w-5 text-right flex-shrink-0">{{ i + 1 }}.</span>
-            <div class="flex-1 min-w-0 font-mono text-sm text-slate-800 dark:text-slate-100 truncate">
-              {{ it.example }}
-              <span class="text-secondary font-semibold">= {{ it.answer }}</span>
+        <!-- Generator (collapsible) -->
+        <div class="rounded-xl border overflow-hidden transition-colors bg-white dark:bg-slate-800"
+             :class="genOpen ? 'border-secondary/40' : 'border-slate-200 dark:border-slate-700'">
+          <button @click="genOpen = !genOpen"
+                  class="w-full px-5 py-4 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
+                 :class="genOpen ? 'bg-secondary text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'">
+              <TeacherIcon name="sparkle" :size="16" />
             </div>
-            <label class="flex items-center gap-1 text-[11px] text-gray-400 flex-shrink-0">
-              <input v-model.number="it.points" type="number" min="0" step="0.5"
-                     class="w-14 px-1.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600
-                            bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs text-right
+            <div class="flex-1 text-left">
+              <div class="text-sm font-medium text-slate-800 dark:text-slate-100">Vytvoriť príklady</div>
+              <div class="text-xs text-gray-400">Automaticky generovať príklady podľa typu a obtiažnosti</div>
+            </div>
+            <TeacherIcon name="chevronDown" :size="16"
+                         class="text-gray-400 transition-transform flex-shrink-0"
+                         :class="genOpen && 'rotate-180'" />
+          </button>
+
+          <div v-if="genOpen" class="border-t border-slate-100 dark:border-slate-700 px-5 pt-4 pb-5 space-y-5">
+            <div>
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
+                Typ príkladov
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <button v-for="t in GEN_TYPES" :key="t.value" @click="genType = t.value"
+                        class="px-3 py-1 rounded-full text-xs border transition-all"
+                        :class="genType === t.value
+                          ? 'bg-secondary text-white border-secondary'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                  {{ t.label }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
+                Obtiažnosť
+              </p>
+              <div class="flex rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden w-fit">
+                <button v-for="(d, di) in DIFFICULTIES" :key="d.value" @click="genDifficulty = d.value"
+                        class="px-4 py-1.5 text-xs transition-colors"
+                        :class="[
+                          di > 0 && 'border-l border-slate-200 dark:border-slate-600',
+                          genDifficulty === d.value
+                            ? 'bg-secondary text-white'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700',
+                        ]">
+                  {{ d.label }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
+                Počet príkladov
+              </p>
+              <div class="flex items-center gap-3">
+                <button @click="genCount = Math.max(1, genCount - 1)"
+                        class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center
+                               text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <TeacherIcon name="minus" :size="12" />
+                </button>
+                <span class="text-sm font-medium w-8 text-center tabular-nums text-slate-800 dark:text-slate-100">
+                  {{ genCount }}
+                </span>
+                <button @click="genCount = Math.min(30, genCount + 1)"
+                        class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center
+                               text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <TeacherIcon name="plus" :size="12" />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2.5">
+                Popis (voliteľné)
+              </p>
+              <input v-model="genDescription" type="text" placeholder="napr. sčítanie a odčítanie do 100"
+                     class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                             focus:outline-none focus:ring-1 focus:ring-secondary" />
-              b.
-            </label>
-            <div class="flex items-center gap-0.5 pl-1.5 border-l border-slate-100 dark:border-slate-700 flex-shrink-0">
-              <button @click="moveItem(i, -1)" :disabled="i === 0" title="Posunúť vyššie"
-                      class="p-1 rounded-lg text-gray-400 hover:text-secondary hover:bg-secondary/10 disabled:opacity-30">
-                <TeacherIcon name="chevronDown" :size="13" class="rotate-180" />
-              </button>
-              <button @click="moveItem(i, 1)" :disabled="i === items.length - 1" title="Posunúť nižšie"
-                      class="p-1 rounded-lg text-gray-400 hover:text-secondary hover:bg-secondary/10 disabled:opacity-30">
-                <TeacherIcon name="chevronDown" :size="13" />
-              </button>
-              <button @click="removeItem(i)" title="Odstrániť z písomky"
-                      class="p-1 rounded-lg text-gray-400 hover:text-accent hover:bg-accent/10">
-                <TeacherIcon name="delete" :size="13" />
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+              <p class="text-xs text-gray-400">
+                Vygeneruje sa
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ genCount }} príkladov</span>
+                ·
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ genPoints }} bodov</span>
+              </p>
+              <button @click="generateExamples" :disabled="genRunning"
+                      class="flex items-center gap-1.5 px-3 py-2 bg-secondary text-white rounded-lg
+                             font-semibold text-xs hover:bg-blue-600 disabled:opacity-50">
+                <TeacherIcon v-if="!genRunning" name="plus" :size="13" />
+                {{ genRunning ? 'Generujem…' : 'Pridať do zoznamu' }}
               </button>
             </div>
           </div>
+        </div>
 
-          <div class="text-xs text-gray-400 text-right pt-1">
-            {{ items.length }} príkladov · spolu {{ totalPoints }} b.
+        <!-- Selected examples -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-5 py-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">Vybraté príklady</h3>
+              <span class="text-xs font-semibold px-1.5 h-5 flex items-center rounded-md
+                           bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                {{ items.length }}
+              </span>
+            </div>
+            <div v-if="items.length" class="flex items-center gap-1.5 text-xs text-gray-400">
+              <template v-if="settings.show_points">
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ totalPoints }} b</span>
+                <span>·</span>
+              </template>
+              <button @click="clearItems" class="hover:text-accent transition-colors">Vyprázdniť</button>
+            </div>
+          </div>
+
+          <div v-if="!items.length" class="py-12 text-center">
+            <TeacherIcon name="book" :size="38" class="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+            <p class="text-sm text-slate-500 dark:text-slate-400">Žiadne príklady neboli pridané</p>
+            <p class="text-xs text-gray-400 mt-1">
+              Použite generátor alebo pridajte sadu zo zoznamu nižšie — prípadne označte príklady v
+              <router-link :to="{ name: 'teacher-library' }" class="text-secondary hover:underline">knižnici</router-link>.
+            </p>
+          </div>
+
+          <div v-else class="divide-y divide-slate-100 dark:divide-slate-700">
+            <div v-for="(it, i) in items" :key="it.key"
+                 draggable="true"
+                 @dragstart="onDragStart(i, $event)"
+                 @dragenter.prevent="onDragEnter(i)"
+                 @dragover.prevent
+                 @dragend="onDragEnd"
+                 class="flex items-center gap-3 px-5 py-2.5 group transition-colors"
+                 :class="dragIdx === i ? 'bg-secondary/5' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'">
+              <TeacherIcon name="grip" :size="15"
+                           class="text-slate-300 dark:text-slate-600 group-hover:text-slate-400 cursor-grab flex-shrink-0" />
+              <span class="w-2 h-2 rounded-full flex-shrink-0" :class="it.dot" />
+              <span class="text-xs font-bold text-slate-400 w-5 text-right flex-shrink-0">{{ i + 1 }}.</span>
+              <div class="flex-1 min-w-0 font-mono text-sm text-slate-800 dark:text-slate-100 truncate">
+                {{ it.example }}
+                <span class="text-secondary font-semibold">= {{ it.answer }}</span>
+              </div>
+              <label v-if="settings.show_points" class="flex items-center gap-1 text-[11px] text-gray-400 flex-shrink-0">
+                <input v-model.number="it.points" type="number" min="0" step="0.5"
+                       class="w-14 px-1.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600
+                              bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs text-right
+                              focus:outline-none focus:ring-1 focus:ring-secondary" />
+                b.
+              </label>
+              <button @click="removeItem(i)" title="Odstrániť z písomky"
+                      class="w-6 h-6 rounded flex items-center justify-center flex-shrink-0
+                             text-gray-400 hover:text-accent hover:bg-accent/10 transition-colors">
+                <TeacherIcon name="close" :size="13" />
+              </button>
+            </div>
           </div>
         </div>
-      </section>
 
-      <!-- Settings panel -->
-      <aside>
-        <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
-          Nastavenia
-        </h2>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
-
-          <label class="block">
-            <span class="text-[11px] font-semibold text-gray-400">Názov písomky</span>
-            <input v-model="settings.title" type="text"
-                   class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
-                          bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
-                          focus:outline-none focus:ring-1 focus:ring-secondary" />
-          </label>
-
-          <label class="block">
-            <span class="text-[11px] font-semibold text-gray-400">Trieda (voliteľné)</span>
-            <input v-model="settings.class_name" type="text" placeholder="napr. 5.A"
-                   class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
-                          bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
-                          focus:outline-none focus:ring-1 focus:ring-secondary" />
-          </label>
-
-          <label class="block">
-            <span class="text-[11px] font-semibold text-gray-400">Pokyny pre žiakov (voliteľné)</span>
-            <input v-model="settings.note" type="text" placeholder="napr. Počítaj bez kalkulačky."
-                   class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
-                          bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
-                          focus:outline-none focus:ring-1 focus:ring-secondary" />
-          </label>
-
-          <div class="grid grid-cols-2 gap-2">
-            <label class="block">
-              <span class="text-[11px] font-semibold text-gray-400">Skupiny</span>
-              <select v-model.number="settings.groups"
-                      class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
-                             bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
-                             focus:outline-none focus:ring-1 focus:ring-secondary">
-                <option :value="1">1 (bez skupín)</option>
-                <option :value="2">2 (A, B)</option>
-                <option :value="3">3 (A–C)</option>
-                <option :value="4">4 (A–D)</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="text-[11px] font-semibold text-gray-400">Písomiek na A4</span>
-              <select v-model.number="settings.per_page"
-                      class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
-                             bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
-                             focus:outline-none focus:ring-1 focus:ring-secondary">
-                <option :value="1">1 (celá strana)</option>
-                <option :value="2">2 (šetrenie papiera)</option>
-              </select>
-            </label>
+        <!-- Example sets -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 space-y-3">
+            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">Príkladové sady</h3>
+            <div class="relative">
+              <TeacherIcon name="search" :size="14"
+                           class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input v-model="taskSearch" type="text" placeholder="Hľadať sady..."
+                     class="w-full pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
+                            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
+                            focus:outline-none focus:ring-1 focus:ring-secondary" />
+            </div>
           </div>
-          <p v-if="settings.groups > 1" class="text-[11px] text-gray-400 -mt-1">
-            Skupina A má tvoje poradie, ďalšie skupiny majú premiešané poradie príkladov.
-          </p>
-          <p v-if="settings.per_page === 2 && items.length > 12" class="text-[11px] text-amber-500 -mt-1">
-            Pri 2 písomkách na A4 sa zmestí len ~12 krátkych príkladov — dlhší zvyšok sa odreže.
-          </p>
-
-          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 cursor-pointer">
-            <input v-model="settings.show_points" type="checkbox" class="w-4 h-4 accent-secondary" />
-            Zobraziť body pri príkladoch
-          </label>
-          <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 cursor-pointer">
-            <input v-model="settings.answer_key" type="checkbox" class="w-4 h-4 accent-secondary" />
-            Pridať kľúč správnych odpovedí
-          </label>
-
-          <div class="pt-2 space-y-2">
-            <button @click="generatePdf(false)" :disabled="generating || !items.length"
-                    class="w-full flex items-center justify-center gap-1.5 py-2.5 bg-secondary text-white rounded-lg
-                           font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
-              <TeacherIcon name="print" :size="15" />
-              {{ generating ? 'Generujem…' : 'Stiahnuť PDF' }}
-            </button>
-            <button @click="generatePdf(true)" :disabled="generating || !items.length"
-                    class="w-full py-2 rounded-lg text-secondary text-xs font-medium
-                           bg-secondary/10 hover:bg-secondary/20 disabled:opacity-50">
-              Otvoriť náhľad v novej karte
-            </button>
+          <div class="divide-y divide-slate-100 dark:divide-slate-700">
+            <div v-for="t in filteredTasks" :key="t.id"
+                 class="flex items-center gap-3 px-5 py-3 transition-colors"
+                 :class="addedTaskIds.has(t.id) ? 'opacity-40' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'">
+              <span class="w-2 h-2 rounded-full flex-shrink-0" :class="DOTS[taskColorIdx(t.id)]" />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-slate-800 dark:text-slate-100 truncate">{{ t.name }}</p>
+                <p class="text-xs text-gray-400">{{ t.example_count }} príkladov</p>
+              </div>
+              <span v-if="t.grade_levels?.length"
+                    class="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
+                    :class="PILLS[taskColorIdx(t.id)]">
+                {{ t.grade_levels.join('., ') }}. ročník
+              </span>
+              <button @click="addTask(t)" :disabled="addedTaskIds.has(t.id) || addingTaskId === t.id"
+                      class="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-lg text-xs font-medium border transition-colors"
+                      :class="addedTaskIds.has(t.id)
+                        ? 'bg-slate-100 dark:bg-slate-700 border-transparent text-slate-500 dark:text-slate-400'
+                        : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                <TeacherIcon :name="addedTaskIds.has(t.id) ? 'check' : 'plus'" :size="12" />
+                {{ addedTaskIds.has(t.id) ? 'Pridaná' : (addingTaskId === t.id ? '…' : 'Pridať') }}
+              </button>
+            </div>
+            <p v-if="!filteredTasks.length" class="py-8 text-center text-sm text-gray-400">
+              Žiadne sady neboli nájdené
+            </p>
           </div>
         </div>
-      </aside>
+      </div>
+
+      <!-- ════════ Right column — settings ════════ -->
+      <div class="lg:sticky lg:top-20 space-y-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
+            <TeacherIcon name="settings" :size="15" class="text-gray-400" />
+            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">Nastavenia tlače</h3>
+          </div>
+
+          <div class="p-5 space-y-5">
+            <!-- Document -->
+            <div class="space-y-2">
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Dokument</p>
+              <input v-model="settings.title" type="text" placeholder="Názov dokumentu"
+                     class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
+                            focus:outline-none focus:ring-1 focus:ring-secondary" />
+              <input v-model="settings.class_name" type="text" placeholder="Trieda (napr. 5.A)"
+                     class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
+                            focus:outline-none focus:ring-1 focus:ring-secondary" />
+              <input v-model="settings.note" type="text" placeholder="Pokyny pre žiakov (voliteľné)"
+                     class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
+                            focus:outline-none focus:ring-1 focus:ring-secondary" />
+            </div>
+
+            <hr class="border-slate-100 dark:border-slate-700" />
+
+            <!-- Display toggles -->
+            <div class="space-y-0.5">
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2">Zobrazenie</p>
+
+              <div class="flex items-center justify-between py-2">
+                <div>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">Zobraziť body</p>
+                  <p class="text-xs text-gray-400">Každý príklad s bodovou hodnotou</p>
+                </div>
+                <ToggleSwitch v-model="settings.show_points" />
+              </div>
+
+              <div class="flex items-center justify-between py-2">
+                <div>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">Úvodná strana</p>
+                  <p class="text-xs text-gray-400">Pridať titulnú stranu</p>
+                </div>
+                <ToggleSwitch v-model="settings.cover_page" />
+              </div>
+
+              <div class="flex items-center justify-between py-2">
+                <div>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">Hlavička</p>
+                  <p class="text-xs text-gray-400">Záhlavie na každej strane</p>
+                </div>
+                <ToggleSwitch v-model="settings.show_header" />
+              </div>
+              <input v-if="settings.show_header" v-model="settings.header_text" type="text"
+                     placeholder="Napr. Meno a priezvisko: ______"
+                     class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
+                            focus:outline-none focus:ring-1 focus:ring-secondary" />
+
+              <div class="flex items-center justify-between py-2">
+                <div>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">Kľúč odpovedí</p>
+                  <p class="text-xs text-gray-400">Strana so správnymi odpoveďami</p>
+                </div>
+                <ToggleSwitch v-model="settings.answer_key" />
+              </div>
+            </div>
+
+            <hr class="border-slate-100 dark:border-slate-700" />
+
+            <!-- Spacing -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">
+                  Vertikálne medzery
+                </p>
+                <span class="text-xs font-medium tabular-nums text-slate-700 dark:text-slate-200">
+                  {{ settings.spacing }} px
+                </span>
+              </div>
+              <input v-model.number="settings.spacing" type="range" min="8" max="64" step="4"
+                     class="w-full accent-secondary cursor-pointer" />
+              <button @click="settings.spacing = RECOMMENDED_SPACING"
+                      class="flex items-center gap-1.5 text-xs transition-colors"
+                      :class="settings.spacing === RECOMMENDED_SPACING
+                        ? 'text-secondary'
+                        : 'text-gray-400 hover:text-slate-700 dark:hover:text-slate-200'">
+                <TeacherIcon name="reset" :size="12" />
+                {{ settings.spacing === RECOMMENDED_SPACING
+                  ? 'Odporúčané (aktívne)'
+                  : `Nastaviť odporúčané (${RECOMMENDED_SPACING} px)` }}
+              </button>
+            </div>
+
+            <hr class="border-slate-100 dark:border-slate-700" />
+
+            <!-- Layout -->
+            <div class="space-y-2">
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Rozloženie</p>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="block">
+                  <span class="text-[11px] font-semibold text-gray-400">Skupiny</span>
+                  <select v-model.number="settings.groups"
+                          class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                                 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
+                                 focus:outline-none focus:ring-1 focus:ring-secondary">
+                    <option :value="1">1 (bez skupín)</option>
+                    <option :value="2">2 (A, B)</option>
+                    <option :value="3">3 (A–C)</option>
+                    <option :value="4">4 (A–D)</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="text-[11px] font-semibold text-gray-400">Písomiek na A4</span>
+                  <select v-model.number="settings.per_page"
+                          class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                                 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
+                                 focus:outline-none focus:ring-1 focus:ring-secondary">
+                    <option :value="1">1 (celá strana)</option>
+                    <option :value="2">2 (šetrenie papiera)</option>
+                  </select>
+                </label>
+              </div>
+              <p v-if="settings.groups > 1" class="text-[11px] text-gray-400">
+                Skupina A má tvoje poradie, ďalšie skupiny majú premiešané poradie príkladov.
+              </p>
+              <p v-if="settings.per_page === 2 && items.length > 12" class="text-[11px] text-amber-500">
+                Pri 2 písomkách na A4 sa zmestí len ~12 krátkych príkladov — dlhší zvyšok sa odreže.
+              </p>
+            </div>
+
+            <hr class="border-slate-100 dark:border-slate-700" />
+
+            <!-- Summary -->
+            <div class="rounded-lg bg-slate-50 dark:bg-slate-700/40 px-4 py-3.5 space-y-2">
+              <div class="flex justify-between text-xs">
+                <span class="text-gray-400">Celkom príkladov</span>
+                <span class="font-medium tabular-nums text-slate-800 dark:text-slate-100">{{ items.length }}</span>
+              </div>
+              <div v-if="settings.show_points" class="flex justify-between text-xs">
+                <span class="text-gray-400">Celkové body</span>
+                <span class="font-medium tabular-nums text-slate-800 dark:text-slate-100">{{ totalPoints }}</span>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-gray-400">Odhadované strany</span>
+                <span class="font-medium tabular-nums text-slate-800 dark:text-slate-100">~{{ estimatedPages }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button @click="generatePdf(false)" :disabled="generating || !items.length"
+                class="w-full h-11 flex items-center justify-center gap-2 bg-secondary text-white rounded-lg
+                       font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
+          <TeacherIcon name="download" :size="16" />
+          {{ generating ? 'Generujem…' : 'Generovať PDF' }}
+        </button>
+        <p v-if="!items.length" class="text-xs text-center text-gray-400">
+          Najprv pridajte aspoň jeden príklad
+        </p>
+      </div>
     </div>
   </div>
 </template>
