@@ -116,6 +116,7 @@ uvicorn==0.34.0
 uvloop==0.21.0
 virtualenv==20.28.0
 watchfiles==1.0.4
+weasyprint==63.1
 websockets==14.2
 whitenoise==6.8.2
 xxhash==3.5.0

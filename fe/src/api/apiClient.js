@@ -1195,6 +1195,13 @@ export const teacherUpdateExample = async (exampleId, teacherId, { example, inpu
   return response.data;
 };
 
+export const teacherPrintTest = async (teacherId, payload) => {
+  const response = await apiClient.post('teacher/print/test/', {
+    teacher_id: teacherId, ...payload,
+  }, { responseType: 'blob' });
+  return response.data;
+};
+
 export const getMyTeacherTasks = async (teacherId) => {
   const response = await apiClient.get('teacher/tasks/mine/', { params: { teacher_id: teacherId } });
   return response.data;

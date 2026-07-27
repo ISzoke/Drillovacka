@@ -234,6 +234,12 @@ const submitNewExample = async () => {
               {{ t.grade_levels.join(', ') }}. roč.
             </span>
             <span class="text-xs text-gray-400">{{ t.example_count }} príkladov</span>
+            <button @click.stop.prevent="$router.push({ name: 'teacher-print', query: { taskId: t.id } })"
+                    title="Tlačiť ako písomku (PDF)"
+                    class="ml-auto flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full
+                           text-gray-400 hover:text-secondary hover:bg-secondary/10 font-medium">
+              <TeacherIcon name="print" :size="11" /> Tlačiť
+            </button>
           </div>
         </router-link>
       </div>
@@ -279,6 +285,10 @@ const submitNewExample = async () => {
                 class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
           <TeacherIcon name="calendar" :size="12" /> Priradiť ako DÚ
         </button>
+        <router-link :to="{ name: 'teacher-print', query: { ids: [...selectedIds].join(',') } }"
+                     class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
+          <TeacherIcon name="print" :size="12" /> Tlačiť PDF
+        </router-link>
         <div class="flex items-center gap-1">
           <select v-model="bulkGradeChoice"
                   class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600

@@ -149,6 +149,10 @@ const handleLogoClick = () => {
               class="flex items-center gap-1.5 text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               <TeacherIcon name="library" :size="14" /> Moja knižnica
             </RouterLink>
+            <RouterLink to="/teacher/print" active-class="border-white"
+              class="flex items-center gap-1.5 text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              <TeacherIcon name="print" :size="14" /> Tlač písomky
+            </RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
           </template>
@@ -231,6 +235,9 @@ const handleLogoClick = () => {
             </RouterLink>
             <RouterLink to="/teacher/library" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               Moja knižnica
+            </RouterLink>
+            <RouterLink to="/teacher/print" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              Tlač písomky
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].contact }}</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 10mm 12mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'DejaVu Sans', sans-serif;
+    font-size: 11pt;
+    color: #111;
+    margin: 0;
+  }
+
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+
+  /* two sheets per A4 — fixed halves with a cut line between them */
+  .half {
+    height: 135mm;
+    overflow: hidden;
+    padding-bottom: 2mm;
+  }
+  .half + .half {
+    border-top: 0.4mm dashed #999;
+    padding-top: 3mm;
+  }
+  .compact { font-size: 9.5pt; }
+
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 0.5mm solid #111;
+    padding-bottom: 2mm;
+    margin-bottom: 3mm;
+  }
+  .head h1 {
+    font-size: 14pt;
+    margin: 0 0 1.5mm 0;
+  }
+  .compact .head h1 { font-size: 12pt; }
+  .meta {
+    font-size: 9.5pt;
+    color: #333;
+  }
+  .meta span { margin-right: 6mm; white-space: nowrap; }
+  .blank {
+    display: inline-block;
+    border-bottom: 0.3mm solid #555;
+    min-width: 30mm;
+  }
+  .blank.short { min-width: 18mm; }
+  .group-badge {
+    border: 0.6mm solid #111;
+    border-radius: 2mm;
+    font-size: 16pt;
+    font-weight: bold;
+    padding: 1mm 3.5mm;
+    margin-left: 4mm;
+  }
+  .note {
+    font-size: 9.5pt;
+    font-style: italic;
+    color: #444;
+    margin: 0 0 2.5mm 0;
+  }
+
+  .items {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .item {
+    width: 50%;
+    padding: 2mm 4mm 2mm 0;
+    page-break-inside: avoid;
+    min-height: 13mm;
+  }
+  .compact .item { min-height: 9mm; padding: 1.2mm 3mm 1.2mm 0; }
+  .item.wide { width: 100%; min-height: 26mm; }
+  .compact .item.wide { min-height: 18mm; }
+  .item .num {
+    font-weight: bold;
+    margin-right: 1.5mm;
+  }
+  .item .pts {
+    color: #555;
+    font-size: 8.5pt;
+    white-space: nowrap;
+  }
+  .item .eq-blank {
+    display: inline-block;
+    border-bottom: 0.3mm solid #888;
+    min-width: 22mm;
+    margin-left: 2mm;
+  }
+
+  /* math bits produced by latex_to_html */
+  .frac {
+    display: inline-block;
+    vertical-align: -0.6em;
+    text-align: center;
+    margin: 0 0.6mm;
+  }
+  .frac .num {
+    display: block;
+    border-bottom: 0.25mm solid #111;
+    padding: 0 1mm;
+    font-weight: normal;
+  }
+  .frac .den { display: block; padding: 0 1mm; }
+  .sqrtarg {
+    border-top: 0.25mm solid #111;
+    padding: 0 0.6mm;
+  }
+  .rootidx { font-size: 7pt; }
+
+  /* answer key */
+  .key h2 { font-size: 13pt; margin: 0 0 3mm 0; }
+  .key h3 { font-size: 11pt; margin: 4mm 0 2mm 0; }
+  .key .answers {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .key .answers div {
+    width: 25%;
+    padding: 1mm 3mm 1mm 0;
+  }
+</style>
+</head>
+<body>
+
+{% for pair in pages %}
+<div class="page">
+  {% for sheet in pair %}
+  <div class="{% if per_page == 2 %}half compact{% else %}full{% endif %}">
+    <div class="head">
+      <div>
+        <h1>{{ title }}</h1>
+        <div class="meta">
+          <span>Meno: <span class="blank"></span></span>
+          <span>Trieda: {% if class_name %}<strong>{{ class_name }}</strong>{% else %}<span class="blank short"></span>{% endif %}</span>
+          <span>Dátum: <span class="blank short"></span></span>
+          {% if show_points %}<span>Body: <span class="blank short"></span> / {{ total_points }}</span>{% endif %}
+        </div>
+      </div>
+      {% if sheet.group %}<div class="group-badge">{{ sheet.group }}</div>{% endif %}
+    </div>
+    {% if note %}<p class="note">{{ note }}</p>{% endif %}
+    <div class="items">
+      {% for item in sheet.items %}
+      <div class="item{% if item.wide %} wide{% endif %}">
+        <span class="num">{{ item.number }}.</span>
+        {% if show_points %}<span class="pts">({{ item.points }} b.)</span>{% endif %}
+        {{ item.html|safe }}
+        {% if not item.wide %}&nbsp;=&nbsp;<span class="eq-blank"></span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+{% if key_sheets %}
+<div class="page key">
+  <h2>Kľúč správnych odpovedí — {{ title }}</h2>
+  {% for sheet in key_sheets %}
+  {% if sheet.group %}<h3>Skupina {{ sheet.group }}</h3>{% endif %}
+  <div class="answers">
+    {% for a in sheet.answers %}
+    <div><strong>{{ a.number }}.</strong> {{ a.answer_html|safe }}</div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+</body>
+</html>

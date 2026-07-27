@@ -8,7 +8,8 @@
 """
 
 from django.urls import path
-from . import views 
+from . import views
+from . import pdf_export
 from .consumers import SpeechRecognitionConsumer
 from .consumersSurvey import SurveySpeechTranscriptionConsumer
 
@@ -136,6 +137,7 @@ urlpatterns = [
     path('teacher/tasks/<int:task_id>/examples/attach/', views.teacher_attach_example, name='teacher-attach-example'),
     path('teacher/tasks/<int:task_id>/examples/detach/', views.teacher_detach_example, name='teacher-detach-example'),
     path('teacher/tasks/<int:task_id>/examples/copy-in/', views.teacher_copy_example_in, name='teacher-copy-example-in'),
+    path('teacher/print/test/', pdf_export.teacher_print_test, name='teacher-print-test'),
     path('analytics/activity/', views.get_recent_activity, name='recent-activity'),
     path('admin/teachers/', views.get_all_teachers, name='admin-teachers'),
     path('admin/classrooms/<int:classroom_id>/students/', views.admin_classroom_students, name='admin-classroom-students'),

@@ -36,6 +36,7 @@ import TeacherClassroomStudentView from '@/views/TeacherClassroomStudentView.vue
 import TeacherCreateTaskView from '@/views/TeacherCreateTaskView.vue'
 import TeacherEditTaskView from '@/views/TeacherEditTaskView.vue'
 import TeacherLibraryView from '@/views/TeacherLibraryView.vue'
+import TeacherPrintView from '@/views/TeacherPrintView.vue'
 
 // Student classroom views
 import JoinClassroomView from '@/views/JoinClassroomView.vue'
@@ -249,6 +250,12 @@ const router = createRouter({
       path: '/teacher/library',
       name: 'teacher-library',
       component: TeacherLibraryView,
+      meta: { requiresTeacher: true },
+    },
+    {
+      path: '/teacher/print',
+      name: 'teacher-print',
+      component: TeacherPrintView,
       meta: { requiresTeacher: true },
     },
     {
