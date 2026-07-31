@@ -47,6 +47,9 @@ const settings = ref({
   default_answer_lines: 4,
 });
 
+// sample texts for the instant compact-columns sandbox demo (avoid unicode fraction glyphs — inconsistent font support)
+const SAMPLE_COMPACT_TEXTS = ['12 + 8', '45 − 9', '1/2 + 1/3', '6 × 7'];
+
 // answer_lines per item: null = auto (podľa typu), 0 = kompaktné (bez riadkov), 1-6 = počet riadkov
 const ANSWER_LINES_OPTIONS = [
   { value: null, label: 'Auto (podľa typu)' },
@@ -859,11 +862,11 @@ const generatePdf = async (openInTab) => {
               <div class="rounded-lg border border-dashed border-slate-300 dark:border-slate-600 p-2.5
                           bg-slate-50 dark:bg-slate-900/40 space-y-1.5">
                 <p class="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Ukážka naživo</p>
-                <div class="grid gap-1.5" :style="{ gridTemplateColumns: `repeat(${settings.columns}, 1fr)` }">
-                  <div v-for="n in Math.min(settings.columns, 2)" :key="n"
+                <div class="grid gap-1.5" :style="{ gridTemplateColumns: `repeat(${settings.columns}, minmax(0, 1fr))` }">
+                  <div v-for="n in settings.columns" :key="n"
                        class="text-[11px] font-mono bg-white dark:bg-slate-800 rounded px-2 py-1.5
                               border border-slate-200 dark:border-slate-700 truncate">
-                    {{ n === 1 ? '12 + 8' : '½ + ⅓' }}&nbsp;=&nbsp;<span class="inline-block w-6 border-b border-slate-400 align-middle"></span>
+                    {{ SAMPLE_COMPACT_TEXTS[(n - 1) % SAMPLE_COMPACT_TEXTS.length] }}&nbsp;=&nbsp;<span class="inline-block w-6 border-b border-slate-400 align-middle"></span>
                   </div>
                 </div>
                 <div class="text-[11px] font-mono bg-white dark:bg-slate-800 rounded px-2 py-1.5
@@ -901,19 +904,6 @@ const generatePdf = async (openInTab) => {
           </div>
         </div>
 
-        <!-- Live preview -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Náhľad</p>
-            <Spinner v-if="previewLoading" class="w-3.5 h-3.5" />
-          </div>
-          <div v-if="!items.length" class="py-8 text-center text-xs text-gray-400">
-            Pridaj aspoň jeden príklad
-          </div>
-          <iframe v-else :srcdoc="previewHtml" sandbox=""
-                  class="w-full h-72 bg-white" style="border: none;" />
-        </div>
-
         <button @click="generatePdf(false)" :disabled="generating || !items.length"
                 class="w-full h-11 flex items-center justify-center gap-2 bg-secondary text-white rounded-lg
                        font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
@@ -923,6 +913,18 @@ const generatePdf = async (openInTab) => {
         <p v-if="!items.length" class="text-xs text-center text-gray-400">
           Najprv pridajte aspoň jeden príklad
         </p>
+      </div>
+    </div>
+
+    <!-- Full-width live preview — exact same render as the PDF -->
+    <div v-if="items.length" class="mt-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+        <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Náhľad (presne ako v PDF)</p>
+        <Spinner v-if="previewLoading" class="w-4 h-4" />
+      </div>
+      <div class="flex justify-center bg-slate-200 dark:bg-slate-900 p-4">
+        <iframe :srcdoc="previewHtml" sandbox=""
+                class="w-full max-w-3xl bg-white" style="border: none; height: 80vh;" />
       </div>
     </div>
   </div>

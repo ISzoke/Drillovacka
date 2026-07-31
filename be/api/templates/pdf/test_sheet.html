@@ -153,6 +153,22 @@
     width: 25%;
     padding: 1mm 3mm 1mm 0;
   }
+
+  /* Screen-only preview affordances (WeasyPrint renders with the "print"
+     media type, so this block is entirely ignored in the actual PDF — it
+     only reconstructs the @page margin + visually separates pages for the
+     browser-based ?debug=html / live preview view.) */
+  @media screen {
+    html, body { background: #cbd5e1; }
+    body { padding: 8mm 0; }
+    .page {
+      background: #fff;
+      max-width: 210mm;
+      margin: 0 auto 8mm auto;
+      padding: 10mm 12mm;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+  }
 </style>
 </head>
 <body>
