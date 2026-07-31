@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import {
   getMyTeacherTasks, teacherListExamples, getTeacherTaskExamples, teacherPrintTest,
-  teacherGenerateTaskPreview,
+  teacherPrintPreviewHtml, teacherGenerateTaskPreview,
 } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
@@ -29,6 +29,7 @@ const unattachedOpen = ref(false);
 // items = [{ key, id|null, example, answer, points, dot }] in print order
 const items = ref([]);
 let itemKey = 0;
+const expandedItemKey = ref(null);
 
 const settings = ref({
   title: 'Písomná práca',
@@ -326,6 +327,30 @@ const buildPayload = () => ({
   }),
 });
 
+// ── Live inline preview (renders the exact same template as the PDF, as HTML) ──
+const previewHtml = ref('');
+const previewLoading = ref(false);
+let previewDebounce = null;
+
+const loadPreview = async () => {
+  if (!items.value.length) {
+    previewHtml.value = '';
+    return;
+  }
+  previewLoading.value = true;
+  try {
+    previewHtml.value = await teacherPrintPreviewHtml(authStore.id, buildPayload());
+  } catch (e) {
+    previewHtml.value = '';
+  }
+  previewLoading.value = false;
+};
+
+watch([items, settings], () => {
+  clearTimeout(previewDebounce);
+  previewDebounce = setTimeout(loadPreview, 500);
+}, { deep: true });
+
 const generatePdf = async (openInTab) => {
   if (!items.value.length) {
     toastStore.addToast({ message: 'Písomka nemá žiadne príklady.', type: 'error', visible: true });
@@ -363,7 +388,7 @@ const generatePdf = async (openInTab) => {
                      border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200
                      bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40">
         <TeacherIcon name="eye" :size="15" />
-        Náhľad
+        Otvoriť PDF
       </button>
     </div>
 
@@ -529,6 +554,12 @@ const generatePdf = async (openInTab) => {
             </div>
           </div>
 
+          <p v-if="items.length" class="px-5 pt-2.5 text-[11px] text-gray-400 leading-relaxed">
+            Miesto na odpoveď pri každom príklade: <strong class="text-slate-500 dark:text-slate-300">Auto</strong> necháva
+            voľné miesto podľa typu príkladu (INLINE/FRAC kompaktne na riadku, WORD/VAR viac voľného miesta pod zadaním).
+            Vyber si konkrétny počet riadkov, ak chceš pre daný príklad viac alebo menej miesta ručne.
+          </p>
+
           <div v-if="!items.length" class="py-12 text-center">
             <TeacherIcon name="book" :size="38" class="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
             <p class="text-sm text-slate-500 dark:text-slate-400">Žiadne príklady neboli pridané</p>
@@ -551,7 +582,10 @@ const generatePdf = async (openInTab) => {
                            class="text-slate-300 dark:text-slate-600 group-hover:text-slate-400 cursor-grab flex-shrink-0" />
               <span class="w-2 h-2 rounded-full flex-shrink-0" :class="it.dot" />
               <span class="text-xs font-bold text-slate-400 w-5 text-right flex-shrink-0">{{ i + 1 }}.</span>
-              <div class="flex-1 min-w-0 font-mono text-sm text-slate-800 dark:text-slate-100 truncate">
+              <div class="flex-1 min-w-0 font-mono text-sm text-slate-800 dark:text-slate-100 cursor-pointer"
+                   :class="expandedItemKey === it.key ? 'whitespace-normal break-words' : 'truncate'"
+                   @click="expandedItemKey = expandedItemKey === it.key ? null : it.key"
+                   title="Klikni pre zobrazenie celého textu">
                 {{ it.example }}
                 <span class="text-secondary font-semibold">= {{ it.answer }}</span>
               </div>
@@ -842,11 +876,24 @@ const generatePdf = async (openInTab) => {
           </div>
         </div>
 
+        <!-- Live preview -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Náhľad</p>
+            <Spinner v-if="previewLoading" class="w-3.5 h-3.5" />
+          </div>
+          <div v-if="!items.length" class="py-8 text-center text-xs text-gray-400">
+            Pridaj aspoň jeden príklad
+          </div>
+          <iframe v-else :srcdoc="previewHtml" sandbox=""
+                  class="w-full h-72 bg-white" style="border: none;" />
+        </div>
+
         <button @click="generatePdf(false)" :disabled="generating || !items.length"
                 class="w-full h-11 flex items-center justify-center gap-2 bg-secondary text-white rounded-lg
                        font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
           <TeacherIcon name="download" :size="16" />
-          {{ generating ? 'Generujem…' : 'Generovať PDF' }}
+          {{ generating ? 'Sťahujem…' : 'Stiahnuť PDF' }}
         </button>
         <p v-if="!items.length" class="text-xs text-center text-gray-400">
           Najprv pridajte aspoň jeden príklad

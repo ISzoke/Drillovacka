@@ -6,9 +6,7 @@
       {% if show_points %}<span class="pts">({{ row.items.0.points }} b.)</span>{% endif %}
       {{ row.items.0.html|safe }}
     </div>
-    {% for _ in row.answer_line_range %}
-    <div class="answer-line"></div>
-    {% endfor %}
+    <div class="answer-blank" style="height:{{ row.blank_h_mm }}mm"></div>
   </div>
   {% else %}
   <div class="row compact-row" style="min-height:{{ row.height_mm }}mm">

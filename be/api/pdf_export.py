@@ -237,7 +237,7 @@ def _build_rows(built_items, columns, metrics, default_answer_lines):
                 'wide': True,
                 'items': [item],
                 'height_mm': round(metrics['header_h'] + lines * metrics['line_h'] + metrics['gap'], 1),
-                'answer_line_range': range(lines),
+                'blank_h_mm': round(lines * metrics['line_h'], 1),
             })
         else:
             bucket.append(item)
@@ -474,7 +474,6 @@ def teacher_print_test(request):
         'header_text': header_text,
         'columns': columns,
         'col_width_pct': round(100.0 / columns, 2),
-        'line_h_mm': metrics['line_h'],
         'row_gap_mm': metrics['gap'],
     }
     html = render_to_string('pdf/test_sheet.html', context)

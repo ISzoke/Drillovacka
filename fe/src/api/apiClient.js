@@ -1207,6 +1207,13 @@ export const teacherPrintTest = async (teacherId, payload) => {
   return response.data;
 };
 
+export const teacherPrintPreviewHtml = async (teacherId, payload) => {
+  const response = await apiClient.post('teacher/print/test/?debug=html', {
+    teacher_id: teacherId, ...payload,
+  }, { responseType: 'text' });
+  return response.data;
+};
+
 export const getMyTeacherTasks = async (teacherId) => {
   const response = await apiClient.get('teacher/tasks/mine/', { params: { teacher_id: teacherId } });
   return response.data;
