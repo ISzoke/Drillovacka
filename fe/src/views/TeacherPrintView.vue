@@ -854,6 +854,31 @@ const generatePdf = async (openInTab) => {
                   </select>
                 </label>
               </div>
+
+              <!-- Instant local sandbox — updates on every keystroke, no server round-trip -->
+              <div class="rounded-lg border border-dashed border-slate-300 dark:border-slate-600 p-2.5
+                          bg-slate-50 dark:bg-slate-900/40 space-y-1.5">
+                <p class="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Ukážka naživo</p>
+                <div class="grid gap-1.5" :style="{ gridTemplateColumns: `repeat(${settings.columns}, 1fr)` }">
+                  <div v-for="n in Math.min(settings.columns, 2)" :key="n"
+                       class="text-[11px] font-mono bg-white dark:bg-slate-800 rounded px-2 py-1.5
+                              border border-slate-200 dark:border-slate-700 truncate">
+                    {{ n === 1 ? '12 + 8' : '½ + ⅓' }}&nbsp;=&nbsp;<span class="inline-block w-6 border-b border-slate-400 align-middle"></span>
+                  </div>
+                </div>
+                <div class="text-[11px] font-mono bg-white dark:bg-slate-800 rounded px-2 py-1.5
+                            border border-slate-200 dark:border-slate-700">
+                  <div>Koľko jabĺk zostane, ak zjeme 3 z 10?</div>
+                  <div class="mt-1 rounded border border-dashed border-slate-300 dark:border-slate-600
+                              flex items-center justify-center text-[10px] text-gray-400 transition-all"
+                       :style="{ height: (settings.default_answer_lines * 16) + 'px' }">
+                    {{ settings.default_answer_lines }}
+                    {{ settings.default_answer_lines === 1 ? 'riadok' : settings.default_answer_lines < 5 ? 'riadky' : 'riadkov' }}
+                    voľného miesta
+                  </div>
+                </div>
+                <p class="text-[10px] text-gray-400">Schematicky — v PDF bude toto miesto úplne prázdne, bez orámovania.</p>
+              </div>
             </div>
 
             <hr class="border-slate-100 dark:border-slate-700" />
