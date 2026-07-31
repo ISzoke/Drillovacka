@@ -703,6 +703,20 @@ const generatePdf = async (openInTab) => {
             </div>
           </div>
         </div>
+
+        <!-- Live preview — exact same render as the PDF. Lives at the end of the
+             left column (not full-width below the grid) so the sticky settings
+             panel on the right keeps following alongside it while scrolling. -->
+        <div v-if="items.length" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Náhľad (presne ako v PDF)</p>
+            <Spinner v-if="previewLoading" class="w-4 h-4" />
+          </div>
+          <div class="flex justify-center bg-slate-200 dark:bg-slate-900 p-4">
+            <iframe :srcdoc="previewHtml" sandbox=""
+                    class="w-full max-w-2xl bg-white" style="border: none; height: 80vh;" />
+          </div>
+        </div>
       </div>
 
       <!-- ════════ Right column — settings ════════ -->
@@ -913,18 +927,6 @@ const generatePdf = async (openInTab) => {
         <p v-if="!items.length" class="text-xs text-center text-gray-400">
           Najprv pridajte aspoň jeden príklad
         </p>
-      </div>
-    </div>
-
-    <!-- Full-width live preview — exact same render as the PDF -->
-    <div v-if="items.length" class="mt-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-        <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Náhľad (presne ako v PDF)</p>
-        <Spinner v-if="previewLoading" class="w-4 h-4" />
-      </div>
-      <div class="flex justify-center bg-slate-200 dark:bg-slate-900 p-4">
-        <iframe :srcdoc="previewHtml" sandbox=""
-                class="w-full max-w-3xl bg-white" style="border: none; height: 80vh;" />
       </div>
     </div>
   </div>
