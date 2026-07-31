@@ -1153,6 +1153,11 @@ export const teacherListExamples = async (teacherId, { search = '', unattachedOn
   return response.data;
 };
 
+export const getUnassignedExampleCount = async (teacherId) => {
+  const response = await apiClient.get('teacher/examples/unassigned-count/', { params: { teacher_id: teacherId } });
+  return response.data;
+};
+
 export const teacherBulkSetGrade = async (teacherId, exampleIds, grade) => {
   const response = await apiClient.post('teacher/examples/bulk-set-grade/', {
     teacher_id: teacherId, example_ids: exampleIds, grade,
@@ -1214,6 +1219,20 @@ export const teacherDeleteExample = async (exampleId, teacherId) => {
 export const getTeacherTaskExamples = async (taskId, teacherId) => {
   const response = await apiClient.get(`teacher/tasks/${taskId}/examples/`, {
     params: { teacher_id: teacherId },
+  });
+  return response.data;
+};
+
+export const teacherGenerateMoreExamplesPreview = async (teacherId, taskId, description, count) => {
+  const response = await apiClient.post(`teacher/tasks/${taskId}/generate-more/`, {
+    teacher_id: teacherId, description, count,
+  });
+  return response.data;
+};
+
+export const teacherSaveGeneratedExamples = async (teacherId, taskId, examples, description = '') => {
+  const response = await apiClient.post(`teacher/tasks/${taskId}/generate-more/save/`, {
+    teacher_id: teacherId, examples, description,
   });
   return response.data;
 };

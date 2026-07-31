@@ -271,7 +271,7 @@ def _do_write_sync(attempt):
     }
 
 
-def sync_teacher_prompt_to_mega(task, teacher, examples):
+def sync_teacher_prompt_to_mega(task, teacher, examples, generation_prompt=None, generation_params=None):
     """
     Save teacher AI generation prompt + result as a JSON file locally and upload to MEGA.
     Called after teacher_save_task in a background thread.
@@ -292,8 +292,8 @@ def sync_teacher_prompt_to_mega(task, teacher, examples):
             "email": teacher.email,
             "name": f"{teacher.first_name} {teacher.last_name}",
         },
-        "generation_prompt": task.generation_prompt,
-        "generation_params": task.generation_params,
+        "generation_prompt": generation_prompt if generation_prompt is not None else task.generation_prompt,
+        "generation_params": generation_params if generation_params is not None else task.generation_params,
         "examples": [
             {
                 "example": ex.get("example", ""),

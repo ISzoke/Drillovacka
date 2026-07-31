@@ -36,6 +36,7 @@ import TeacherClassroomStudentView from '@/views/TeacherClassroomStudentView.vue
 import TeacherCreateTaskView from '@/views/TeacherCreateTaskView.vue'
 import TeacherEditTaskView from '@/views/TeacherEditTaskView.vue'
 import TeacherLibraryView from '@/views/TeacherLibraryView.vue'
+import TeacherUnassignedExamplesView from '@/views/TeacherUnassignedExamplesView.vue'
 import TeacherPrintView from '@/views/TeacherPrintView.vue'
 
 // Student classroom views
@@ -251,6 +252,19 @@ const router = createRouter({
       name: 'teacher-library',
       component: TeacherLibraryView,
       meta: { requiresTeacher: true },
+    },
+    {
+      path: '/teacher/library/unassigned',
+      name: 'teacher-library-unassigned',
+      component: TeacherUnassignedExamplesView,
+      meta: { requiresTeacher: true },
+    },
+    {
+      path: '/teacher/library/create-task',
+      name: 'teacher-create-task-standalone',
+      component: TeacherCreateTaskView,
+      meta: { requiresTeacher: true },
+      props: true,
     },
     {
       path: '/teacher/print',

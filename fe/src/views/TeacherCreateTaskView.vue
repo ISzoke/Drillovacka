@@ -136,8 +136,13 @@ const save = async () => {
     if (props.classroomId) {
       await assignTaskToClassroom(props.classroomId, authStore.id, result.task_id, false, null);
     }
-    toastStore.addToast({ message: 'Sada vytvorená a priradená!', type: 'success', visible: true });
-    router.push({ name: 'teacher-task-sets', params: { classroomId: props.classroomId } });
+    toastStore.addToast({
+      message: props.classroomId ? 'Sada vytvorená a priradená!' : 'Sada vytvorená!',
+      type: 'success', visible: true,
+    });
+    router.push(props.classroomId
+      ? { name: 'teacher-task-sets', params: { classroomId: props.classroomId } }
+      : { name: 'teacher-library' });
   } catch (e) {
     toastStore.addToast({ message: 'Chyba pri ukladaní.', type: 'error', visible: true });
   }
@@ -149,7 +154,9 @@ const save = async () => {
   <div class="pt-20 px-4 max-w-3xl mx-auto pb-16">
 
     <TeacherPageHeader
-      :crumbs="[{ label: 'Príkladové sady', to: { name: 'teacher-task-sets', params: { classroomId } } }]"
+      :crumbs="[props.classroomId
+        ? { label: 'Príkladové sady', to: { name: 'teacher-task-sets', params: { classroomId: props.classroomId } } }
+        : { label: 'Moja knižnica', to: { name: 'teacher-library' } }]"
       current="Nová sada"
       title="Vytvoriť novú sadu" />
 

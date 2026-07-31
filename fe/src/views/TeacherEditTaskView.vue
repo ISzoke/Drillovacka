@@ -10,6 +10,7 @@ import {
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
 import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
+import TeacherGenerateMoreExamplesModal from '@/components/TeacherGenerateMoreExamplesModal.vue';
 
 const props = defineProps({ classroomId: [String, Number], taskId: [String, Number] });
 
@@ -37,6 +38,13 @@ const showLibrary = ref(false);
 const libraryLoading = ref(false);
 const libraryExamples = ref([]);
 const attachingId = ref(null);
+
+const showGenerateMore = ref(false);
+const onGenerateMoreSuccess = (created) => {
+  showGenerateMore.value = false;
+  examples.value.push(...created);
+  toastStore.addToast({ message: `${created.length} príkladov pridaných zo AI generovania.`, type: 'success', visible: true });
+};
 
 // Live "what the student sees" preview — reflects whichever draft is currently being edited/created.
 const previewDraft = computed(() => {
@@ -304,6 +312,10 @@ const deleteTask = async () => {
                   class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
             <TeacherIcon name="library" :size="12" /> Z mojej knižnice
           </button>
+          <button @click="showGenerateMore = true"
+                  class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
+            <TeacherIcon name="sparkle" :size="12" /> Generovať viac s AI
+          </button>
         </div>
 
         <div v-if="showNewForm" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 space-y-2 mb-4">
@@ -392,6 +404,11 @@ const deleteTask = async () => {
         </button>
       </div>
     </div>
+
+    <TeacherGenerateMoreExamplesModal v-if="showGenerateMore"
+                                      :task-id="props.taskId"
+                                      @close="showGenerateMore = false"
+                                      @success="onGenerateMoreSuccess" />
 
   </div>
 </template>

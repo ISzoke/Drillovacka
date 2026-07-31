@@ -130,6 +130,76 @@ def generate_teacher_task(task_type: str, count: int, description: str) -> dict:
     }
 
 
+SYSTEM_PROMPT_MORE = """\
+Si generátor matematických príkladov pre slovenských žiakov základnej školy.
+Sada už obsahuje tieto príklady (zachovaj rovnaký štýl, formát a input_type; NEOPAKUJ ich):
+{reference_block}
+
+Vygeneruj presne {count} NOVÝCH príkladov v rovnakom štýle ako vyššie.
+Doplňujúca požiadavka učiteľa: "{description}"
+
+Výstup MUSÍ byť iba JSON bez markdown:
+{{"examples": [{{"example": "...", "input_type": "...", "answer": "..."}}]}}
+Vygeneruj presne {count} príkladov. Každý príklad musí mať vyplnené "example", "input_type" a "answer".
+"""
+
+
+def _generate_more_batch(reference_examples: list, count: int, description: str) -> list:
+    """Single Gemini call for up to BATCH_SIZE new examples, using reference_examples as a style sample."""
+    reference_block = "\n".join(
+        json.dumps({'example': ex['example'], 'input_type': ex['input_type'], 'answer': ex['answer']}, ensure_ascii=False)
+        for ex in reference_examples
+    )
+    prompt = SYSTEM_PROMPT_MORE.format(reference_block=reference_block, count=count, description=description)
+
+    model = genai.GenerativeModel(
+        'gemini-2.5-flash',
+        generation_config={
+            'response_mime_type': 'application/json',
+            'max_output_tokens': 8192,
+        },
+    )
+    response = model.generate_content(prompt)
+    return json.loads(response.text).get('examples', [])
+
+
+def generate_teacher_task_more(reference_examples: list, count: int, description: str, fallback_type: str = 'arithmetic') -> dict:
+    """Generate `count` additional examples matching the style of reference_examples (last examples in the sada)."""
+    if _MOCK_MODE:
+        input_type = reference_examples[0]['input_type'] if reference_examples else TYPE_TO_INPUT.get(fallback_type, 'INLINE')
+        return {
+            'examples': [
+                {'example': f'Nový príklad {i + 1}', 'input_type': input_type, 'answer': str(i + 1)}
+                for i in range(count)
+            ],
+        }
+
+    if not reference_examples:
+        # Empty sada — no style to imitate yet, degrade to the plain generator.
+        return {'examples': generate_teacher_task(fallback_type, count, description)['examples']}
+
+    all_examples = []
+    remaining = count
+    while remaining > 0:
+        batch = min(remaining, BATCH_SIZE)
+        try:
+            examples = _generate_more_batch(reference_examples, batch, description)
+        except json.JSONDecodeError as e:
+            logger.error('Gemini returned invalid JSON: %s', e)
+            raise ValueError(f'Gemini returned invalid JSON: {e}')
+        except Exception as e:
+            logger.error('Gemini API error: %s', e)
+            raise RuntimeError(f'Gemini API error: {e}')
+
+        if not examples:
+            raise ValueError('No examples in Gemini response')
+
+        all_examples.extend(examples)
+        remaining -= batch
+
+    return {'examples': all_examples}
+
+
 def generate_teacher_task_mix(segments: list, description: str) -> dict:
     """Calls generate_teacher_task per segment and combines results."""
     all_examples = []

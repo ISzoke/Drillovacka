@@ -4639,6 +4639,15 @@ def _clone_example(source_example, target_task, teacher):
     return new_example
 
 
+@api_view(['GET'])
+def teacher_examples_unassigned_count(request):
+    teacher_id = request.GET.get('teacher_id')
+    if not teacher_id:
+        return Response({'error': 'teacher_id required'}, status=status.HTTP_400_BAD_REQUEST)
+    count = Example.objects.filter(owner_teacher_id=teacher_id, task__isnull=True).count()
+    return Response({'count': count})
+
+
 @api_view(['GET', 'POST'])
 def teacher_examples(request):
     if request.method == 'GET':
@@ -4841,6 +4850,77 @@ def teacher_task_examples(request, task_id):
         'task_name': task.name,
         'examples': [_serialize_teacher_example(ex) for ex in examples],
     })
+
+
+@api_view(['POST'])
+def teacher_generate_more_examples_preview(request, task_id):
+    teacher_id = request.data.get('teacher_id')
+    task = get_object_or_404(Task, id=task_id)
+    if not teacher_id or task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    description = (request.data.get('description') or '').strip()
+    if not description:
+        return Response({'error': 'description is required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        count = min(max(int(request.data.get('count', 10)), 1), 30)
+    except (TypeError, ValueError):
+        count = 10
+
+    # Example has no timestamp column; -id is a reliable insertion-order proxy. Reverse to chronological for the prompt.
+    recent = list(task.example_set.prefetch_related('answers').order_by('-id')[:10])[::-1]
+    reference_examples = [{
+        'example': ex.example, 'input_type': ex.input_type,
+        'answer': ex.answers.first().answer if ex.answers.first() else '',
+    } for ex in recent]
+    fallback_type = 'word' if task.form == 'word-problem' else 'arithmetic'
+
+    from .generators.teacher_generator import generate_teacher_task_more
+    try:
+        data = generate_teacher_task_more(reference_examples, count, description, fallback_type)
+    except ValueError as e:
+        return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    except RuntimeError as e:
+        return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return Response(data)
+
+
+@api_view(['POST'])
+def teacher_save_generated_examples(request, task_id):
+    teacher_id = request.data.get('teacher_id')
+    task = get_object_or_404(Task, id=task_id)
+    if not teacher_id or task.owner_teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    examples_data = request.data.get('examples') or []
+    if not examples_data:
+        return Response({'error': 'At least one example required'}, status=status.HTTP_400_BAD_REQUEST)
+    description = (request.data.get('description') or '').strip()
+    teacher = task.owner_teacher
+
+    created = []
+    with transaction.atomic():
+        for ex_data in examples_data:
+            ex_text = str(ex_data.get('example', '')).strip()
+            input_type = str(ex_data.get('input_type', 'INLINE')).upper()
+            answer_text = str(ex_data.get('answer', '')).strip()
+            if not ex_text or not answer_text:
+                continue
+            ex = Example.objects.create(example=ex_text, input_type=input_type, task=task, owner_teacher=teacher)
+            Answer.objects.create(example=ex, answer=answer_text)
+            created.append(ex)
+
+    if description:
+        import threading
+        from .attempt_cloud_sync import sync_teacher_prompt_to_mega
+        threading.Thread(
+            target=sync_teacher_prompt_to_mega,
+            args=(task, teacher, examples_data),
+            kwargs={'generation_prompt': description, 'generation_params': {'mode': 'generate_more', 'count': len(created)}},
+            daemon=True,
+        ).start()
+
+    return Response({'created': [_serialize_teacher_example(ex) for ex in created]}, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
