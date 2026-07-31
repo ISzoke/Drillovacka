@@ -18,17 +18,14 @@
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
 
-  /* two sheets per A4 — fixed halves with a cut line between them */
-  .half {
-    height: 135mm;
-    overflow: hidden;
-    padding-bottom: 2mm;
-  }
+  /* two sheets per A4 — height grows with content, dashed cut line between them */
+  .half { padding-bottom: 2mm; }
   .half + .half {
     border-top: 0.4mm dashed #999;
     padding-top: 3mm;
   }
   .compact { font-size: 9.5pt; }
+  .compact .head h1 { font-size: 12pt; }
 
   .head {
     display: flex;
@@ -42,7 +39,12 @@
     font-size: 14pt;
     margin: 0 0 1.5mm 0;
   }
-  .compact .head h1 { font-size: 12pt; }
+  .head-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1mm;
+  }
   .meta {
     font-size: 9.5pt;
     color: #333;
@@ -60,7 +62,12 @@
     font-size: 16pt;
     font-weight: bold;
     padding: 1mm 3.5mm;
-    margin-left: 4mm;
+  }
+  .continuation-tag {
+    font-size: 8pt;
+    color: #777;
+    font-style: italic;
+    white-space: nowrap;
   }
   .note {
     font-size: 9.5pt;
@@ -69,33 +76,25 @@
     margin: 0 0 2.5mm 0;
   }
 
-  .items {
-    display: flex;
-    flex-wrap: wrap;
-  }
-  .item {
-    width: 50%;
-    padding: {{ item_pad_mm }}mm 4mm {{ item_pad_mm }}mm 0;
+  /* rows: either N compact items side by side, or one wide item + answer lines */
+  .row {
     page-break-inside: avoid;
-    min-height: {{ item_minh_mm }}mm;
+    margin-bottom: {{ row_gap_mm }}mm;
   }
-  .compact .item { min-height: {{ compact_minh_mm }}mm; padding: {{ compact_pad_mm }}mm 3mm {{ compact_pad_mm }}mm 0; }
-  .item.wide { width: 100%; min-height: {{ item_minh_wide_mm }}mm; }
-  .compact .item.wide { min-height: {{ compact_minh_wide_mm }}mm; }
-  .item .num {
-    font-weight: bold;
-    margin-right: 1.5mm;
-  }
-  .item .pts {
-    color: #555;
-    font-size: 8.5pt;
-    white-space: nowrap;
-  }
-  .item .eq-blank {
+  .compact-row { display: flex; }
+  .compact-row .cell { padding: 0 4mm 0 0; }
+  .wide-row .q { margin-bottom: 1mm; }
+  .row .num { font-weight: bold; margin-right: 1.5mm; }
+  .row .pts { color: #555; font-size: 8.5pt; white-space: nowrap; }
+  .row .eq-blank {
     display: inline-block;
     border-bottom: 0.3mm solid #888;
     min-width: 22mm;
     margin-left: 2mm;
+  }
+  .answer-line {
+    height: {{ line_h_mm }}mm;
+    border-bottom: 0.3mm solid #999;
   }
 
   /* math bits produced by latex_to_html */
@@ -133,6 +132,10 @@
     border-bottom: 0.6mm solid #111;
     padding-bottom: 4mm;
   }
+  .cover .note {
+    text-align: center;
+    margin: 0 0 6mm 0;
+  }
   .cover .cover-meta {
     font-size: 12pt;
     color: #333;
@@ -159,6 +162,7 @@
 <div class="page">
   <div class="cover">
     <h1>{{ title }}</h1>
+    {% if note %}<p class="note">{{ note }}</p>{% endif %}
     <div class="cover-meta">
       <div>Meno: <span class="blank"></span></div>
       <div>Trieda: {% if class_name %}<strong>{{ class_name }}</strong>{% else %}<span class="blank short"></span>{% endif %}</div>
@@ -169,10 +173,10 @@
 </div>
 {% endif %}
 
-{% for pair in pages %}
+{% if per_page == 1 %}
+{% for sheet in pages_full %}
 <div class="page">
-  {% for sheet in pair %}
-  <div class="{% if per_page == 2 %}half compact{% else %}full{% endif %}">
+  <div class="full">
     {% if show_header %}
     <div class="head">
       <div>
@@ -193,21 +197,53 @@
     {% elif sheet.group %}
     <div class="head"><div></div><div class="group-badge">{{ sheet.group }}</div></div>
     {% endif %}
-    {% if note %}<p class="note">{{ note }}</p>{% endif %}
-    <div class="items">
-      {% for item in sheet.items %}
-      <div class="item{% if item.wide %} wide{% endif %}">
-        <span class="num">{{ item.number }}.</span>
-        {% if show_points %}<span class="pts">({{ item.points }} b.)</span>{% endif %}
-        {{ item.html|safe }}
-        {% if not item.wide %}&nbsp;=&nbsp;<span class="eq-blank"></span>{% endif %}
+    {% if note and not cover_page %}<p class="note">{{ note }}</p>{% endif %}
+    {% include 'pdf/_rows.html' with rows=sheet.rows %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if per_page == 2 %}
+{% for page in pages_half %}
+<div class="page">
+  {% for half in page.halves %}
+  <div class="half compact">
+    {% if half %}
+      {% if show_header %}
+      <div class="head">
+        <div>
+          <h1>{{ title }}</h1>
+          <div class="meta">
+            {% if header_text %}
+            <span>{{ header_text }}</span>
+            {% else %}
+            <span>Meno: <span class="blank"></span></span>
+            <span>Trieda: {% if class_name %}<strong>{{ class_name }}</strong>{% else %}<span class="blank short"></span>{% endif %}</span>
+            <span>Dátum: <span class="blank short"></span></span>
+            {% if show_points %}<span>Body: <span class="blank short"></span> / {{ total_points }}</span>{% endif %}
+            {% endif %}
+          </div>
+        </div>
+        <div class="head-right">
+          {% if half.is_continuation %}<div class="continuation-tag">pokračovanie {{ half.chunk_number }}/{{ half.chunk_count }}</div>{% endif %}
+          {% if half.group %}<div class="group-badge">{{ half.group }}</div>{% endif %}
+        </div>
       </div>
-      {% endfor %}
-    </div>
+      {% elif half.group or half.is_continuation %}
+      <div class="head">
+        <div>{% if half.is_continuation %}<div class="continuation-tag">pokračovanie {{ half.chunk_number }}/{{ half.chunk_count }}</div>{% endif %}</div>
+        {% if half.group %}<div class="group-badge">{{ half.group }}</div>{% endif %}
+      </div>
+      {% endif %}
+      {% if note and not cover_page and not half.is_continuation %}<p class="note">{{ note }}</p>{% endif %}
+      {% include 'pdf/_rows.html' with rows=half.rows %}
+    {% endif %}
   </div>
   {% endfor %}
 </div>
 {% endfor %}
+{% endif %}
 
 {% if key_sheets %}
 <div class="page key">

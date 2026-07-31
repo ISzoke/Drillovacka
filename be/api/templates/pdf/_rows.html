@@ -1,0 +1,25 @@
+{% for row in rows %}
+  {% if row.wide %}
+  <div class="row wide-row" style="min-height:{{ row.height_mm }}mm">
+    <div class="q">
+      <span class="num">{{ row.items.0.number }}.</span>
+      {% if show_points %}<span class="pts">({{ row.items.0.points }} b.)</span>{% endif %}
+      {{ row.items.0.html|safe }}
+    </div>
+    {% for _ in row.answer_line_range %}
+    <div class="answer-line"></div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="row compact-row" style="min-height:{{ row.height_mm }}mm">
+    {% for item in row.items %}
+    <div class="cell" style="width:{{ col_width_pct }}%">
+      <span class="num">{{ item.number }}.</span>
+      {% if show_points %}<span class="pts">({{ item.points }} b.)</span>{% endif %}
+      {{ item.html|safe }}
+      &nbsp;=&nbsp;<span class="eq-blank"></span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endfor %}

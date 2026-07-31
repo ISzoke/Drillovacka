@@ -42,7 +42,21 @@ const settings = ref({
   show_header: true,
   header_text: '',
   spacing: RECOMMENDED_SPACING,
+  columns: 2,
+  default_answer_lines: 4,
 });
+
+// answer_lines per item: null = auto (podľa typu), 0 = kompaktné (bez riadkov), 1-6 = počet riadkov
+const ANSWER_LINES_OPTIONS = [
+  { value: null, label: 'Auto (podľa typu)' },
+  { value: 0, label: 'Kompaktné (=___)' },
+  { value: 1, label: '1 riadok' },
+  { value: 2, label: '2 riadky' },
+  { value: 3, label: '3 riadky' },
+  { value: 4, label: '4 riadky' },
+  { value: 5, label: '5 riadkov' },
+  { value: 6, label: '6 riadkov' },
+];
 
 const generating = ref(false);
 
@@ -95,13 +109,39 @@ const filteredTasks = computed(() => {
   return myTasks.value.filter(t => t.name.toLowerCase().includes(q));
 });
 
-// Rough page estimate: 2-col rows, row height scales with spacing.
+// Rough page estimate: mirrors the backend's row/type/column model closely
+// enough for a "~N strán" label — exact pagination stays server-authoritative.
 const estimatedPages = computed(() => {
   const n = items.value.length;
   if (!n) return 0;
-  const rowH = 13 * (settings.value.spacing / RECOMMENDED_SPACING);
-  const avail = settings.value.per_page === 2 ? 110 : 240;
-  const sheetPages = Math.max(1, Math.ceil((Math.ceil(n / 2) * rowH + 25) / avail));
+  const spacingFactor = settings.value.spacing / RECOMMENDED_SPACING;
+  const compact = settings.value.per_page === 2;
+  const rowH = (compact ? 9 : 13) * spacingFactor;
+  const lineH = (compact ? 5 : 6) * spacingFactor;
+  const headerH = (compact ? 5 : 6) * spacingFactor;
+
+  let heightMm = 0;
+  let compactCount = 0;
+  const flushCompact = () => {
+    if (compactCount > 0) {
+      heightMm += rowH * Math.ceil(compactCount / settings.value.columns);
+      compactCount = 0;
+    }
+  };
+  for (const it of items.value) {
+    const isWide = it.answer_lines != null ? it.answer_lines > 0 : (it.input_type === 'WORD' || it.input_type === 'VAR');
+    if (isWide) {
+      flushCompact();
+      const lines = it.answer_lines != null && it.answer_lines > 0 ? it.answer_lines : settings.value.default_answer_lines;
+      heightMm += headerH + lines * lineH;
+    } else {
+      compactCount += 1;
+    }
+  }
+  flushCompact();
+
+  const avail = compact ? 135 : 250;
+  const sheetPages = Math.max(1, Math.ceil((heightMm + 25) / avail));
   let pages = settings.value.groups * sheetPages;
   if (settings.value.per_page === 2) pages = Math.ceil(pages / 2);
   if (settings.value.cover_page) pages += 1;
@@ -126,6 +166,8 @@ const toItem = (ex, dot = DOTS[0]) => ({
   id: ex.id,
   example: ex.example,
   answer: ex.answer,
+  input_type: ex.input_type || 'INLINE',
+  answer_lines: null,
   points: 1,
   dot,
 });
@@ -219,6 +261,8 @@ const generateExamples = async () => {
       id: null,
       example: e.example,
       answer: e.answer,
+      input_type: e.input_type || 'INLINE',
+      answer_lines: null,
       points: 1,
       dot: 'bg-secondary',
     }));
@@ -271,11 +315,14 @@ const buildPayload = () => ({
   show_header: settings.value.show_header,
   header_text: settings.value.header_text,
   spacing: settings.value.spacing,
+  columns: settings.value.columns,
+  default_answer_lines: settings.value.default_answer_lines,
   items: items.value.map(it => {
     const points = Number.isFinite(Number(it.points)) ? Number(it.points) : 1;
+    const base = { points, input_type: it.input_type || 'INLINE', answer_lines: it.answer_lines };
     return it.id
-      ? { example_id: it.id, points }
-      : { example: it.example, answer: it.answer, points };
+      ? { example_id: it.id, ...base }
+      : { example: it.example, answer: it.answer, ...base };
   }),
 });
 
@@ -508,6 +555,17 @@ const generatePdf = async (openInTab) => {
                 {{ it.example }}
                 <span class="text-secondary font-semibold">= {{ it.answer }}</span>
               </div>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-400 flex-shrink-0">
+                {{ it.input_type || 'INLINE' }}
+              </span>
+              <select v-model="it.answer_lines" title="Miesto na odpoveď"
+                      class="flex-shrink-0 px-1.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600
+                             bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px]
+                             focus:outline-none focus:ring-1 focus:ring-secondary">
+                <option v-for="opt in ANSWER_LINES_OPTIONS" :key="String(opt.value)" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
               <label v-if="settings.show_points" class="flex items-center gap-1 text-[11px] text-gray-400 flex-shrink-0">
                 <input v-model.number="it.points" type="number" min="0" step="0.5"
                        class="w-14 px-1.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600
@@ -738,9 +796,30 @@ const generatePdf = async (openInTab) => {
               <p v-if="settings.groups > 1" class="text-[11px] text-gray-400">
                 Skupina A má tvoje poradie, ďalšie skupiny majú premiešané poradie príkladov.
               </p>
-              <p v-if="settings.per_page === 2 && items.length > 12" class="text-[11px] text-amber-500">
-                Pri 2 písomkách na A4 sa zmestí len ~12 krátkych príkladov — dlhší zvyšok sa odreže.
+              <p v-if="settings.per_page === 2 && items.length > 12" class="text-[11px] text-gray-400">
+                Pri 2 písomkách na A4 sa dlhšia sada rozdelí na viac strán (tá istá polovica pokračuje na ďalšej strane) — nič sa neoreže.
               </p>
+
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <label class="block">
+                  <span class="text-[11px] font-semibold text-gray-400">Stĺpce (INLINE/FRAC)</span>
+                  <select v-model.number="settings.columns"
+                          class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                                 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
+                                 focus:outline-none focus:ring-1 focus:ring-secondary">
+                    <option v-for="n in [1,2,3,4]" :key="n" :value="n">{{ n }}</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="text-[11px] font-semibold text-gray-400">Riadky (WORD/VAR)</span>
+                  <select v-model.number="settings.default_answer_lines"
+                          class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
+                                 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
+                                 focus:outline-none focus:ring-1 focus:ring-secondary">
+                    <option v-for="n in [2,3,4,5,6]" :key="n" :value="n">{{ n }}</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <hr class="border-slate-100 dark:border-slate-700" />

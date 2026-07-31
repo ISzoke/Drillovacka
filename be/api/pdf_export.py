@@ -178,6 +178,106 @@ def _plain_len(latex_text):
 
 
 # ---------------------------------------------------------------------------
+# Row / chunk layout engine
+#
+# Items are packed into display "rows" (up to `columns` compact items side
+# by side, or one wide item with its answer-line block per row), each with
+# an estimated height in mm. For the "2 per A4" layout each sheet's rows are
+# then split into height-bounded chunks so a half never silently overflows a
+# fixed box (the old bug) — instead a sheet that doesn't fit continues onto
+# the next physical page in the same half-position (top stays top, bottom
+# stays bottom), so cutting a duplex-printed stack in half yields a coherent
+# multi-page booklet per skupina.
+# ---------------------------------------------------------------------------
+
+_HALF_BUDGET_MM = 135
+_HALF_HEAD_RESERVE_MM = 26       # header + meta (+ note) reserved on chunk 0 of a half
+_HALF_CONT_HEAD_RESERVE_MM = 12  # lighter header reserved on a continuation half
+
+
+def _resolve_wide(input_type, plain_len, answer_lines):
+    """An item is 'wide' (its own full-width row with an answer-line block)
+    if its type needs room, the teacher forced it via an explicit override,
+    or the text is too long to sit comfortably in a compact column."""
+    if answer_lines is not None:
+        return answer_lines > 0
+    if input_type in ('WORD', 'VAR'):
+        return True
+    return plain_len > 45
+
+
+def _row_metrics(compact, spacing_factor):
+    base = 9 if compact else 13
+    return {
+        'row_h': round(base * spacing_factor, 1),
+        'header_h': round((5 if compact else 6) * spacing_factor, 1),
+        'line_h': round((5 if compact else 6) * spacing_factor, 1),
+        'gap': round(2 * spacing_factor, 2),
+    }
+
+
+def _build_rows(built_items, columns, metrics, default_answer_lines):
+    rows = []
+    bucket = []
+
+    def flush_bucket():
+        if bucket:
+            rows.append({
+                'wide': False,
+                'items': list(bucket),
+                'height_mm': round(metrics['row_h'] + metrics['gap'], 1),
+            })
+            bucket.clear()
+
+    for item in built_items:
+        if item['wide']:
+            flush_bucket()
+            lines = item['answer_lines'] if item['answer_lines'] is not None else default_answer_lines
+            rows.append({
+                'wide': True,
+                'items': [item],
+                'height_mm': round(metrics['header_h'] + lines * metrics['line_h'] + metrics['gap'], 1),
+                'answer_line_range': range(lines),
+            })
+        else:
+            bucket.append(item)
+            if len(bucket) >= columns:
+                flush_bucket()
+    flush_bucket()
+    return rows
+
+
+def _chunk_rows(rows, budget_mm):
+    """Split a row list into height-bounded batches (one per half-page)."""
+    if not rows:
+        return [[]]
+    chunks = []
+    current = []
+    used = _HALF_HEAD_RESERVE_MM
+    for row in rows:
+        if current and used + row['height_mm'] > budget_mm:
+            chunks.append(current)
+            current = []
+            used = _HALF_CONT_HEAD_RESERVE_MM
+        current.append(row)
+        used += row['height_mm']
+    chunks.append(current)
+    return chunks
+
+
+def _sheet_half_ctx(sheet, chunks, idx):
+    if idx >= len(chunks):
+        return None
+    return {
+        'group': sheet['group'],
+        'rows': chunks[idx],
+        'is_continuation': idx > 0,
+        'chunk_number': idx + 1,
+        'chunk_count': len(chunks),
+    }
+
+
+# ---------------------------------------------------------------------------
 # View
 # ---------------------------------------------------------------------------
 
@@ -213,14 +313,23 @@ def teacher_print_test(request):
     try:
         for it in items:
             points = float(1 if it.get('points') in (None, '') else it['points'])
+            input_type = it.get('input_type')
+            input_type = str(input_type).upper() if input_type else None
+            answer_lines = it.get('answer_lines')
+            answer_lines = None if answer_lines in (None, '') else max(0, min(6, int(answer_lines)))
             if it.get('example_id') is not None:
-                entries.append({'id': int(it['example_id']), 'points': points})
+                entries.append({
+                    'id': int(it['example_id']), 'points': points,
+                    'input_type': input_type, 'answer_lines': answer_lines,
+                })
             else:
                 entries.append({
                     'id': None,
                     'example': str(it['example']),
                     'answer': str(it.get('answer') or ''),
                     'points': points,
+                    'input_type': input_type,
+                    'answer_lines': answer_lines,
                 })
     except (KeyError, TypeError, ValueError):
         return Response(
@@ -256,6 +365,15 @@ def teacher_print_test(request):
         groups = 1
     per_page = 2 if str(data.get('per_page', 1)) == '2' else 1
 
+    try:
+        columns = max(1, min(4, int(data.get('columns', 2))))
+    except (TypeError, ValueError):
+        columns = 2
+    try:
+        default_answer_lines = max(1, min(6, int(data.get('default_answer_lines', 4))))
+    except (TypeError, ValueError):
+        default_answer_lines = 4
+
     # Vertical spacing between examples: 8–64 "px", 24 = the original layout.
     try:
         spacing = max(8, min(64, int(data.get('spacing', 24))))
@@ -269,20 +387,28 @@ def teacher_print_test(request):
             answer = ex.answers.first()
             text = ex.example or ''
             answer_text = answer.answer if answer else ''
+            input_type = entry.get('input_type') or ex.input_type or 'INLINE'
         else:
             text = entry['example']
             answer_text = entry['answer']
-        # the sheet draws its own "= ______" answer blank
+            input_type = entry.get('input_type') or 'INLINE'
+        # the sheet draws its own "= ______" answer blank / answer lines
         text = re.sub(r'=\s*\?\s*$', '', text).rstrip()
+        plain_len = _plain_len(text)
+        answer_lines = entry.get('answer_lines')
         return {
             'number': number,
             'points': _fmt_points(entry['points']),
             'html': latex_to_html(text),
             'answer_html': latex_to_html(answer_text),
-            'wide': _plain_len(text) > 45,
+            'input_type': input_type,
+            'answer_lines': answer_lines,
+            'wide': _resolve_wide(input_type, plain_len, answer_lines),
         }
 
     total_points = _fmt_points(sum(e['points'] for e in entries))
+    compact = per_page == 2
+    metrics = _row_metrics(compact, spacing_factor)
 
     # Group A keeps the teacher's order; B–D are deterministic reshuffles.
     shuffle_seed = [e['id'] if e['id'] is not None else e.get('example', '') for e in entries]
@@ -291,20 +417,35 @@ def teacher_print_test(request):
         ordered = list(entries)
         if gi > 0:
             random.Random(f'{sorted(map(str, shuffle_seed))}-{gi}').shuffle(ordered)
+        built_items = [build_item(e, n) for n, e in enumerate(ordered, start=1)]
         sheets.append({
             'group': _GROUP_LETTERS[gi] if groups > 1 else '',
-            'items': [build_item(e, n) for n, e in enumerate(ordered, start=1)],
+            'items': built_items,
+            'rows': _build_rows(built_items, columns, metrics, default_answer_lines),
         })
 
+    # per_page == 1: WeasyPrint's natural page flow already spills a sheet's
+    # rows across as many physical pages as needed (no fixed-height container
+    # involved), so no Python-side chunking is required there.
+    pages_full = []
+    pages_half = []
     if per_page == 2:
-        pages = []
         for i in range(0, len(sheets), 2):
             pair = sheets[i:i + 2]
             if len(pair) == 1:
                 pair = [pair[0], pair[0]]
-            pages.append(pair)
+            top_sheet, bottom_sheet = pair
+            top_chunks = _chunk_rows(top_sheet['rows'], _HALF_BUDGET_MM)
+            bottom_chunks = _chunk_rows(bottom_sheet['rows'], _HALF_BUDGET_MM)
+            for pi in range(max(len(top_chunks), len(bottom_chunks))):
+                pages_half.append({
+                    'halves': [
+                        _sheet_half_ctx(top_sheet, top_chunks, pi),
+                        _sheet_half_ctx(bottom_sheet, bottom_chunks, pi),
+                    ],
+                })
     else:
-        pages = [[sheet] for sheet in sheets]
+        pages_full = [{'group': s['group'], 'rows': s['rows']} for s in sheets]
 
     key_sheets = []
     if answer_key:
@@ -324,18 +465,17 @@ def teacher_print_test(request):
         'show_points': show_points,
         'total_points': total_points,
         'per_page': per_page,
-        'pages': pages,
+        'pages_full': pages_full,
+        'pages_half': pages_half,
         'key_sheets': key_sheets,
         'has_groups': groups > 1,
         'cover_page': cover_page,
         'show_header': show_header,
         'header_text': header_text,
-        'item_pad_mm': round(2 * spacing_factor, 2),
-        'item_minh_mm': round(13 * spacing_factor, 1),
-        'item_minh_wide_mm': round(26 * spacing_factor, 1),
-        'compact_pad_mm': round(1.2 * spacing_factor, 2),
-        'compact_minh_mm': round(9 * spacing_factor, 1),
-        'compact_minh_wide_mm': round(18 * spacing_factor, 1),
+        'columns': columns,
+        'col_width_pct': round(100.0 / columns, 2),
+        'line_h_mm': metrics['line_h'],
+        'row_gap_mm': metrics['gap'],
     }
     html = render_to_string('pdf/test_sheet.html', context)
 
