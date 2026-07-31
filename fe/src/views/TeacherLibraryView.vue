@@ -53,9 +53,9 @@ const filteredTasks = computed(() => {
       title="Moja knižnica"
       subtitle="Vlastné sady, ktoré vieš voľne upravovať, mazať a preskladať.">
       <template #action>
-        <router-link :to="{ name: 'teacher-create-task-standalone' }" title="Vytvoriť novú sadu"
-                     class="w-9 h-9 rounded-full bg-secondary/10 text-secondary flex items-center justify-center hover:bg-secondary/20">
-          <TeacherIcon name="plus" :size="18" />
+        <router-link :to="{ name: 'teacher-create-task-standalone' }"
+                     class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-white text-xs font-semibold hover:bg-blue-600">
+          <TeacherIcon name="plus" :size="14" /> Vytvoriť novú sadu
         </router-link>
       </template>
     </TeacherPageHeader>
@@ -76,7 +76,7 @@ const filteredTasks = computed(() => {
 
     <div v-if="loadingTasks" class="flex justify-center py-6"><Spinner /></div>
 
-    <div v-else-if="!myTasks.length" class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 text-center">
+    <div v-else-if="!myTasks.length && !unassignedCount" class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 text-center">
       <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mx-auto mb-3">
         <TeacherIcon name="library" :size="22" />
       </div>
@@ -85,7 +85,7 @@ const filteredTasks = computed(() => {
     </div>
 
     <div v-else class="grid sm:grid-cols-2 gap-3">
-      <router-link :to="{ name: 'teacher-library-unassigned' }"
+      <router-link v-if="unassignedCount" :to="{ name: 'teacher-library-unassigned' }"
                    class="block px-4 py-3.5 bg-white dark:bg-slate-800 rounded-2xl
                           border border-dashed border-slate-300 dark:border-slate-600 hover:border-secondary
                           hover:-translate-y-0.5 transition-all">
