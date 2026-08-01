@@ -929,16 +929,19 @@ const generatePdf = async (openInTab) => {
           <TeacherIcon name="download" :size="16" />
           {{ generating ? 'Sťahujem…' : 'Stiahnuť PDF' }}
         </button>
-        <button v-if="items.length" @click="scrollToPreview"
-                class="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium
-                       text-secondary hover:text-blue-600 transition-colors">
-          Pozrieť živý náhľad
-          <TeacherIcon name="chevronDown" :size="12" class="animate-bounce" />
-        </button>
         <p v-if="!items.length" class="text-xs text-center text-gray-400">
           Najprv pridajte aspoň jeden príklad
         </p>
       </div>
     </div>
+
+    <!-- Floating scroll-to-preview button, fixed to the bottom-center of the viewport -->
+    <button v-if="items.length" @click="scrollToPreview"
+            class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2.5
+                   bg-slate-800 dark:bg-secondary text-white rounded-full shadow-lg text-sm font-medium
+                   hover:bg-slate-700 dark:hover:bg-blue-600 transition-colors">
+      Živý náhľad
+      <TeacherIcon name="chevronDown" :size="14" class="animate-bounce" />
+    </button>
   </div>
 </template>
