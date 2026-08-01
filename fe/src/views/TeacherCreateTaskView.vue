@@ -1,9 +1,12 @@
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, reactive, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useRouter } from 'vue-router';
-import { teacherGenerateTaskPreview, teacherSaveTask, assignTaskToClassroom } from '@/api/apiClient';
+import {
+  teacherGenerateTaskPreview, teacherSaveTask, assignTaskToClassroom,
+  browseTasks, getTaskExamples, copyTaskForTeacher,
+} from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
 import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
@@ -14,7 +17,18 @@ const authStore = useAuthStore();
 const toastStore = useToastStore();
 const router = useRouter();
 
-const mode = ref(null); // null | 'manual' | 'ai-form' | 'ai'
+const mode = ref(null); // null | 'manual' | 'ai-form' | 'ai' | 'browse'
+
+// Browse Aritmation library state
+const browseSearch = ref('');
+const browseGrade = ref('');
+const browseLoading = ref(false);
+const browseResults = ref([]);
+const browseCopyingId = ref(null);
+const expandedBrowseId = ref(null);
+const browsePreview = reactive({});
+const browsePreviewLoading = reactive({});
+let browseSearchDebounce = null;
 
 // AI generation state
 const aiType = ref('arithmetic');
@@ -56,6 +70,58 @@ const startManual = () => {
   taskName.value = '';
   taskGrade.value = '';
   examples.value = [{ example: '', input_type: 'INLINE', answer: '' }];
+};
+
+const startBrowse = () => {
+  mode.value = 'browse';
+  loadBrowse();
+};
+
+const loadBrowse = async () => {
+  browseLoading.value = true;
+  try {
+    browseResults.value = await browseTasks(browseGrade.value || null, browseSearch.value) || [];
+  } catch (e) {
+    browseResults.value = [];
+  }
+  browseLoading.value = false;
+};
+
+watch(browseGrade, loadBrowse);
+watch(browseSearch, () => {
+  clearTimeout(browseSearchDebounce);
+  browseSearchDebounce = setTimeout(loadBrowse, 300);
+});
+
+const toggleBrowsePreview = async (task) => {
+  const key = task.task_id;
+  expandedBrowseId.value = expandedBrowseId.value === key ? null : key;
+  if (expandedBrowseId.value === key && browsePreview[key] === undefined) {
+    browsePreviewLoading[key] = true;
+    try {
+      browsePreview[key] = await getTaskExamples(key) || [];
+    } catch (e) {
+      browsePreview[key] = [];
+    }
+    browsePreviewLoading[key] = false;
+  }
+};
+
+const copyFromBrowse = async (task) => {
+  browseCopyingId.value = task.task_id;
+  try {
+    const result = await copyTaskForTeacher(authStore.id, task.task_id);
+    if (props.classroomId) {
+      await assignTaskToClassroom(props.classroomId, authStore.id, result.task_id, false, null);
+    }
+    toastStore.addToast({ message: 'Sada skopírovaná do tvojej knižnice.', type: 'success', visible: true });
+    router.push(props.classroomId
+      ? { name: 'teacher-edit-task', params: { classroomId: props.classroomId, taskId: result.task_id } }
+      : { name: 'teacher-edit-task-standalone', params: { taskId: result.task_id } });
+  } catch (e) {
+    toastStore.addToast({ message: 'Chyba pri kopírovaní sady.', type: 'error', visible: true });
+  }
+  browseCopyingId.value = null;
 };
 
 const addExample = () => {
@@ -161,7 +227,7 @@ const save = async () => {
       title="Vytvoriť novú sadu" />
 
     <!-- ── Mode selection ────────────────────────────────────────────────────── -->
-    <div v-if="!hasPreview && mode === null" class="grid sm:grid-cols-2 gap-4">
+    <div v-if="!hasPreview && mode === null" class="grid sm:grid-cols-3 gap-4">
       <button @click="startManual"
               class="p-6 bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700
                      border-b-[6px] border-b-slate-300 dark:border-b-slate-600
@@ -182,6 +248,81 @@ const save = async () => {
         </div>
         <div class="font-bold text-primary dark:text-white text-lg">Generovať pomocou AI</div>
         <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Opíš čo chceš a Gemini vygeneruje príklady.</div>
+      </button>
+
+      <button @click="startBrowse"
+              class="p-6 bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700
+                     border-b-[6px] border-b-slate-300 dark:border-b-slate-600
+                     hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 transition-all text-left">
+        <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-3">
+          <TeacherIcon name="library" :size="20" />
+        </div>
+        <div class="font-bold text-primary dark:text-white text-lg">Z Aritmation knižnice</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Skopíruj hotovú sadu z appky a uprav si ju.</div>
+      </button>
+    </div>
+
+    <!-- ── Browse Aritmation library ──────────────────────────────────────────── -->
+    <div v-else-if="mode === 'browse'" class="space-y-4">
+      <div class="flex gap-3">
+        <input v-model="browseSearch" type="text" placeholder="Hľadať sadu podľa názvu..."
+               class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600
+                      bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
+                      focus:outline-none focus:ring-2 focus:ring-secondary" />
+        <select v-model="browseGrade"
+                class="w-28 px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600
+                       bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
+                       focus:outline-none focus:ring-2 focus:ring-secondary">
+          <option value="">Ročník</option>
+          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. roč.</option>
+        </select>
+      </div>
+
+      <div v-if="browseLoading" class="flex justify-center py-10"><Spinner /></div>
+
+      <div v-else-if="!browseResults.length" class="text-sm text-gray-400 text-center py-10">
+        Žiadne sady nenájdené.
+      </div>
+
+      <div v-else class="space-y-2">
+        <div v-for="task in browseResults" :key="task.task_id"
+             class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30"
+               @click="toggleBrowsePreview(task)">
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-slate-800 dark:text-slate-100 text-sm truncate">{{ task.task_name }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">
+                {{ task.example_count ?? 0 }} príkladov
+                <span v-if="task.grade_levels?.length"> · {{ task.grade_levels.join(', ') }}. roč.</span>
+              </div>
+            </div>
+            <button @click.stop="copyFromBrowse(task)" :disabled="browseCopyingId === task.task_id"
+                    class="flex-shrink-0 text-xs px-3 py-1.5 bg-secondary text-white rounded-lg
+                           hover:bg-blue-600 transition-colors disabled:opacity-50 font-medium">
+              {{ browseCopyingId === task.task_id ? '...' : 'Vytvoriť kópiu' }}
+            </button>
+          </div>
+
+          <div v-if="expandedBrowseId === task.task_id"
+               class="border-t border-slate-100 dark:border-slate-700 px-4 py-3 bg-slate-50 dark:bg-slate-900/40">
+            <div v-if="browsePreviewLoading[task.task_id]" class="flex justify-center py-3"><Spinner /></div>
+            <div v-else-if="!browsePreview[task.task_id]?.length" class="text-xs text-gray-400 text-center py-2">
+              Žiadne príklady.
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <span v-for="ex in browsePreview[task.task_id]" :key="ex.id"
+                    class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200
+                           dark:border-slate-700 rounded-lg text-xs font-mono text-slate-700 dark:text-slate-300">
+                {{ ex.example }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button @click="mode = null"
+              class="px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 text-sm">
+        Späť
       </button>
     </div>
 
