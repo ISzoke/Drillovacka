@@ -30,6 +30,10 @@ const unattachedOpen = ref(false);
 const items = ref([]);
 let itemKey = 0;
 const expandedItemKey = ref(null);
+const previewSection = ref(null);
+const scrollToPreview = () => {
+  previewSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 const settings = ref({
   title: 'Písomná práca',
@@ -707,7 +711,8 @@ const generatePdf = async (openInTab) => {
         <!-- Live preview — exact same render as the PDF. Lives at the end of the
              left column (not full-width below the grid) so the sticky settings
              panel on the right keeps following alongside it while scrolling. -->
-        <div v-if="items.length" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div v-if="items.length" ref="previewSection"
+             class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Náhľad (presne ako v PDF)</p>
             <Spinner v-if="previewLoading" class="w-4 h-4" />
@@ -923,6 +928,12 @@ const generatePdf = async (openInTab) => {
                        font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
           <TeacherIcon name="download" :size="16" />
           {{ generating ? 'Sťahujem…' : 'Stiahnuť PDF' }}
+        </button>
+        <button v-if="items.length" @click="scrollToPreview"
+                class="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium
+                       text-secondary hover:text-blue-600 transition-colors">
+          Pozrieť živý náhľad
+          <TeacherIcon name="chevronDown" :size="12" class="animate-bounce" />
         </button>
         <p v-if="!items.length" class="text-xs text-center text-gray-400">
           Najprv pridajte aspoň jeden príklad
