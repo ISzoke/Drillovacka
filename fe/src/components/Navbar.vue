@@ -40,8 +40,11 @@ const ASR_BY_LANG = { en: 'en-US', cs: 'cs-CZ', sk: 'sk-SK' };
 function changeLanguage(lang) {
   langStore.setLanguage(lang);
   recorderStore.changeASRLanguage(ASR_BY_LANG[lang] || 'sk-SK');
-  
-  // Navigate to appropriate language route
+
+  // Logged-in users (student/teacher/admin) just switch language in place.
+  // Only anonymous visitors get redirected to the language-flavored home route.
+  if (isAuthenticated.value) return;
+
   if (lang === 'en') {
     router.push({ path: '/en' });
   } else if (lang === 'cs') {
