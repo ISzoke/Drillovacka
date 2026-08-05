@@ -138,6 +138,11 @@ const handleLogoClick = () => {
             <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('myData') }}</RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('contact') }}</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('logout') }}</button>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+            </div>
           </template>
 
           <!-- Teacher menu -->
@@ -156,6 +161,11 @@ const handleLogoClick = () => {
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('contact') }}</RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('logout') }}</button>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+            </div>
           </template>
 
           <!-- Logged in user (student) -->
@@ -227,6 +237,11 @@ const handleLogoClick = () => {
             <RouterLink to="/analytics/my-data" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('myData') }}</RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('contact') }}</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ t('logout') }}</button>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+            </div>
           </template>
 
           <!-- Teacher menu (mobile) -->
@@ -242,6 +257,11 @@ const handleLogoClick = () => {
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('contact') }}</RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ t('logout') }}</button>
+            <div class="flex items-center gap-2">
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+            </div>
           </template>
 
           <!-- Logged in user (student) -->
