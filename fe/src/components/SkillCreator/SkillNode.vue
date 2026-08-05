@@ -9,8 +9,11 @@
 
 <script setup>
 import { ref, nextTick, onMounted } from 'vue';
-import { createSkill, getGradeLevels, updateSkillGradeLevels } from '@/api/apiClient'; 
+import { useI18n } from 'vue-i18n';
+import { createSkill, getGradeLevels, updateSkillGradeLevels } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
+
+const { t } = useI18n();
 
 const props = defineProps({
   skills: Array,
@@ -97,14 +100,14 @@ const saveGradeLevels = async (skillId) => {
     isEditingGrades.value[skillId] = false;
     
     toastStore.addToast({
-      message: 'Ročníky byly úspěšně aktualizovány',
+      message: t('gradesUpdated'),
       type: 'success',
       visible: true,
     });
   } catch (error) {
     console.error('Error updating grade levels:', error);
     toastStore.addToast({
-      message: 'Chyba při aktualizaci ročníků',
+      message: t('gradesUpdateError'),
       type: 'error',
       visible: true,
     });
@@ -138,7 +141,7 @@ const addSkill = async (parentSkill, isChild = false) => {
     const newSkill = await createSkill(newSkillName.value[parentSkill], parentSkill || null);
 
     toastStore.addToast({
-        message: `Dovednost ${newSkillName.value[parentSkill]} byla vytvořena`,
+        message: t('skillCreatedMessage', { name: newSkillName.value[parentSkill] }),
         type: 'success',
         visible: true,
     });
@@ -212,7 +215,7 @@ const removeChildSkill = (name, id) => {
           <button v-if="!isAddingChild[skill.id]"
             @click.stop="toggleGradeEdit(skill.id)"
             class="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500 text-white font-bold text-xs hover:bg-purple-600 shadow-md transition"
-            title="Upravit ročníky">
+            :title="t('editGrades')">
             <i class="fa-solid fa-graduation-cap"></i>
           </button>
 
@@ -234,7 +237,7 @@ const removeChildSkill = (name, id) => {
 
       <!-- Grade level editor -->
       <div v-if="isEditingGrades[skill.id]" class="ml-6 mt-2 p-3 bg-white border border-gray-300 rounded-lg shadow">
-        <h4 class="text-sm font-semibold text-gray-700 mb-2">Vyberte ročníky:</h4>
+        <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ t('skillGradeSelectHeading') }}</h4>
         <div class="flex flex-wrap gap-2 mb-3">
           <label v-for="grade in gradeLevels" :key="grade.id" class="flex items-center">
             <input 
@@ -250,12 +253,12 @@ const removeChildSkill = (name, id) => {
           <button 
             @click="saveGradeLevels(skill.id)"
             class="px-3 py-1 text-white bg-green-500 rounded-lg hover:bg-green-600 transition text-sm">
-            <i class="fa-solid fa-check mr-1"></i>Uložit
+            <i class="fa-solid fa-check mr-1"></i>{{ t('saveButtonLabel') }}
           </button>
-          <button 
+          <button
             @click="isEditingGrades[skill.id] = false"
             class="px-3 py-1 text-white bg-gray-500 rounded-lg hover:bg-gray-600 transition text-sm">
-            <i class="fa-solid fa-xmark mr-1"></i>Zrušit
+            <i class="fa-solid fa-xmark mr-1"></i>{{ t('cancel') }}
           </button>
         </div>
       </div>
@@ -266,7 +269,7 @@ const removeChildSkill = (name, id) => {
         <!--New skill name -->
         <input v-model="newSkillName[skill.id]" ref="childSkillInputs" v-focus
           :ref="el => childSkillInputs.value[skill.id] = el" @keyup.enter="addSkill(skill.id, true)"
-          placeholder="Název nové dovednosti"
+          :placeholder="t('newSkillNamePlaceholder')"
           class="border border-gray-300 rounded-lg px-3 py-1 text-sm w-1/3 focus:outline-none focus:ring-2 focus:ring-blue-300" />
 
         <!-- Confirm creating skill -->
@@ -294,7 +297,7 @@ const removeChildSkill = (name, id) => {
 
       <!--New skill name -->
       <input v-model="newSkillName[props.parent]" ref="newSkillInput" @keyup.enter="addSkill(props.parent, false)"
-        placeholder="Název nové dovednosti"
+        :placeholder="t('newSkillNamePlaceholder')"
         class="border border-gray-300 rounded-lg px-3 py-1 text-sm w-1/3 focus:outline-none focus:ring-2 focus:ring-blue-300" />
 
       <!-- Confirm creating skill -->

@@ -1,9 +1,11 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Spinner from '@/components/Spinner.vue';
 import { getGradeLevels, getSkillTree, bulkImportTasks } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
 
+const { t } = useI18n();
 const toastStore = useToastStore();
 
 const gradeLevels = ref([]);
@@ -124,13 +126,13 @@ const handleImport = async () => {
     const created = response.results.filter(r => r.status === 'created' || r.status === 'updated').length;
     const totalExamples = response.results.reduce((s, r) => s + (r.examples_added || 0), 0);
     toastStore.addToast({
-      message: `Import dokončený: ${created} taskov, ${totalExamples} príkladov`,
+      message: t('importCompletedMessage', { tasks: created, examples: totalExamples }),
       type: 'success',
       visible: true,
     });
   } catch (error) {
     toastStore.addToast({
-      message: typeof error === 'string' ? error : 'Import sa nepodaril',
+      message: typeof error === 'string' ? error : t('importFailedMessage'),
       type: 'error',
       visible: true,
     });
@@ -148,7 +150,7 @@ onMounted(async () => {
     gradeLevels.value = gradeData || [];
     skills.value = skillData || [];
   } catch {
-    toastStore.addToast({ message: 'Nepodarilo sa načítať dáta', type: 'error', visible: true });
+    toastStore.addToast({ message: t('loadDataFailedMessage'), type: 'error', visible: true });
   } finally {
     loading.value = false;
   }
@@ -159,20 +161,19 @@ onMounted(async () => {
   <div class="max-w-5xl mx-auto px-4 pt-12 pb-16">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <h1 class="text-4xl font-bold text-primary">Hromadný import</h1>
+        <h1 class="text-4xl font-bold text-primary">{{ t('bulkImportTitle') }}</h1>
         <p class="mt-2 text-slate-600">
-          Vlož JSON s taskami a príkladmi. Ak každý task obsahuje <code>skill_ids</code> a <code>grade_ids</code>,
-          selektory nižšie sú voliteľné záloha.
+          {{ t('bulkImportIntroBefore') }} <code>skill_ids</code> {{ t('and') }} <code>grade_ids</code>{{ t('bulkImportIntroAfter') }}
         </p>
       </div>
       <div class="flex gap-3">
         <RouterLink to="/tasks"
           class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">
-          Všetky tasky
+          {{ t('allTasksLink') }}
         </RouterLink>
         <RouterLink to="/tasks/grades"
           class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50">
-          Podľa ročníka
+          {{ t('byGradeLink') }}
         </RouterLink>
       </div>
     </div>
@@ -183,10 +184,10 @@ onMounted(async () => {
 
       <!-- JSON input FIRST -->
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900">JSON dáta</h2>
+        <h2 class="text-lg font-bold text-slate-900">{{ t('jsonDataHeading') }}</h2>
         <p class="text-sm text-slate-500 mb-3">
-          Podporuje formát <code>{"tasks": [...]}</code> aj priame pole <code>[...]</code>.
-          Každý task môže mať vlastné <code>skill_ids</code> a <code>grade_ids</code> — vtedy selektory nižšie nie sú potrebné.
+          {{ t('bulkImportFormatBefore') }} <code>{"tasks": [...]}</code> {{ t('bulkImportFormatMid') }} <code>[...]</code>.
+          {{ t('bulkImportFormatFieldsBefore') }} <code>skill_ids</code> {{ t('and') }} <code>grade_ids</code> {{ t('bulkImportFormatFieldsAfter') }}
         </p>
         <textarea
           v-model="jsonInput"
@@ -196,13 +197,13 @@ onMounted(async () => {
         ></textarea>
 
         <div v-if="jsonError" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
-          JSON chyba: {{ jsonError }}
+          {{ t('jsonErrorLabel') }} {{ jsonError }}
         </div>
         <div v-else-if="parsedTasks" class="mt-2 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2 text-sm text-emerald-800">
-          ✓ Rozpoznaných <strong>{{ previewCount.tasks }}</strong> taskov
-          s <strong>{{ previewCount.examples }}</strong> príkladmi
+          ✓ {{ t('recognizedTasksBefore') }} <strong>{{ previewCount.tasks }}</strong> {{ t('recognizedTasksMid') }}
+          <strong>{{ previewCount.examples }}</strong> {{ t('recognizedTasksAfter') }}
           <span v-if="allTasksSelfSufficient" class="ml-2 text-emerald-600 font-semibold">
-            · skill_ids a grade_ids sú v JSON ✓
+            · {{ t('skillGradeIdsInJsonNote') }}
           </span>
         </div>
       </section>
@@ -210,11 +211,11 @@ onMounted(async () => {
       <!-- Fallback: Leaf skills selector -->
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">
-          Záložné zručnosti
-          <span class="ml-2 text-sm font-normal text-slate-400">(použijú sa ak task v JSON nemá skill_ids)</span>
+          {{ t('fallbackSkillsHeading') }}
+          <span class="ml-2 text-sm font-normal text-slate-400">{{ t('fallbackSkillsHint') }}</span>
         </h2>
         <p class="text-sm text-slate-500 mb-3">
-          Zobrazené sú len leaf skills (bez podskills).
+          {{ t('leafSkillsOnlyNote') }}
         </p>
         <div class="flex flex-wrap gap-2">
           <button
@@ -232,15 +233,15 @@ onMounted(async () => {
         </div>
         <p v-if="!allTasksSelfSufficient && selectedSkillIds.length === 0"
            class="mt-2 text-sm text-amber-600 font-medium">
-          Niektoré tasky v JSON nemajú skill_ids — vyber záložnú zručnosť
+          {{ t('missingSkillIdsWarning') }}
         </p>
       </section>
 
       <!-- Fallback: Grade selector -->
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">
-          Záložné ročníky
-          <span class="ml-2 text-sm font-normal text-slate-400">(použijú sa ak task v JSON nemá grade_ids)</span>
+          {{ t('fallbackGradesHeading') }}
+          <span class="ml-2 text-sm font-normal text-slate-400">{{ t('fallbackGradesHint') }}</span>
         </h2>
         <div class="flex flex-wrap gap-2 mt-3">
           <button
@@ -253,7 +254,7 @@ onMounted(async () => {
               ? 'border-primary bg-primary text-white shadow'
               : 'border-slate-300 bg-white text-slate-700 hover:border-primary hover:text-primary'"
           >
-            {{ grade.grade }}. ročník
+            {{ grade.grade }}. {{ t('grade') }}
           </button>
         </div>
       </section>
@@ -261,19 +262,19 @@ onMounted(async () => {
       <!-- Form type fallback -->
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">
-          Záložný typ tasku
-          <span class="ml-2 text-sm font-normal text-slate-400">(ak task v JSON nemá task_form)</span>
+          {{ t('fallbackTaskTypeHeading') }}
+          <span class="ml-2 text-sm font-normal text-slate-400">{{ t('fallbackTaskTypeHint') }}</span>
         </h2>
         <div class="flex gap-3 mt-3">
           <button type="button" @click="taskForm = 'classic'"
             class="rounded-lg border px-4 py-2 text-sm font-semibold transition"
             :class="taskForm === 'classic' ? 'border-primary bg-primary text-white' : 'border-slate-300 bg-white text-slate-700'">
-            Classic
+            {{ t('taskFormClassicLabel') }}
           </button>
           <button type="button" @click="taskForm = 'word-problem'"
             class="rounded-lg border px-4 py-2 text-sm font-semibold transition"
             :class="taskForm === 'word-problem' ? 'border-primary bg-primary text-white' : 'border-slate-300 bg-white text-slate-700'">
-            Word Problem
+            {{ t('taskFormWordProblemLabel') }}
           </button>
         </div>
       </section>
@@ -286,17 +287,17 @@ onMounted(async () => {
           @click="handleImport"
           class="rounded-xl bg-green-600 px-6 py-3 text-lg font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          {{ importing ? 'Importujem...' : 'Importovať' }}
+          {{ importing ? t('importingEllipsis') : t('importButton') }}
         </button>
         <a :href="'/api/export/csv/?all_actions=true'" target="_blank"
           class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-lg font-bold text-slate-700 transition hover:bg-slate-50">
-          Stiahnuť CSV export
+          {{ t('downloadCsvExportButton') }}
         </a>
       </div>
 
       <!-- Results -->
       <section v-if="results" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900 mb-3">Výsledky importu</h2>
+        <h2 class="text-lg font-bold text-slate-900 mb-3">{{ t('importResultsHeading') }}</h2>
         <div class="space-y-2">
           <div
             v-for="(r, idx) in results"
@@ -306,12 +307,12 @@ onMounted(async () => {
               ? 'bg-amber-50 border border-amber-200 text-amber-800'
               : 'bg-emerald-50 border border-emerald-200 text-emerald-800'"
           >
-            <span class="font-bold">{{ r.task_name || '(bez názvu)' }}</span>
+            <span class="font-bold">{{ r.task_name || t('noNameFallback') }}</span>
             <span class="ml-auto">
-              <template v-if="r.status === 'skipped'">Preskočené: {{ r.reason }}</template>
+              <template v-if="r.status === 'skipped'">{{ t('skippedReasonLabel') }} {{ r.reason }}</template>
               <template v-else>
-                {{ r.status === 'created' ? 'Vytvorené' : 'Aktualizované' }}
-                — {{ r.examples_added }} príkladov
+                {{ r.status === 'created' ? t('createdLabel') : t('updatedLabel') }}
+                — {{ r.examples_added }} {{ t('taskSetsExamples') }}
               </template>
             </span>
           </div>

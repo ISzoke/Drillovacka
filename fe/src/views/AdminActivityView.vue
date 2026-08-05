@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue';
 import { getRecentActivity } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const activity = ref([]);
 const loading = ref(true);
@@ -28,11 +31,11 @@ const fmt = (iso) => {
 };
 
 const actionLabel = (a) => ({
-  evaluated: 'Vyhodnotené',
-  skipped: 'Preskočené',
-  terminated: 'Ukončené',
-  no_match: 'Bez zhody',
-  error: 'Chyba',
+  evaluated: t('evaluatedLabel'),
+  skipped: t('skipped'),
+  terminated: t('terminatedLabel'),
+  no_match: t('noMatchLabel'),
+  error: t('errorStatusLabel'),
 }[a] || a);
 
 const actionClass = (row) => {
@@ -44,19 +47,19 @@ const actionClass = (row) => {
 <template>
   <div class="pt-24 px-4 max-w-7xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">Analytika aktivity</h1>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t('activityAnalyticsTitle') }}</h1>
       <div class="flex items-center gap-3">
         <select v-model="limit" @change="load"
                 class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600
                        bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm">
-          <option :value="50">Posledných 50</option>
-          <option :value="100">Posledných 100</option>
-          <option :value="200">Posledných 200</option>
-          <option :value="500">Posledných 500</option>
+          <option :value="50">{{ t('activityLast50') }}</option>
+          <option :value="100">{{ t('activityLast100') }}</option>
+          <option :value="200">{{ t('activityLast200') }}</option>
+          <option :value="500">{{ t('activityLast500') }}</option>
         </select>
         <button @click="load"
                 class="px-4 py-1.5 bg-secondary text-white rounded-lg text-sm hover:bg-blue-600">
-          Obnoviť
+          {{ t('refresh') }}
         </button>
       </div>
     </div>
@@ -68,13 +71,13 @@ const actionClass = (row) => {
       <table class="w-full text-sm text-left">
         <thead class="border-b border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 uppercase">
           <tr>
-            <th class="px-4 py-3">Čas</th>
-            <th class="px-4 py-3">Používateľ</th>
-            <th class="px-4 py-3">Typ</th>
-            <th class="px-4 py-3">Príklad</th>
-            <th class="px-4 py-3">Výsledok</th>
-            <th class="px-4 py-3">Zdroj</th>
-            <th class="px-4 py-3">Čas (ms)</th>
+            <th class="px-4 py-3">{{ t('colTime') }}</th>
+            <th class="px-4 py-3">{{ t('colUser') }}</th>
+            <th class="px-4 py-3">{{ t('colType') }}</th>
+            <th class="px-4 py-3">{{ t('colExample') }}</th>
+            <th class="px-4 py-3">{{ t('colResult') }}</th>
+            <th class="px-4 py-3">{{ t('colSource') }}</th>
+            <th class="px-4 py-3">{{ t('colTimeMs') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -87,19 +90,19 @@ const actionClass = (row) => {
                 ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                 : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'"
                     class="text-xs px-2 py-0.5 rounded-full">
-                {{ row.user_type === 'student' ? 'Študent' : 'Anonym' }}
+                {{ row.user_type === 'student' ? t('studentOption') : t('anonymousBadge') }}
               </span>
             </td>
             <td class="px-4 py-2 text-slate-700 dark:text-slate-300 max-w-xs truncate">{{ row.example_text || '—' }}</td>
             <td class="px-4 py-2" :class="actionClass(row)">
-              {{ row.action === 'evaluated' ? (row.is_correct ? '✓ Správne' : '✗ Nesprávne') : actionLabel(row.action) }}
+              {{ row.action === 'evaluated' ? (row.is_correct ? `✓ ${t('correctLabel')}` : `✗ ${t('incorrectLabel')}`) : actionLabel(row.action) }}
             </td>
             <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ row.source }}</td>
             <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ row.duration ?? '—' }}</td>
           </tr>
         </tbody>
       </table>
-      <p v-if="activity.length === 0" class="text-center py-8 text-slate-400">Žiadna aktivita.</p>
+      <p v-if="activity.length === 0" class="text-center py-8 text-slate-400">{{ t('noActivityYet') }}</p>
     </div>
   </div>
 </template>

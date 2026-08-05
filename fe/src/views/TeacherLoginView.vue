@@ -1,8 +1,8 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 
 const email = ref('');
@@ -14,7 +14,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
 
-const d = dictionary[langStore.language];
+const { t } = useI18n();
 
 const handleLogin = async () => {
   emailError.value = '';
@@ -22,10 +22,10 @@ const handleLogin = async () => {
   authStore.errorMessage = '';
 
   if (!email.value.trim()) {
-    emailError.value = d.emailRequired || 'Zadajte email.';
+    emailError.value = t('emailRequired') || 'Zadajte email.';
   }
   if (!password.value.trim()) {
-    passwordError.value = d.passwordRequired || 'Zadajte heslo.';
+    passwordError.value = t('passwordRequired') || 'Zadajte heslo.';
   }
   if (emailError.value || passwordError.value) return;
 
@@ -38,26 +38,26 @@ const handleLogin = async () => {
     <!-- If already logged in as teacher -->
     <div v-if="authStore.isAuthenticated && authStore.role === 'teacher'"
          class="text-2xl text-primary text-center font-bold pt-12">
-      {{ d.teacherDashboardWelcome || 'Vitajte' }}, {{ authStore.name }}
+      {{ t('teacherDashboardWelcome') || 'Vitajte' }}, {{ authStore.name }}
       <div class="mt-4">
         <router-link :to="{ name: 'teacher-dashboard' }"
                      class="text-base text-secondary underline">
-          {{ d.goToDashboard || 'Prejsť na dashboard' }}
+          {{ t('goToDashboard') || 'Prejsť na dashboard' }}
         </router-link>
       </div>
     </div>
 
     <div v-else class="max-w-lg mx-auto p-6 bg-white dark:bg-slate-800 rounded-lg shadow-lg mb-4">
       <h2 class="text-2xl font-bold text-primary dark:text-slate-100 mb-8 text-center">
-        {{ d.teacherLogin || 'Prihlásenie učiteľa' }}
+        {{ t('teacherLogin') || 'Prihlásenie učiteľa' }}
       </h2>
 
       <form @submit.prevent="handleLogin">
         <div class="mb-4">
           <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email
+            {{ t('email') }}
           </label>
-          <input type="email" id="email" v-model="email" placeholder="Email"
+          <input type="email" id="email" v-model="email" :placeholder="t('email')"
                  class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md
                         bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
                         placeholder:text-slate-400 dark:placeholder:text-slate-500
@@ -67,9 +67,9 @@ const handleLogin = async () => {
 
         <div class="mb-4">
           <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ d.password || 'Heslo' }}
+            {{ t('password') || 'Heslo' }}
           </label>
-          <input type="password" id="password" v-model="password" :placeholder="d.password || 'Heslo'"
+          <input type="password" id="password" v-model="password" :placeholder="t('password') || 'Heslo'"
                  class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md
                         bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
                         placeholder:text-slate-400 dark:placeholder:text-slate-500
@@ -84,14 +84,14 @@ const handleLogin = async () => {
         <button type="submit"
                 class="w-full py-2 bg-secondary text-white font-semibold rounded-md
                        hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          {{ d.loginButton || 'Prihlásiť sa' }}
+          {{ t('loginButton') || 'Prihlásiť sa' }}
         </button>
       </form>
 
       <p class="text-center mt-4 text-sm text-gray-600 dark:text-gray-400">
-        {{ d.noAccountYet || 'Nemáte účet?' }}
+        {{ t('noAccountYet') || 'Nemáte účet?' }}
         <router-link :to="{ name: 'teacher-register' }" class="text-secondary underline">
-          {{ d.registerHere || 'Zaregistrujte sa' }}
+          {{ t('registerHere') || 'Zaregistrujte sa' }}
         </router-link>
       </p>
 
@@ -101,7 +101,7 @@ const handleLogin = async () => {
                   bg-amber-50 dark:bg-slate-700 text-amber-700 dark:text-amber-400
                   border-2 border-amber-400 dark:border-amber-500 rounded-md
                   hover:bg-amber-100 dark:hover:bg-slate-600 font-semibold transition-colors text-sm">
-          📖 {{ d.teacherManual || 'Manuál pre učiteľov' }}
+          📖 {{ t('teacherManual') || 'Manuál pre učiteľov' }}
         </a>
       </div>
     </div>

@@ -8,9 +8,9 @@
         <!-- Header -->
         <div class="mb-6">
           <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight mb-1">
-            {{ dictionary[langStore.language].leaderboard }} 🏆
+            {{ t('leaderboard') }} 🏆
           </h2>
-          <p class="text-slate-500 font-medium">{{ dictionary[langStore.language].topStudents }}</p>
+          <p class="text-slate-500 font-medium">{{ t('topStudents') }}</p>
         </div>
 
         <!-- Tabs -->
@@ -21,7 +21,7 @@
             :class="activeTab === 'xp'
               ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm border-2 border-slate-200 dark:border-slate-500 border-b-[4px]'
               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-600/50'">
-            Podľa XP
+            {{ t('byXpLabel') }}
           </button>
           <button
             @click="activeTab = 'grade'"
@@ -29,13 +29,13 @@
             :class="activeTab === 'grade'
               ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm border-2 border-slate-200 dark:border-slate-500 border-b-[4px]'
               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-600/50'">
-            Podľa ročníku
+            {{ t('byGradeLink') }}
           </button>
         </div>
 
         <!-- Grade picker -->
         <div v-if="activeTab === 'grade'" class="mb-6">
-          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Vyber ročník</p>
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">{{ t('pickGradeLabel') }}</p>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="g in 9"
@@ -57,12 +57,12 @@
 
         <!-- Empty -->
         <div v-else-if="currentList.length === 0" class="text-center py-16">
-          <p class="text-slate-500 text-lg font-bold mb-4">Zatiaľ tu nikto nie je. Buď prvý!</p>
+          <p class="text-slate-500 text-lg font-bold mb-4">{{ t('leaderboardEmptyText') }}</p>
           <router-link
             to="/"
             class="inline-block px-6 py-3 bg-violet-500 text-white rounded-2xl font-black text-sm
                    border-b-[4px] border-violet-700 hover:-translate-y-0.5 transition-transform">
-            {{ dictionary[langStore.language].practiceNow }}
+            {{ t('practiceNow') }}
           </router-link>
         </div>
 
@@ -155,12 +155,12 @@
                     </p>
                     <span v-if="isMe(entry)"
                       class="text-[10px] bg-violet-500 text-white px-2.5 py-1 rounded-lg font-black uppercase tracking-wider shadow-sm flex-shrink-0">
-                      To si ty!
+                      {{ t('thatsYouLabel') }}
                     </span>
                   </div>
                   <p class="text-sm font-bold text-slate-400">
-                    Lvl {{ entry.level }} · {{ entry.solved_count }} správne
-                    <span v-if="entry.current_streak > 1"> · {{ entry.current_streak }}d séria</span>
+                    Lvl {{ entry.level }} · {{ entry.solved_count }} {{ t('correctSuffix') }}
+                    <span v-if="entry.current_streak > 1"> · {{ entry.current_streak }}{{ t('dayStreakAbbrSuffix') }}</span>
                   </p>
                 </div>
                 <!-- XP -->
@@ -177,7 +177,7 @@
         <div
           v-if="activeTab === 'xp' && gamStore.rank && gamStore.rank > 20 && authStore.isAuthenticated && authStore.role !== 'admin'"
           class="mt-4 bg-violet-50 rounded-2xl p-4 border-[3px] border-violet-200 border-b-[6px] text-center">
-          <span class="text-slate-500 text-sm font-bold">{{ dictionary[langStore.language].myRank }}: </span>
+          <span class="text-slate-500 text-sm font-bold">{{ t('myRank') }}: </span>
           <span class="font-black text-violet-700 text-lg">#{{ gamStore.rank }}</span>
         </div>
 
@@ -187,16 +187,17 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { dictionary } from '@/utils/dictionary'
 import axios from 'axios'
 
 const authStore = useAuthStore()
 const gamStore = useGamificationStore()
 const langStore = useLanguageStore()
+const { t } = useI18n()
 
 const loading = ref(true)
 const gradeLoading = ref(false)

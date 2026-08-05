@@ -10,15 +10,12 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
-import { useLanguageStore } from '@/stores/useLanguageStore';
-import { dictionary } from '@/utils/dictionary';
+import { useI18n } from 'vue-i18n';
 
 const emit = defineEmits(['skip', 'register']);
 
 const router = useRouter();
-const langStore = useLanguageStore();
-
-const t = () => dictionary[langStore.language];
+const { t, tm } = useI18n();
 
 const onRegister = () => {
   emit('register');
@@ -55,17 +52,17 @@ const onSkip = () => {
 
         <!-- Title -->
         <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 mb-2 leading-tight">
-          {{ t().regPromptTitle }}
+          {{ t('regPromptTitle') }}
         </h2>
 
         <!-- Subtitle -->
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
-          {{ t().regPromptSubtitle }}
+          {{ t('regPromptSubtitle') }}
         </p>
 
         <!-- Benefits list -->
         <ul class="w-full text-left space-y-2 mb-6">
-          <li v-for="benefit in t().regPromptBenefits" :key="benefit"
+          <li v-for="benefit in tm('regPromptBenefits')" :key="benefit"
               class="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300">
             <i class="fa-solid fa-circle-check text-violet-500 dark:text-violet-400 mt-0.5 shrink-0"></i>
             <span>{{ benefit }}</span>
@@ -79,7 +76,7 @@ const onSkip = () => {
                  bg-violet-600 border-[3px] border-violet-700 border-b-[6px] border-b-violet-800
                  hover:brightness-110 active:translate-y-0.5 active:border-b-[3px]
                  transition-all select-none">
-          {{ t().regPromptCta }}
+          {{ t('regPromptCta') }}
         </button>
 
         <!-- Skip link -->
@@ -88,7 +85,7 @@ const onSkip = () => {
           class="mt-4 text-sm text-slate-400 dark:text-slate-500
                  hover:text-slate-600 dark:hover:text-slate-300
                  underline underline-offset-2 transition-colors">
-          {{ t().regPromptSkip }}
+          {{ t('regPromptSkip') }}
         </button>
 
       </div>

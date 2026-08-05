@@ -9,12 +9,14 @@
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getTasks, deleteTask, getGradeLevels, updateTaskGradeLevels } from '@/api/apiClient';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useRouter } from 'vue-router';
 import Spinner from '@/components/Spinner.vue';
 
+const { t } = useI18n();
 const tasks = ref([]);
 const gradeLevels = ref([]);
 const loading = ref(true);
@@ -96,13 +98,13 @@ const saveTaskGrades = async (taskIndex) => {
     const result = await updateTaskGradeLevels(task.task_id, selectedGrades.value[task.task_id] || []);
     task.grade_levels = result.grade_levels || [];
     toastStore.addToast({
-      message: `Ročníky pre sadu "${task.task_name}" boli uložené`,
+      message: t('gradesSavedForTaskMessage', { name: task.task_name }),
       type: 'success',
       visible: true,
     });
   } catch (error) {
     toastStore.addToast({
-      message: typeof error === 'string' ? error : 'Ročníky sa nepodarilo uložiť',
+      message: typeof error === 'string' ? error : t('gradesSaveFailedMessage'),
       type: 'error',
       visible: true,
     });
@@ -138,7 +140,7 @@ const handleDeleteTask = async () => {
     await deleteTask(taskToDelete.value);
 
     toastStore.addToast({
-      message: `Sada "${taskToDeleteName.value}" byla smazána`,
+      message: t('taskSetDeletedMessage', { name: taskToDeleteName.value }),
       type: 'success',
       visible: true,
     });
@@ -166,20 +168,20 @@ const handleEditTask = (taskIndex) => {
 
   <div class="max-w-5xl mx-auto p-4 pt-12">
     <div class="flex flex-col items-center justify-center">
-      <h1 class="text-4xl text-primary font-bold text-center">Sady příkladů</h1>
+      <h1 class="text-4xl text-primary font-bold text-center">{{ t('taskSetsTitle') }}</h1>
 
       <div class="my-4 flex flex-col sm:flex-row gap-3">
         <RouterLink to="/tasks/grades"
           class="bg-blue-600 hover:bg-blue-700 p-4 cursor-pointer text-xl font-bold text-white rounded-lg transition">
-          Správa podľa ročníka
+          {{ t('manageByGradeLink') }}
         </RouterLink>
         <RouterLink to="/sandbox"
           class="bg-green-500 hover:bg-green-700 p-4 cursor-pointer text-xl font-bold text-white rounded-lg transition">
-          Vytvořit novou sadu
+          {{ t('createNewSetLink') }}
         </RouterLink>
         <RouterLink to="/bulk-import"
           class="bg-sky-600 hover:bg-sky-700 p-4 cursor-pointer text-xl font-bold text-white rounded-lg transition">
-          Hromadný import
+          {{ t('bulkImportTitle') }}
         </RouterLink>
       </div>
 
@@ -208,26 +210,26 @@ const handleEditTask = (taskIndex) => {
           </div>
 
           <div class="mt-3">
-            <div class="text-sm font-semibold text-slate-700 mb-2">Priradené ročníky</div>
+            <div class="text-sm font-semibold text-slate-700 mb-2">{{ t('assignedGradesLabel') }}</div>
             <div class="flex flex-wrap gap-2">
               <span
                 v-if="(task.grade_levels || []).length === 0"
                 class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-3 py-1 text-xs font-semibold"
               >
-                Nepriradené
+                {{ t('unassignedTaskLabel') }}
               </span>
               <span
                 v-for="grade in task.grade_levels"
                 :key="grade.id"
                 class="inline-flex items-center rounded-full bg-sky-100 text-sky-800 px-3 py-1 text-xs font-semibold"
               >
-                {{ grade.grade }}. ročník
+                {{ grade.grade }}. {{ t('grade') }}
               </span>
             </div>
           </div>
 
           <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <div class="text-sm font-semibold text-slate-800 mb-2">Manuálne priradiť k ročníkom</div>
+            <div class="text-sm font-semibold text-slate-800 mb-2">{{ t('manuallyAssignGradesLabel') }}</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               <label
                 v-for="grade in gradeLevels"
@@ -239,7 +241,7 @@ const handleEditTask = (taskIndex) => {
                   :checked="(selectedGrades[task.task_id] || []).includes(grade.id)"
                   @change="toggleGradeSelection(task.task_id, grade.id, $event.target.checked)"
                 >
-                <span>{{ grade.grade }}. ročník</span>
+                <span>{{ grade.grade }}. {{ t('grade') }}</span>
               </label>
             </div>
             <button
@@ -247,7 +249,7 @@ const handleEditTask = (taskIndex) => {
               :disabled="savingGrades[task.task_id]"
               class="mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm py-2 px-3 rounded font-bold transition"
             >
-              {{ savingGrades[task.task_id] ? 'Ukladám...' : 'Uložiť ročníky' }}
+              {{ savingGrades[task.task_id] ? t('saving') : t('saveGrades') }}
             </button>
           </div>
 
@@ -257,13 +259,13 @@ const handleEditTask = (taskIndex) => {
         <div class="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
           <button @click="handleEditTask(taskIndex)"
             class="bg-amber-500 hover:bg-amber-600 text-white text-sm py-2 px-3 rounded font-bold transition whitespace-nowrap"
-            title="Upravit sadu">
-            Upravit
+            :title="t('editSetTitle')">
+            {{ t('editButton') }}
           </button>
           <button @click="confirmDeleteTask(task.task_id, taskIndex, task.task_name)"
             class="bg-red-500 hover:bg-red-700 text-white text-sm py-2 px-3 rounded font-bold transition whitespace-nowrap"
-            title="Smazat celou sadu">
-            Smazat
+            :title="t('deleteWholeSetTitle')">
+            {{ t('delete') }}
           </button>
         </div>
 
@@ -273,7 +275,7 @@ const handleEditTask = (taskIndex) => {
       <details class="group">
 
         <summary class="cursor-pointer font-medium text-blue-600 hover:underline">
-          Zobrazit příklady
+          {{ t('showExamplesToggle') }}
         </summary>
 
         <div class="mt-4">
@@ -281,11 +283,11 @@ const handleEditTask = (taskIndex) => {
             class="flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-start mb-4 border-b pb-3 min-w-0">
 
             <p class="text-gray-700 min-w-0 break-words lg:flex-1">
-              <span>Příklad:</span> <span v-html="example.example" class="font-semibold text-black dark:text-white break-words"></span>
+              <span>{{ t('exampleLabel') }}</span> <span v-html="example.example" class="font-semibold text-black dark:text-white break-words"></span>
             </p>
 
             <p class="text-gray-700 break-words lg:min-w-[140px] lg:text-right">
-              <span>Výsledek: </span>
+              <span>{{ t('resultLabel') }} </span>
               <span v-html="example.answers.map(a => a.answer_text).join(', ')" class="font-semibold text-black dark:text-white"></span>
             </p>
 
@@ -299,16 +301,16 @@ const handleEditTask = (taskIndex) => {
   <!-- Delete task confirmation modal -->
   <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-[92%] max-w-2xl">
-      <h2 class="text-2xl mb-4 break-words">Opravdu chcete smazat sadu <span class="font-semibold">{{ taskToDeleteName }}</span>?</h2>
-      <p class="mt-2 text-lg font-semibold text-red-600"><i class="fa-solid fa-triangle-exclamation text-xl"></i> Tato akce je nevratná </p>
+      <h2 class="text-2xl mb-4 break-words">{{ t('confirmDeleteTaskSetMessage', { name: taskToDeleteName }) }}</h2>
+      <p class="mt-2 text-lg font-semibold text-red-600"><i class="fa-solid fa-triangle-exclamation text-xl"></i> {{ t('actionIrreversibleWarning') }} </p>
       <div class="flex flex-col sm:flex-row sm:justify-end gap-3 mt-4 font-semibold text-xl">
         <button @click="cancelDelete"
           class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-          Zrušit
+          {{ t('cancel') }}
         </button>
         <button @click="handleDeleteTask"
           class="px-4 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold">
-          Smazat
+          {{ t('delete') }}
         </button>
       </div>
     </div>

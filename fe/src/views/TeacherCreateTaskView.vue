@@ -3,6 +3,7 @@ import { ref, reactive, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   teacherGenerateTaskPreview, teacherSaveTask, assignTaskToClassroom,
   browseTasks, getTaskExamples, copyTaskForTeacher,
@@ -16,6 +17,7 @@ const props = defineProps({ classroomId: [String, Number] });
 const authStore = useAuthStore();
 const toastStore = useToastStore();
 const router = useRouter();
+const { t } = useI18n();
 
 const mode = ref(null); // null | 'manual' | 'ai-form' | 'ai' | 'browse'
 
@@ -48,14 +50,15 @@ const taskGrade = ref('');
 const examples = ref([]);
 const saving = ref(false);
 
-const AI_TYPES = [
-  { value: 'arithmetic', label: 'Aritmetika', icon: '±', inputType: 'INLINE' },
-  { value: 'fractions',  label: 'Zlomky',     icon: '½', inputType: 'FRAC'   },
-  { value: 'word',       label: 'Slovná úloha', icon: '📖', inputType: 'WORD' },
-  { value: 'algebra',    label: 'Algebra',    icon: 'x', inputType: 'VAR'    },
+const AI_TYPES_BASE = [
+  { value: 'arithmetic', labelKey: 'aiTypeArithmetic',  icon: '±', inputType: 'INLINE' },
+  { value: 'fractions',  labelKey: 'aiTypeFractions',   icon: '½', inputType: 'FRAC'   },
+  { value: 'word',       labelKey: 'aiTypeWordProblem', icon: '📖', inputType: 'WORD' },
+  { value: 'algebra',    labelKey: 'aiTypeAlgebra',     icon: 'x', inputType: 'VAR'    },
 ];
+const AI_TYPES = computed(() => AI_TYPES_BASE.map(item => ({ ...item, label: t(item.labelKey) })));
 
-const selectedType = computed(() => AI_TYPES.find(t => t.value === aiType.value));
+const selectedType = computed(() => AI_TYPES.value.find(item => item.value === aiType.value));
 const hasPreview = computed(() => examples.value.length > 0);
 const mixTotal = computed(() => mixSegments.value.reduce((s, seg) => s + Number(seg.count), 0));
 
@@ -114,12 +117,12 @@ const copyFromBrowse = async (task) => {
     if (props.classroomId) {
       await assignTaskToClassroom(props.classroomId, authStore.id, result.task_id, false, null);
     }
-    toastStore.addToast({ message: 'Sada skopírovaná do tvojej knižnice.', type: 'success', visible: true });
+    toastStore.addToast({ message: t('taskCopiedToLibrary'), type: 'success', visible: true });
     router.push(props.classroomId
       ? { name: 'teacher-edit-task', params: { classroomId: props.classroomId, taskId: result.task_id } }
       : { name: 'teacher-edit-task-standalone', params: { taskId: result.task_id } });
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri kopírovaní sady.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('taskCopyError'), type: 'error', visible: true });
   }
   browseCopyingId.value = null;
 };
@@ -143,7 +146,7 @@ const removeMixSegment = (i) => {
 const generate = async () => {
   aiError.value = '';
   if (!aiDescription.value.trim()) {
-    aiError.value = 'Popis je povinný.';
+    aiError.value = t('aiDescriptionRequired');
     return;
   }
   aiGenerating.value = true;
@@ -167,7 +170,7 @@ const generate = async () => {
     }));
     mode.value = 'ai';
   } catch (e) {
-    aiError.value = e?.response?.data?.error || 'Chyba pri generovaní.';
+    aiError.value = e?.response?.data?.error || t('aiGenerationError');
   }
   aiGenerating.value = false;
 };
@@ -175,11 +178,11 @@ const generate = async () => {
 const save = async () => {
   const validExamples = examples.value.filter(e => e.example.trim() && e.answer.trim());
   if (!taskName.value.trim()) {
-    toastStore.addToast({ message: 'Zadaj názov sady.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('taskNameRequired'), type: 'error', visible: true });
     return;
   }
   if (!validExamples.length) {
-    toastStore.addToast({ message: 'Pridaj aspoň jeden príklad.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('addAtLeastOneExample'), type: 'error', visible: true });
     return;
   }
   saving.value = true;
@@ -203,14 +206,14 @@ const save = async () => {
       await assignTaskToClassroom(props.classroomId, authStore.id, result.task_id, false, null);
     }
     toastStore.addToast({
-      message: props.classroomId ? 'Sada vytvorená a priradená!' : 'Sada vytvorená!',
+      message: props.classroomId ? t('taskCreatedAndAssigned') : t('taskCreated'),
       type: 'success', visible: true,
     });
     router.push(props.classroomId
       ? { name: 'teacher-task-sets', params: { classroomId: props.classroomId } }
       : { name: 'teacher-library' });
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri ukladaní.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('taskSaveError'), type: 'error', visible: true });
   }
   saving.value = false;
 };
@@ -221,10 +224,10 @@ const save = async () => {
 
     <TeacherPageHeader
       :crumbs="[props.classroomId
-        ? { label: 'Príkladové sady', to: { name: 'teacher-task-sets', params: { classroomId: props.classroomId } } }
-        : { label: 'Moja knižnica', to: { name: 'teacher-library' } }]"
-      current="Nová sada"
-      title="Vytvoriť novú sadu" />
+        ? { label: t('taskSetsTitle'), to: { name: 'teacher-task-sets', params: { classroomId: props.classroomId } } }
+        : { label: t('myLibrary'), to: { name: 'teacher-library' } }]"
+      :current="t('newTaskSet')"
+      :title="t('createNewTaskSet')" />
 
     <!-- ── Mode selection ────────────────────────────────────────────────────── -->
     <div v-if="!hasPreview && mode === null" class="grid sm:grid-cols-3 gap-4">
@@ -235,8 +238,8 @@ const save = async () => {
         <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-3">
           <TeacherIcon name="edit" :size="20" />
         </div>
-        <div class="font-bold text-primary dark:text-white text-lg">Manuálne zadať</div>
-        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Zadaj príklady a odpovede ručne.</div>
+        <div class="font-bold text-primary dark:text-white text-lg">{{ t('manualEntryTitle') }}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t('manualEntryDesc') }}</div>
       </button>
 
       <button @click="mode = 'ai-form'"
@@ -246,8 +249,8 @@ const save = async () => {
         <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-3">
           <TeacherIcon name="sparkle" :size="20" />
         </div>
-        <div class="font-bold text-primary dark:text-white text-lg">Generovať pomocou AI</div>
-        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Opíš čo chceš a Gemini vygeneruje príklady.</div>
+        <div class="font-bold text-primary dark:text-white text-lg">{{ t('aiGenerateTitle') }}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t('aiGenerateDesc') }}</div>
       </button>
 
       <button @click="startBrowse"
@@ -257,15 +260,15 @@ const save = async () => {
         <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-3">
           <TeacherIcon name="library" :size="20" />
         </div>
-        <div class="font-bold text-primary dark:text-white text-lg">Z Aritmation knižnice</div>
-        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Skopíruj hotovú sadu z appky a uprav si ju.</div>
+        <div class="font-bold text-primary dark:text-white text-lg">{{ t('fromLibraryTitle') }}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t('fromLibraryDesc') }}</div>
       </button>
     </div>
 
     <!-- ── Browse Aritmation library ──────────────────────────────────────────── -->
     <div v-else-if="mode === 'browse'" class="space-y-4">
       <div class="flex gap-3">
-        <input v-model="browseSearch" type="text" placeholder="Hľadať sadu podľa názvu..."
+        <input v-model="browseSearch" type="text" :placeholder="t('searchTaskSetByName')"
                class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600
                       bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                       focus:outline-none focus:ring-2 focus:ring-secondary" />
@@ -273,15 +276,15 @@ const save = async () => {
                 class="w-28 px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600
                        bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                        focus:outline-none focus:ring-2 focus:ring-secondary">
-          <option value="">Ročník</option>
-          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. roč.</option>
+          <option value="">{{ t('gradeLevel') }}</option>
+          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. {{ t('gradeShortSuffix') }}</option>
         </select>
       </div>
 
       <div v-if="browseLoading" class="flex justify-center py-10"><Spinner /></div>
 
       <div v-else-if="!browseResults.length" class="text-sm text-gray-400 text-center py-10">
-        Žiadne sady nenájdené.
+        {{ t('taskSetsNoResults') }}
       </div>
 
       <div v-else class="space-y-2">
@@ -292,14 +295,14 @@ const save = async () => {
             <div class="flex-1 min-w-0">
               <div class="font-medium text-slate-800 dark:text-slate-100 text-sm truncate">{{ task.task_name }}</div>
               <div class="text-xs text-gray-400 mt-0.5">
-                {{ task.example_count ?? 0 }} príkladov
-                <span v-if="task.grade_levels?.length"> · {{ task.grade_levels.join(', ') }}. roč.</span>
+                {{ task.example_count ?? 0 }} {{ t('examplesCount') }}
+                <span v-if="task.grade_levels?.length"> · {{ task.grade_levels.join(', ') }}. {{ t('gradeShortSuffix') }}</span>
               </div>
             </div>
             <button @click.stop="copyFromBrowse(task)" :disabled="browseCopyingId === task.task_id"
                     class="flex-shrink-0 text-xs px-3 py-1.5 bg-secondary text-white rounded-lg
                            hover:bg-blue-600 transition-colors disabled:opacity-50 font-medium">
-              {{ browseCopyingId === task.task_id ? '...' : 'Vytvoriť kópiu' }}
+              {{ browseCopyingId === task.task_id ? '...' : t('createCopy') }}
             </button>
           </div>
 
@@ -307,7 +310,7 @@ const save = async () => {
                class="border-t border-slate-100 dark:border-slate-700 px-4 py-3 bg-slate-50 dark:bg-slate-900/40">
             <div v-if="browsePreviewLoading[task.task_id]" class="flex justify-center py-3"><Spinner /></div>
             <div v-else-if="!browsePreview[task.task_id]?.length" class="text-xs text-gray-400 text-center py-2">
-              Žiadne príklady.
+              {{ t('noExamples') }}
             </div>
             <div v-else class="flex flex-wrap gap-2">
               <span v-for="ex in browsePreview[task.task_id]" :key="ex.id"
@@ -322,7 +325,7 @@ const save = async () => {
 
       <button @click="mode = null"
               class="px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 text-sm">
-        Späť
+        {{ t('back') }}
       </button>
     </div>
 
@@ -335,36 +338,36 @@ const save = async () => {
         <button @click="isMix = false"
                 :class="['flex-1 py-2 rounded-xl text-sm font-semibold transition-all',
                          !isMix ? 'bg-primary text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700']">
-          Jeden typ
+          {{ t('singleType') }}
         </button>
         <button @click="isMix = true"
                 :class="['flex-1 py-2 rounded-xl text-sm font-semibold transition-all',
                          isMix ? 'bg-primary text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700']">
-          🎲 Mix / Písomka
+          {{ t('mixOrTest') }}
         </button>
       </div>
 
       <!-- Single type -->
       <template v-if="!isMix">
         <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Typ príkladov</label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ t('exampleType') }}</label>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button v-for="t in AI_TYPES" :key="t.value"
-                    @click="aiType = t.value"
+            <button v-for="opt in AI_TYPES" :key="opt.value"
+                    @click="aiType = opt.value"
                     :class="[
                       'py-2.5 px-3 rounded-xl text-sm font-medium border-2 transition-all',
-                      aiType === t.value
+                      aiType === opt.value
                         ? 'border-secondary bg-secondary/10 dark:bg-secondary/20 text-secondary'
                         : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                     ]">
-              <span class="mr-1">{{ t.icon }}</span> {{ t.label }}
+              <span class="mr-1">{{ opt.icon }}</span> {{ opt.label }}
             </button>
           </div>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Počet príkladov <span class="text-secondary font-bold ml-1">{{ aiCount }}</span>
+            {{ t('numberOfExamples') }} <span class="text-secondary font-bold ml-1">{{ aiCount }}</span>
           </label>
           <input type="range" v-model.number="aiCount" min="3" max="30" step="1"
                  class="w-full accent-secondary" />
@@ -377,13 +380,13 @@ const save = async () => {
         <div>
           <div class="flex items-center justify-between mb-2">
             <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Typy príkladov
-              <span class="ml-2 text-xs text-gray-400">celkom: {{ mixTotal }} príkladov</span>
+              {{ t('exampleTypes') }}
+              <span class="ml-2 text-xs text-gray-400">{{ t('totalCount') }} {{ mixTotal }} {{ t('examplesCount') }}</span>
             </label>
             <button @click="addMixSegment"
                     class="text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary
                            rounded-lg hover:bg-secondary/20 font-medium">
-              + Pridať typ
+              {{ t('addTypeButton') }}
             </button>
           </div>
           <div class="space-y-2">
@@ -394,8 +397,8 @@ const save = async () => {
                       class="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                              bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm
                              focus:outline-none focus:ring-1 focus:ring-secondary">
-                <option v-for="t in AI_TYPES" :key="t.value" :value="t.value">
-                  {{ t.icon }} {{ t.label }}
+                <option v-for="opt in AI_TYPES" :key="opt.value" :value="opt.value">
+                  {{ opt.icon }} {{ opt.label }}
                 </option>
               </select>
               <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -417,12 +420,10 @@ const save = async () => {
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-          {{ isMix ? 'Téma / kontext písomky' : 'Popis príkladov' }}
+          {{ isMix ? t('topicContextLabel') : t('exampleDescriptionLabel') }}
         </label>
         <textarea v-model="aiDescription" rows="3"
-                  :placeholder="isMix
-                    ? 'Napr: 5. ročník, precvičiť zlomky a slovné úlohy z geometrie...'
-                    : 'Napr: násobilka 7, príklady so zvyškom, rovnice s dvoma premennými...'"
+                  :placeholder="isMix ? t('mixDescriptionPlaceholder') : t('aiDescriptionPlaceholder')"
                   class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600
                          bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                          focus:outline-none focus:ring-2 focus:ring-secondary resize-none text-sm" />
@@ -432,7 +433,7 @@ const save = async () => {
       <div class="flex gap-3">
         <button @click="mode = null"
                 class="px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 text-sm">
-          Späť
+          {{ t('back') }}
         </button>
         <button @click="generate" :disabled="aiGenerating"
                 class="flex-1 py-3 bg-secondary text-white rounded-2xl font-bold
@@ -440,7 +441,7 @@ const save = async () => {
                        active:border-b-2 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
           <Spinner v-if="aiGenerating" class="w-4 h-4" />
           <TeacherIcon v-else name="sparkle" :size="13" />
-          <span>{{ aiGenerating ? 'Generujem...' : 'Generovať' }}</span>
+          <span>{{ aiGenerating ? t('generatingLabel') : t('generateLabel') }}</span>
         </button>
       </div>
     </div>
@@ -451,20 +452,20 @@ const save = async () => {
       <!-- Task name + grade -->
       <div class="flex gap-3">
         <div class="flex-1">
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Názov sady</label>
-          <input v-model="taskName" type="text" placeholder="Napr: Násobilka 7"
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t('taskSetName') }}</label>
+          <input v-model="taskName" type="text" :placeholder="t('taskNamePlaceholderExample')"
                  class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600
                         bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                         focus:outline-none focus:ring-2 focus:ring-secondary" />
         </div>
         <div class="w-28">
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ročník</label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t('gradeLevel') }}</label>
           <select v-model="taskGrade"
                   class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600
                          bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                          focus:outline-none focus:ring-2 focus:ring-secondary">
             <option value="">—</option>
-            <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. roč.</option>
+            <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. {{ t('gradeShortSuffix') }}</option>
           </select>
         </div>
       </div>
@@ -473,12 +474,12 @@ const save = async () => {
       <div>
         <div class="flex items-center justify-between mb-3">
           <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Príklady ({{ examples.length }})
+            {{ t('examples') }} ({{ examples.length }})
           </label>
           <button @click="addExample"
                   class="text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary
                          rounded-lg hover:bg-secondary/20 font-medium">
-            + Pridať
+            {{ t('addButton') }}
           </button>
         </div>
 
@@ -491,11 +492,11 @@ const save = async () => {
               <!-- Example input -->
               <div class="flex-1 min-w-0">
                 <textarea v-if="ex.input_type === 'WORD'" v-model="ex.example" rows="2"
-                          placeholder="Slovná úloha..."
+                          :placeholder="t('wordProblemPlaceholder')"
                           class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                                  bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm
                                  focus:outline-none focus:ring-1 focus:ring-secondary resize-none" />
-                <input v-else v-model="ex.example" type="text" placeholder="Príklad napr. \frac{1}{2} + \frac{1}{3}"
+                <input v-else v-model="ex.example" type="text" :placeholder="t('examplePlaceholderLatex')"
                        class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                               bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm
                               font-mono focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -503,7 +504,7 @@ const save = async () => {
                 <div v-if="ex.input_type !== 'WORD' && ex.example.trim()"
                      class="mt-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900
                             border border-slate-100 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300">
-                  <span class="text-xs text-gray-400 mr-2">náhľad:</span>\({{ ex.example }}\)
+                  <span class="text-xs text-gray-400 mr-2">{{ t('previewLabel') }}</span>\({{ ex.example }}\)
                 </div>
               </div>
 
@@ -518,7 +519,7 @@ const save = async () => {
                 <option value="VAR">VAR</option>
               </select>
               <div class="flex-shrink-0 w-28">
-                <input v-model="ex.answer" type="text" placeholder="Odpoveď"
+                <input v-model="ex.answer" type="text" :placeholder="t('answerPlaceholder')"
                        class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                               bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm
                               font-mono focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -539,19 +540,19 @@ const save = async () => {
       <div class="flex gap-3 pt-2">
         <button @click="mode = null; examples = []"
                 class="px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 text-sm">
-          Zahodiť
+          {{ t('discard') }}
         </button>
         <button v-if="mode === 'ai'" @click="mode = 'ai-form'"
                 class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600
                        text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm">
-          Regenerovať
+          {{ t('regenerate') }}
         </button>
         <button @click="save" :disabled="saving"
                 class="flex-1 py-2.5 bg-secondary text-white rounded-2xl font-bold
                        border-b-4 border-blue-700 hover:-translate-y-0.5 active:translate-y-0.5
                        active:border-b-2 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
           <Spinner v-if="saving" class="w-4 h-4" />
-          <span>{{ saving ? 'Ukladám...' : 'Uložiť a priradiť' }}</span>
+          <span>{{ saving ? t('saving') : t('saveAndAssign') }}</span>
         </button>
       </div>
     </div>

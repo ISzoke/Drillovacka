@@ -3,12 +3,12 @@ import { ref } from 'vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { getSessionId } from '@/utils/sessionManager';
-import { dictionary } from '@/utils/dictionary';
+import { useI18n } from 'vue-i18n';
 import { sendSurveyAnswer } from '@/api/apiClient';
 
 const langStore = useLanguageStore();
 const authStore = useAuthStore();
-const t = () => dictionary[langStore.language];
+const { t } = useI18n();
 
 const feedbackText = ref('');
 const submitting = ref(false);
@@ -67,11 +67,11 @@ async function submit() {
         </div>
 
         <h1 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-4">
-          {{ t().contactTitle }}
+          {{ t('contactTitle') }}
         </h1>
 
         <p class="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
-          {{ t().contactDesc }}
+          {{ t('contactDesc') }}
         </p>
 
         <div class="w-full flex items-center gap-2">
@@ -92,7 +92,7 @@ async function submit() {
                          border-violet-200 dark:border-violet-800
                          bg-violet-50 dark:bg-violet-900/20
                          hover:bg-violet-100 dark:hover:bg-violet-900/40"
-                  :title="copied ? 'Skopírované!' : 'Kopírovať email'">
+                  :title="copied ? t('copied') : t('copyEmailTooltip')">
             <i :class="copied ? 'fa-solid fa-check text-green-500' : 'fa-regular fa-copy text-violet-500 dark:text-violet-400'"></i>
           </button>
         </div>
@@ -106,16 +106,16 @@ async function submit() {
                   shadow-sm p-8">
 
         <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 mb-1">
-          {{ t().feedbackTitle || 'Spätná väzba' }}
+          {{ t('feedbackTitle') }}
         </h2>
         <p class="text-slate-500 dark:text-slate-400 text-sm mb-5">
-          {{ t().feedbackDesc || 'Napíš, čo sa ti páčilo alebo čo by si zmenil/a...' }}
+          {{ t('feedbackDesc') }}
         </p>
 
         <!-- Thank you state -->
         <div v-if="submitted" class="flex items-center gap-3 text-green-600 dark:text-green-400 font-semibold">
           <i class="fa-solid fa-circle-check text-2xl"></i>
-          <span>{{ t().feedbackSent || 'Ďakujeme za spätnú väzbu!' }}</span>
+          <span>{{ t('feedbackSent') }}</span>
         </div>
 
         <!-- Input form -->
@@ -123,7 +123,7 @@ async function submit() {
           <textarea
             v-model="feedbackText"
             rows="4"
-            :placeholder="t().feedbackPlaceholder || 'Čo sa ti páčilo? Čo by si zmenil/a alebo pridal/a?'"
+            :placeholder="t('feedbackPlaceholder')"
             :disabled="submitting"
             class="w-full border-[3px] border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-3 text-sm
                    bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
@@ -138,7 +138,7 @@ async function submit() {
                    border-b-4 border-blue-700
                    hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2
                    transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4">
-            {{ submitting ? (t().saving || 'Odosielam...') : (t().confirm || 'Odoslať') }}
+            {{ submitting ? t('saving') : t('send') }}
           </button>
         </template>
       </div>

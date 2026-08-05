@@ -10,6 +10,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const emit = defineEmits(['done'])
 
@@ -23,41 +26,41 @@ const answers = ref({
 
 const step = ref(0)  // 0–4
 
-const questions = [
+const questions = computed(() => [
   {
     key: 'q1_as_requested',
-    text: 'Boli príklady to, o čo si žiadal/a?',
+    text: t('surveyQ1'),
     type: 'yesno',
   },
   {
     key: 'q2_solvable_display',
-    text: 'Boli príklady počitateľné a zobrazili sa správne?',
+    text: t('surveyQ2'),
     type: 'yesno',
   },
   {
     key: 'q3_difficulty',
-    text: 'Ako ťažké boli príklady?',
+    text: t('surveyQ3'),
     type: 'difficulty',
   },
   {
     key: 'q4_has_errors',
-    text: 'Mali príklady v sebe chyby?',
+    text: t('surveyQ4'),
     type: 'yesno',
   },
   {
     key: 'q5_satisfied',
-    text: 'Si spokojný/á s príkladmi?',
-    subtext: 'Ak áno, odošleme ich adminovi na schválenie.',
+    text: t('surveyQ5'),
+    subtext: t('surveyQ5Subtext'),
     type: 'yesno',
     isFinal: true,
   },
-]
+])
 
-const current = computed(() => questions[step.value])
+const current = computed(() => questions.value[step.value])
 
 function answer(value) {
   answers.value[current.value.key] = value
-  if (step.value < questions.length - 1) {
+  if (step.value < questions.value.length - 1) {
     step.value++
   } else {
     emit('done', { ...answers.value })
@@ -67,9 +70,9 @@ function answer(value) {
 
 <template>
   <div>
-    <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 mb-1">📋 Krátka anketa</h2>
+    <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 mb-1">{{ t('shortSurveyTitle') }}</h2>
     <p class="text-xs text-slate-400 dark:text-slate-500 mb-5">
-      Otázka {{ step + 1 }} / {{ questions.length }}
+      {{ t('questionCounter', { current: step + 1, total: questions.length }) }}
     </p>
 
     <!-- Progress bar -->
@@ -93,7 +96,7 @@ function answer(value) {
                bg-emerald-500 border-[3px] border-emerald-600 border-b-[6px] border-b-emerald-700
                hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
       >
-        {{ current.isFinal ? '✅ Áno, odošli adminovi' : '✅ Áno' }}
+        {{ current.isFinal ? t('surveyYesFinal') : t('surveyYes') }}
       </button>
       <button
         @click="answer(false)"
@@ -102,14 +105,14 @@ function answer(value) {
                text-slate-700 dark:text-slate-300
                hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
       >
-        {{ current.isFinal ? '❌ Nie' : '❌ Nie' }}
+        {{ t('surveyNo') }}
       </button>
     </div>
 
     <!-- Difficulty (3 choices) -->
     <div v-else-if="current.type === 'difficulty'" class="flex gap-2">
       <button
-        v-for="opt in [{ value: 'easy', label: '😌 Ľahké' }, { value: 'ok', label: '👍 Primerané' }, { value: 'hard', label: '🤯 Ťažké' }]"
+        v-for="opt in [{ value: 'easy', label: t('difficultyEasy') }, { value: 'ok', label: t('difficultyOk') }, { value: 'hard', label: t('difficultyHard') }]"
         :key="opt.value"
         @click="answer(opt.value)"
         class="flex-1 py-3 rounded-2xl font-black text-sm

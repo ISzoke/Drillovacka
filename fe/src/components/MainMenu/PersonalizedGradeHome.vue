@@ -9,17 +9,19 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { dictionary, getTaskName } from '@/utils/dictionary'
+import { getTaskName } from '@/utils/contentNameMaps'
 import { getGradeLevels, getTasksByGrade } from '@/api/apiClient'
 import Spinner from '@/components/Spinner.vue'
 import ExampleRequestSheet from '@/components/ExampleRequestSheet.vue'
 
 const authStore = useAuthStore()
 const langStore = useLanguageStore()
+const { t } = useI18n()
 const router = useRouter()
 
 const allGrades   = ref([])
@@ -71,8 +73,8 @@ function openTaskExamples(task) {
 
       <!-- Header -->
       <div class="flex flex-col items-center mb-8">
-        <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Tvoj ročník</span>
-        <h1 class="text-3xl md:text-5xl font-black text-slate-800 dark:text-slate-100">{{ authStore.grade }}. ročník</h1>
+        <span class="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">{{ t('yourGradeLabel') }}</span>
+        <h1 class="text-3xl md:text-5xl font-black text-slate-800 dark:text-slate-100">{{ t('gradeFullLabel', { grade: authStore.grade }) }}</h1>
       </div>
 
       <!-- My grade tasks grid -->
@@ -89,11 +91,11 @@ function openTaskExamples(task) {
           >
             <div class="flex items-center gap-2 mb-2">
               <span class="text-xs font-black px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300">
-                {{ dictionary[langStore.language].aiGeneratedBadge }}
+                {{ t('aiGeneratedBadge') }}
               </span>
             </div>
             <div class="text-xl font-black text-violet-800 dark:text-violet-200 break-words">{{ getTaskName(task.name, langStore.language) }}</div>
-            <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ task.example_count }} {{ dictionary[langStore.language].examplesCountPrivate }}</div>
+            <div class="mt-2 text-sm font-bold text-violet-400 dark:text-violet-500">{{ task.example_count }} {{ t('examplesCountPrivate') }}</div>
           </button>
 
           <!-- Public task -->
@@ -107,17 +109,17 @@ function openTaskExamples(task) {
           >
             <div class="flex items-center gap-2 mb-1" v-if="task.generated_batch_id">
               <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                {{ dictionary[langStore.language].aiGeneratedBadge }}
+                {{ t('aiGeneratedBadge') }}
               </span>
             </div>
             <div class="text-xl font-black text-slate-800 dark:text-slate-100 break-words">{{ getTaskName(task.name, langStore.language) }}</div>
-            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ task.example_count }} {{ dictionary[langStore.language].examplesCount }}</div>
+            <div class="mt-2 text-sm font-bold text-slate-400 dark:text-slate-500">{{ task.example_count }} {{ t('examplesCount') }}</div>
           </button>
         </template>
       </div>
 
       <div v-else class="text-center py-16 text-slate-400 dark:text-slate-500 text-lg font-semibold">
-        Pre tento ročník zatiaľ nie sú žiadne príklady.
+        {{ t('noExamplesForThisGradeText') }}
       </div>
 
       <!-- "Want more examples?" text link below the grid -->
@@ -126,7 +128,7 @@ function openTaskExamples(task) {
           @click="drawer = 'request'"
           class="text-sm font-semibold text-slate-400 dark:text-slate-500 hover:text-violet-500 transition underline underline-offset-2"
         >
-          💡 Málo príkladov? Klikni sem.
+          {{ t('requestMoreExamples') }}
         </button>
       </div>
 
@@ -145,7 +147,7 @@ function openTaskExamples(task) {
                border-[3px] border-sky-200 dark:border-sky-700 border-b-[6px] border-b-sky-300 dark:border-b-sky-600
                hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
       >
-        📚 Základy
+        {{ t('basicsLabel') }}
       </button>
 
       <button
@@ -155,7 +157,7 @@ function openTaskExamples(task) {
                border-[3px] border-slate-200 dark:border-slate-600 border-b-[6px] border-b-slate-300 dark:border-b-slate-500
                hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
       >
-        💡 Málo príkladov?
+        {{ t('fewExamplesShortLabel') }}
       </button>
 
       <button
@@ -166,7 +168,7 @@ function openTaskExamples(task) {
                border-[3px] border-orange-200 dark:border-orange-700 border-b-[6px] border-b-orange-300 dark:border-b-orange-600
                hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
       >
-        🔥 Výzva
+        {{ t('challengeLabel') }}
       </button>
     </div>
 
@@ -199,8 +201,8 @@ function openTaskExamples(task) {
 
         <!-- Basics sheet -->
         <template v-if="drawer === 'basics'">
-          <h2 class="text-2xl font-black text-sky-700 dark:text-sky-300 mb-1">📚 Základy</h2>
-          <p class="text-sm text-slate-400 dark:text-slate-500 mb-5">Precvičuj ľahší učebný materiál z nižších ročníkov.</p>
+          <h2 class="text-2xl font-black text-sky-700 dark:text-sky-300 mb-1">{{ t('basicsLabel') }}</h2>
+          <p class="text-sm text-slate-400 dark:text-slate-500 mb-5">{{ t('basicsSheetDesc') }}</p>
           <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
             <button
               v-for="g in lowerGrades"
@@ -212,15 +214,15 @@ function openTaskExamples(task) {
                      hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all font-black text-xl"
             >
               {{ g.grade }}.
-              <span class="text-xs font-bold text-sky-100 mt-0.5">ročník</span>
+              <span class="text-xs font-bold text-sky-100 mt-0.5">{{ t('grade') }}</span>
             </button>
           </div>
         </template>
 
         <!-- Challenge sheet -->
         <template v-if="drawer === 'challenge'">
-          <h2 class="text-2xl font-black text-orange-700 dark:text-orange-300 mb-1">🔥 Výzva</h2>
-          <p class="text-sm text-slate-400 dark:text-slate-500 mb-5">Skús príklady z vyšších ročníkov a zarobi 1.5× viac XP!</p>
+          <h2 class="text-2xl font-black text-orange-700 dark:text-orange-300 mb-1">{{ t('challengeLabel') }}</h2>
+          <p class="text-sm text-slate-400 dark:text-slate-500 mb-5">{{ t('challengeSheetDesc') }}</p>
           <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
             <button
               v-for="g in higherGrades"
@@ -232,7 +234,7 @@ function openTaskExamples(task) {
                      hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all font-black text-xl"
             >
               {{ g.grade }}.
-              <span class="text-xs font-bold text-orange-100 mt-0.5">ročník</span>
+              <span class="text-xs font-bold text-orange-100 mt-0.5">{{ t('grade') }}</span>
             </button>
           </div>
         </template>

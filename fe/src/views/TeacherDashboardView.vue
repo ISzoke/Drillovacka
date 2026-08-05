@@ -1,8 +1,8 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { getTeacherClassrooms, createClassroom } from '@/api/apiClient';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useToastStore } from '@/stores/useToastStore';
 import Spinner from '@/components/Spinner.vue';
@@ -11,7 +11,7 @@ import TeacherIcon from '@/components/TeacherIcon.vue';
 const authStore = useAuthStore();
 const langStore = useLanguageStore();
 const toastStore = useToastStore();
-const d = dictionary[langStore.language];
+const { t } = useI18n();
 
 const classrooms = ref([]);
 const loading = ref(true);
@@ -41,7 +41,7 @@ const handleCreate = async () => {
     showCreateModal.value = false;
     newName.value = '';
     newDescription.value = '';
-    toastStore.addToast({ message: d.classroomCreated || 'Trieda vytvorená', type: 'success', visible: true });
+    toastStore.addToast({ message: t('classroomCreated'), type: 'success', visible: true });
   } catch (e) {
     console.error('Error creating classroom:', e);
   }
@@ -51,9 +51,9 @@ const handleCreate = async () => {
 onMounted(fetchClassrooms);
 
 const studentLabel = (count) => {
-  if (count === 1) return '1 študent';
-  if (count >= 2 && count <= 4) return `${count} študenti`;
-  return `${count} študentov`;
+  if (count === 1) return `1 ${t('studentCountOne')}`;
+  if (count >= 2 && count <= 4) return `${count} ${t('studentCountFew')}`;
+  return `${count} ${t('studentCountMany')}`;
 };
 </script>
 
@@ -62,16 +62,16 @@ const studentLabel = (count) => {
     <div class="flex items-start justify-between mb-8 gap-4">
       <div>
         <h1 class="text-3xl font-bold text-primary dark:text-slate-100">
-          {{ d.teacherDashboard || 'Vaše triedy' }}
+          {{ t('teacherDashboard') }}
         </h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Knižnicu vlastných sád a príkladov nájdeš v navigácii hore.
+          {{ t('libraryHintInNav') }}
         </p>
       </div>
       <button @click="showCreateModal = true"
               class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white rounded-full hover:bg-blue-600
                      font-semibold transition-colors flex-shrink-0">
-        <TeacherIcon name="plus" :size="14" /> {{ d.createClassroom || 'Vytvoriť triedu' }}
+        <TeacherIcon name="plus" :size="14" /> {{ t('createClassroom') }}
       </button>
     </div>
 
@@ -79,7 +79,7 @@ const studentLabel = (count) => {
 
     <div v-else-if="classrooms.length === 0"
          class="text-center text-gray-500 dark:text-gray-400 py-16 text-lg">
-      {{ d.noClassrooms || 'Zatiaľ nemáte žiadne triedy. Vytvorte prvú!' }}
+      {{ t('noClassrooms') }}
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,15 +109,15 @@ const studentLabel = (count) => {
          @click.self="showCreateModal = false">
       <div class="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl">
         <h2 class="text-xl font-bold text-primary dark:text-slate-100 mb-4">
-          {{ d.createClassroom || 'Vytvoriť triedu' }}
+          {{ t('createClassroom') }}
         </h2>
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {{ d.classroomName || 'Názov triedy' }} *
+            {{ t('classroomName') }} *
           </label>
           <input v-model="newName" type="text"
-                 :placeholder="d.classroomNamePlaceholder || 'napr. 5.A Matematika'"
+                 :placeholder="t('classroomNamePlaceholder')"
                  class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md
                         bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
                         focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -125,10 +125,10 @@ const studentLabel = (count) => {
 
         <div class="mb-6">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {{ d.classroomDescription || 'Popis' }}
+            {{ t('classroomDescription') }}
           </label>
           <textarea v-model="newDescription" rows="2"
-                    :placeholder="d.classroomDescPlaceholder || 'Voliteľný popis triedy...'"
+                    :placeholder="t('classroomDescPlaceholder')"
                     class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md
                            bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
                            focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
@@ -138,12 +138,12 @@ const studentLabel = (count) => {
           <button @click="showCreateModal = false"
                   class="px-4 py-2 rounded-md text-gray-600 dark:text-gray-300
                          hover:bg-gray-100 dark:hover:bg-slate-700">
-            {{ d.cancel || 'Zrušiť' }}
+            {{ t('cancel') }}
           </button>
           <button @click="handleCreate" :disabled="creating || !newName.trim()"
                   class="px-4 py-2 bg-secondary text-white rounded-md hover:bg-blue-600
                          disabled:opacity-50 font-semibold">
-            {{ creating ? '...' : (d.create || 'Vytvoriť') }}
+            {{ creating ? '...' : t('create') }}
           </button>
         </div>
       </div>

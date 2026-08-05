@@ -8,11 +8,11 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, defineEmits, defineProps, onMounted } from 'vue';
 import { useRecorderStore } from "@/stores/useRecorderStore";
 import { sendSurveyAnswer } from '@/api/apiClient';
 import SpeechVisualizer from './SpeechVisualizer.vue';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore'; 
 
 const props = defineProps({
@@ -26,6 +26,7 @@ const selectedScale = ref(null);
 const emits = defineEmits(['hideSurvey']);
 const recorderStore = useRecorderStore();
 const langStore = useLanguageStore();
+const { t } = useI18n();
 
 const currentQuestionTypeCode = () => `survey-${questions.value[index.value].type}-q${index.value + 1}`;
 
@@ -229,8 +230,8 @@ onMounted(() => {
 
     <!-- Question instructions -->
     <div class="text-lg md:text-xl flex items-center justify-center mt-6 z-20 text-gray-700 italic">
-      <span v-if="questions[index].type == 'voice'">{{dictionary[langStore.language].clickMicText}}</span>
-      <span v-if="questions[index].type == 'choice'">{{dictionary[langStore.language].chooseOptionText}}</span>
+      <span v-if="questions[index].type == 'voice'">{{t('clickMicText')}}</span>
+      <span v-if="questions[index].type == 'choice'">{{t('chooseOptionText')}}</span>
       <span v-if="questions[index].type == 'scale'">{{ questions[index].boundaries[langStore.language] }}</span>
     </div>
 
@@ -253,7 +254,7 @@ onMounted(() => {
       <!-- Button to continue after answering -->
       <button @click="handleNext"
         class="mt-8 bg-secondary hover:bg-primary text-white font-semibold py-3 px-6 rounded-lg text-2xl shadow-md transition hover:scale-105">
-        {{dictionary[langStore.language].continue}}
+        {{t('continue')}}
       </button>
 
     </div>
@@ -302,7 +303,7 @@ onMounted(() => {
           :class="selectedScale === null
             ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
             : 'bg-secondary hover:bg-primary text-white cursor-pointer'" :disabled="selectedScale === null">
-          {{ dictionary[langStore.language].continue }}
+          {{ t('continue') }}
         </button>
 
       </div>

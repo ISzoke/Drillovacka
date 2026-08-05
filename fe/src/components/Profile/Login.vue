@@ -7,10 +7,10 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 
 const username = ref('');
@@ -23,6 +23,7 @@ const passphraseError = ref('');
 const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
+const { t } = useI18n();
 
 const handleLogin = async () => {
   usernameError.value = '';
@@ -31,9 +32,9 @@ const handleLogin = async () => {
 
   const passphrase = `${passphrasePart1.value}-${passphrasePart2.value}-${passphrasePart3.value}`;
 
-  if (username.value.trim() === '') usernameError.value = dictionary[langStore.language].usernameError;
+  if (username.value.trim() === '') usernameError.value = t('usernameError');
   if (!passphrasePart1.value.trim() || !passphrasePart2.value.trim() || !passphrasePart3.value.trim()) {
-    passphraseError.value = dictionary[langStore.language].passphraseError;
+    passphraseError.value = t('passphraseError');
   }
   if (usernameError.value || passphraseError.value) return;
 
@@ -47,7 +48,7 @@ const handleLogin = async () => {
                 border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-8 shadow-sm">
 
       <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-8 text-center">
-        {{ dictionary[langStore.language].login }}
+        {{ t('login') }}
       </h2>
 
       <form @submit.prevent="handleLogin" class="space-y-5">
@@ -55,12 +56,12 @@ const handleLogin = async () => {
         <!-- Username -->
         <div>
           <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            {{ dictionary[langStore.language].nickname }}
+            {{ t('nickname') }}
           </label>
           <input
             type="text"
             v-model="username"
-            :placeholder="dictionary[langStore.language].nicknamePlaceholder"
+            :placeholder="t('nicknamePlaceholder')"
             class="w-full px-4 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
                    bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
                    placeholder-slate-400 dark:placeholder-slate-500
@@ -72,14 +73,14 @@ const handleLogin = async () => {
         <!-- Passphrase (3 parts) -->
         <div>
           <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            {{ dictionary[langStore.language].accessCode }}
+            {{ t('accessCode') }}
           </label>
           <div class="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-1.5">
             <input
               type="text"
               v-model="passphrasePart1"
               maxlength="20"
-              :placeholder="dictionary[langStore.language].part1"
+              :placeholder="t('part1')"
               class="min-w-0 w-full px-2 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
                      bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
                      placeholder-slate-400 dark:placeholder-slate-500 text-sm
@@ -90,7 +91,7 @@ const handleLogin = async () => {
               type="text"
               v-model="passphrasePart2"
               maxlength="20"
-              :placeholder="dictionary[langStore.language].part2"
+              :placeholder="t('part2')"
               class="min-w-0 w-full px-2 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
                      bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
                      placeholder-slate-400 dark:placeholder-slate-500 text-sm
@@ -101,7 +102,7 @@ const handleLogin = async () => {
               type="text"
               v-model="passphrasePart3"
               maxlength="20"
-              :placeholder="dictionary[langStore.language].part3"
+              :placeholder="t('part3')"
               class="min-w-0 w-full px-2 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
                      bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
                      placeholder-slate-400 dark:placeholder-slate-500 text-sm
@@ -125,7 +126,7 @@ const handleLogin = async () => {
                  bg-violet-500 border-[3px] border-violet-600 border-b-[8px] border-b-violet-700
                  hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
         >
-          {{ dictionary[langStore.language].login }}
+          {{ t('login') }}
         </button>
       </form>
     </div>

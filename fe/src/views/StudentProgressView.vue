@@ -1,55 +1,55 @@
 <template>
   <div class="p-6 max-w-5xl mx-auto">
     <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold">Môj pokrok</h1>
-      <button 
-        @click="fetchData" 
+      <h1 class="text-2xl font-bold">{{ t('myProgress') }}</h1>
+      <button
+        @click="fetchData"
         :disabled="loading"
         class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 flex items-center gap-2">
         <i class="fa-solid fa-rotate" :class="{'fa-spin': loading}"></i>
-        Obnoviť
+        {{ t('refresh') }}
       </button>
     </div>
-    
-    <div v-if="loading && skills.length === 0" class="text-gray-500">Načítavam...</div>
-    <div v-else-if="error" class="text-red-600">Chyba: {{ error }}</div>
+
+    <div v-if="loading && skills.length === 0" class="text-gray-500">{{ t('loadingEllipsis') }}</div>
+    <div v-else-if="error" class="text-red-600">{{ t('errorLabel') }} {{ error }}</div>
     <div v-else-if="!authStore.isAuthenticated || authStore.role === 'admin'" class="text-gray-500">
-      Prihlás sa ako študent, aby si videl svoj pokrok.
+      {{ t('loginToSeeProgress') }}
     </div>
     <div v-else>
       <div class="mb-6 p-4 bg-blue-50 rounded border border-blue-200">
-        <h2 class="text-lg font-semibold mb-2">Celková štatistika</h2>
+        <h2 class="text-lg font-semibold mb-2">{{ t('overallStats') }}</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <p class="text-sm text-gray-600">Cvičených príkladov</p>
+            <p class="text-sm text-gray-600">{{ t('examplesPracticed') }}</p>
             <p class="text-2xl font-bold">{{ totalExamples }}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600">Správne vyriešené</p>
+            <p class="text-sm text-gray-600">{{ t('correctlySolved') }}</p>
             <p class="text-2xl font-bold text-green-600">{{ totalSolved }}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600">Celková presnosť</p>
+            <p class="text-sm text-gray-600">{{ t('overallAccuracy') }}</p>
             <p class="text-2xl font-bold" :class="accuracyColor(overallAccuracy)">{{ (overallAccuracy * 100).toFixed(1) }}%</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600">Priemerné mastery</p>
+            <p class="text-sm text-gray-600">{{ t('avgMastery') }}</p>
             <p class="text-2xl font-bold" :class="masteryColor(overallMastery)">{{ (overallMastery * 100).toFixed(1) }}%</p>
           </div>
         </div>
       </div>
 
-      <h2 class="text-xl font-semibold mb-3">Detail podľa zručností</h2>
+      <h2 class="text-xl font-semibold mb-3">{{ t('detailBySkill') }}</h2>
       <table class="min-w-full border">
         <thead>
           <tr class="bg-gray-100">
-            <th class="p-2 border">Zručnosť</th>
-            <th class="p-2 border">Príklady</th>
-            <th class="p-2 border">Správne</th>
-            <th class="p-2 border">Presnosť</th>
-            <th class="p-2 border">Zvládnutie</th>
-            <th class="p-2 border">Priem. čas (s)</th>
-            <th class="p-2 border">Posledné cvičenie</th>
+            <th class="p-2 border">{{ t('skillLabel') }}</th>
+            <th class="p-2 border">{{ t('examples') }}</th>
+            <th class="p-2 border">{{ t('correctSuffix') }}</th>
+            <th class="p-2 border">{{ t('accuracy') }}</th>
+            <th class="p-2 border">{{ t('mastery') }}</th>
+            <th class="p-2 border">{{ t('avgTimeSecLabel') }}</th>
+            <th class="p-2 border">{{ t('lastPracticeLabel') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -69,7 +69,7 @@
         </tbody>
       </table>
       <div v-if="skills.length === 0" class="mt-4 text-gray-500">
-        Zatiaľ si neriešil žiadne príklady. Začni cvičiť, aby si videl svoj pokrok!
+        {{ t('noExamplesYetStartPracticing') }}
       </div>
     </div>
   </div>
@@ -79,10 +79,12 @@
 import { ref, onMounted, onActivated, watch, computed } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getStudentSkillStats } from '../api/apiClient'
 
 const authStore = useAuthStore()
 const route = useRoute()
+const { t } = useI18n()
 const skills = ref([])
 const loading = ref(false)
 const error = ref('')
@@ -116,7 +118,7 @@ function fetchData() {
     })
     .catch(e => {
       console.error('StudentProgressView: Error fetching data:', e)
-      error.value = e.message || 'Chyba pri načítaní dát.'
+      error.value = e.message || t('dataLoadError')
       loading.value = false
     })
 }

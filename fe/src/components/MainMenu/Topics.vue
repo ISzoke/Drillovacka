@@ -9,16 +9,17 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { onMounted, ref, computed } from 'vue';
 import GradeView from '@/components/MainMenu/GradeView.vue';
 import PersonalizedGradeHome from '@/components/MainMenu/PersonalizedGradeHome.vue';
 import Spinner from '../Spinner.vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { dictionary } from '@/utils/dictionary';
 import { browseTasks } from '@/api/apiClient';
 
 const langStore = useLanguageStore();
+const { t } = useI18n();
 const authStore = useAuthStore();
 
 const allTasks = ref([]);
@@ -57,7 +58,7 @@ onMounted(async () => {
       <template v-else>
         <div class="flex justify-center pt-10 px-4">
           <h2 class="text-3xl md:text-4xl font-black text-slate-800 dark:text-slate-100 text-center">
-            {{ dictionary[langStore.language].selectGrades }}
+            {{ t('selectGrades') }}
           </h2>
         </div>
         <GradeView />
@@ -66,7 +67,7 @@ onMounted(async () => {
       <!-- Task set search — visible to all users -->
       <div class="max-w-5xl mx-auto px-4 pb-16 mt-10">
         <h3 class="text-xl font-black text-slate-700 dark:text-slate-200 mb-4 text-center">
-          {{ dictionary[langStore.language].taskSetsTitle }}
+          {{ t('taskSetsTitle') }}
         </h3>
 
         <!-- Search bar -->
@@ -78,7 +79,7 @@ onMounted(async () => {
             <input
               v-model="taskSearch"
               type="text"
-              :placeholder="dictionary[langStore.language].searchTaskSetsPlaceholder"
+              :placeholder="t('searchTaskSetsPlaceholder')"
               class="w-full pl-11 pr-4 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
                      bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
                      placeholder-slate-400 dark:placeholder-slate-500
@@ -94,7 +95,7 @@ onMounted(async () => {
           </div>
           <div v-else-if="filteredTasks.length === 0"
                class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">
-            {{ dictionary[langStore.language].taskSetsNoResults }}
+            {{ t('taskSetsNoResults') }}
           </div>
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <router-link
@@ -112,11 +113,11 @@ onMounted(async () => {
               </span>
               <span class="text-xs text-slate-400 dark:text-slate-500">
                 {{ task.example_count }}
-                {{ dictionary[langStore.language].taskSetsExamples }}
+                {{ t('taskSetsExamples') }}
                 <template v-if="task.grade_levels?.length">
                   &middot;
                   {{ task.grade_levels.map(g => g + '.').join(', ') }}
-                  {{ dictionary[langStore.language].grade }}
+                  {{ t('grade') }}
                 </template>
               </span>
             </router-link>

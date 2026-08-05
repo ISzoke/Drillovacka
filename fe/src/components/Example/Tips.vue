@@ -9,11 +9,11 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { dictionary } from "@/utils/dictionary";
+import { useI18n } from 'vue-i18n';
 import { useLanguageStore } from "@/stores/useLanguageStore";
 
 const langStore = useLanguageStore();
-const t = (key) => dictionary[langStore.language]?.[key] ?? dictionary['sk'][key];
+const { t } = useI18n();
 
 const showTips = ref(false);
 

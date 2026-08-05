@@ -8,8 +8,9 @@
 
 <script setup>
 import { ref, defineProps, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLanguageStore } from '@/stores/useLanguageStore';
-import { getSkillName } from '@/utils/dictionary';
+import { getSkillName } from '@/utils/contentNameMaps';
 
 const props = defineProps({
   subtopic: { required: true },
@@ -18,6 +19,7 @@ const props = defineProps({
 
 const isSelected = ref(false);
 const langStore = useLanguageStore();
+const { t } = useI18n();
 
 watch(isSelected, (newValue) => {
   if (newValue) {
@@ -43,15 +45,10 @@ const removeChildrenFromSelection = (subskills) => {
 };
 
 const getCorrectForm = (count) => {
-  if (langStore.language === 'en') return count === 1 ? 'example' : 'examples';
-  if (langStore.language === 'sk') {
-    if (count === 1) return 'príklad';
-    if (count > 1 && count < 5) return 'príklady';
-    return 'príkladov';
-  }
-  if (count === 1) return 'příklad';
-  if (count > 1 && count < 5) return 'příklady';
-  return 'příkladů';
+  if (langStore.language === 'en') return count === 1 ? t('exampleFormOne') : t('exampleFormMany');
+  if (count === 1) return t('exampleFormOne');
+  if (count > 1 && count < 5) return t('exampleFormFew');
+  return t('exampleFormMany');
 };
 </script>
 

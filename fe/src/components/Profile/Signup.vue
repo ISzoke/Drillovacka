@@ -7,12 +7,12 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import generatePassphrase from '@/utils/passphraseGenerator';
 import { registerStudent } from '@/api/apiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 
 const username = ref('');
@@ -29,6 +29,7 @@ const isLoading = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
+const { t } = useI18n();
 
 const handleSubmit = async () => {
   if (isLoading.value) return;
@@ -37,8 +38,8 @@ const handleSubmit = async () => {
   passphraseError.value = '';
   errorMessage.value = '';
 
-  if (username.value.trim() === '') usernameError.value = dictionary[langStore.language].usernameForgot;
-  if (passphrase.value.trim() === '') passphraseError.value = dictionary[langStore.language].passphraseForgot;
+  if (username.value.trim() === '') usernameError.value = t('usernameForgot');
+  if (passphrase.value.trim() === '') passphraseError.value = t('passphraseForgot');
   if (usernameError.value || passphraseError.value) return;
 
   isLoading.value = true;
@@ -77,7 +78,7 @@ const copyToClipboard = () => {
                 border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-8 shadow-sm">
 
       <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-8 text-center">
-        {{ dictionary[langStore.language].register }}
+        {{ t('register') }}
       </h2>
 
       <form @submit.prevent="handleSubmit" class="space-y-5">
@@ -85,12 +86,12 @@ const copyToClipboard = () => {
         <!-- Username -->
         <div>
           <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            {{ dictionary[langStore.language].nickname }}
+            {{ t('nickname') }}
           </label>
           <input
             type="text"
             v-model="username"
-            :placeholder="dictionary[langStore.language].nicknamePlaceholder"
+            :placeholder="t('nicknamePlaceholder')"
             class="w-full px-4 py-3 rounded-2xl border-[3px] border-slate-200 dark:border-slate-600
                    bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
                    placeholder-slate-400 dark:placeholder-slate-500
@@ -102,7 +103,7 @@ const copyToClipboard = () => {
         <!-- Passphrase -->
         <div>
           <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            {{ dictionary[langStore.language].accessCode }}
+            {{ t('accessCode') }}
           </label>
 
           <!-- Passphrase display area -->
@@ -110,7 +111,7 @@ const copyToClipboard = () => {
                       rounded-2xl px-4 py-3 flex items-center justify-between min-h-[52px]">
             <span class="font-black text-slate-800 dark:text-slate-100 text-center flex-1"
                   :class="passphrase ? '' : 'text-slate-400 dark:text-slate-500 font-semibold'">
-              {{ passphrase || dictionary[langStore.language].generatePassphrasePlaceholder }}
+              {{ passphrase || t('generatePassphrasePlaceholder') }}
             </span>
             <button
               @click="copyToClipboard"
@@ -122,7 +123,7 @@ const copyToClipboard = () => {
           </div>
 
           <p class="text-xs font-bold text-violet-500 dark:text-violet-400 text-center mt-1.5 h-4">
-            {{ copied ? dictionary[langStore.language].copied : '' }}
+            {{ copied ? t('copied') : '' }}
           </p>
           <p v-if="passphraseError" class="text-red-500 text-sm font-semibold">{{ passphraseError }}</p>
         </div>
@@ -135,14 +136,14 @@ const copyToClipboard = () => {
                  bg-emerald-500 border-[3px] border-emerald-600 border-b-[6px] border-b-emerald-700
                  hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all"
         >
-          {{ dictionary[langStore.language].generatePassphrase }}
+          {{ t('generatePassphrase') }}
         </button>
 
         <!-- Grade selector -->
         <div>
           <label class="block text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            {{ dictionary[langStore.language].gradeLevel }}
-            <span class="normal-case font-semibold text-slate-400">(nepovinné)</span>
+            {{ t('gradeLevel') }}
+            <span class="normal-case font-semibold text-slate-400">{{ t('optionalParenthetical') }}</span>
           </label>
           <div class="grid grid-cols-5 sm:grid-cols-9 gap-1.5">
             <button
@@ -159,7 +160,7 @@ const copyToClipboard = () => {
               {{ g }}
             </button>
           </div>
-          <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mt-2 text-center">V ktorom ročníku si?</p>
+          <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mt-2 text-center">{{ t('whatGradeAreYouIn') }}</p>
         </div>
 
         <!-- Error message -->
@@ -175,7 +176,7 @@ const copyToClipboard = () => {
             />
           </div>
           <span class="text-sm font-semibold text-slate-600 dark:text-slate-300 leading-snug">
-            Zapísal/a som si prihlasovacie meno aj heslo a budem si ich pamätať
+            {{ t('credentialsSavedConfirmation') }}
           </span>
         </label>
 
@@ -189,9 +190,9 @@ const copyToClipboard = () => {
                  disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 disabled:border-b-[8px]"
         >
           <span v-if="isLoading">
-            <i class="fas fa-spinner fa-spin mr-2"></i>{{ dictionary[langStore.language].saving }}
+            <i class="fas fa-spinner fa-spin mr-2"></i>{{ t('saving') }}
           </span>
-          <span v-else>{{ dictionary[langStore.language].register }}</span>
+          <span v-else>{{ t('register') }}</span>
         </button>
       </form>
     </div>

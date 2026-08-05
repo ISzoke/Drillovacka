@@ -5,9 +5,9 @@
       <!-- Header -->
       <div class="text-center mb-8">
         <div class="text-6xl mb-2">🎖️</div>
-        <h1 class="text-4xl font-black text-violet-700">{{ dictionary[langStore.language].achievements }}</h1>
+        <h1 class="text-4xl font-black text-violet-700">{{ t('achievements') }}</h1>
         <p class="text-gray-500 mt-1">
-          {{ earnedCount }} / {{ allBadges.length }} odznakov
+          {{ earnedCount }} / {{ allBadges.length }} {{ t('badgesCountSuffix') }}
         </p>
       </div>
 
@@ -38,7 +38,7 @@
               <div class="mt-2 text-xs font-semibold" :class="badge.earned ? 'text-violet-600' : 'text-gray-400'">
                 +{{ badge.xp_reward }} XP
               </div>
-              <div v-if="badge.earned" class="mt-1 text-xs text-green-600 font-semibold">✓ Získaný</div>
+              <div v-if="badge.earned" class="mt-1 text-xs text-green-600 font-semibold">{{ t('earnedCheckLabel') }}</div>
             </div>
           </div>
         </div>
@@ -49,11 +49,11 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { dictionary } from '@/utils/dictionary'
 import axios from 'axios'
 
 const ICON_MAP = {
@@ -67,18 +67,19 @@ function iconEmoji(key) { return ICON_MAP[key] || '🏅' }
 const authStore = useAuthStore()
 const gamStore = useGamificationStore()
 const langStore = useLanguageStore()
+const { t } = useI18n()
 
 const loading = ref(true)
 const allBadges = ref([])
 
-const categories = [
-  { key: 'activity', label: 'Aktivita', icon: '📚' },
-  { key: 'accuracy', label: 'Presnosť', icon: '🎯' },
-  { key: 'speed', label: 'Rýchlosť', icon: '⚡' },
-  { key: 'voice', label: 'Hlas', icon: '🎤' },
-  { key: 'streak', label: 'Séria', icon: '🔥' },
-  { key: 'milestone', label: 'Míľniky', icon: '🏆' },
-]
+const categories = computed(() => [
+  { key: 'activity', label: t('badgeCategoryActivity'), icon: '📚' },
+  { key: 'accuracy', label: t('accuracy'), icon: '🎯' },
+  { key: 'speed', label: t('badgeCategorySpeed'), icon: '⚡' },
+  { key: 'voice', label: t('badgeCategoryVoice'), icon: '🎤' },
+  { key: 'streak', label: t('streak'), icon: '🔥' },
+  { key: 'milestone', label: t('badgeCategoryMilestone'), icon: '🏆' },
+])
 
 const earnedCount = computed(() => allBadges.value.filter(b => b.earned).length)
 

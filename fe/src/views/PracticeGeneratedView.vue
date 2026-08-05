@@ -8,11 +8,13 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useI18n } from 'vue-i18n'
 import { getMyGeneratedBatches } from '@/api/apiClient'
 
 const route  = useRoute()
 const router = useRouter()
 const auth   = useAuthStore()
+const { t } = useI18n()
 
 onMounted(async () => {
   if (!auth.id) { router.replace({ name: 'home' }); return }
@@ -29,4 +31,4 @@ onMounted(async () => {
   }
 })
 </script>
-<template><div class="min-h-screen flex items-center justify-center text-slate-400">Načítavam…</div></template>
+<template><div class="min-h-screen flex items-center justify-center text-slate-400">{{ t('loadingEllipsis') }}</div></template>

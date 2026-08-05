@@ -3,31 +3,31 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
-        <h1 class="text-3xl font-bold text-gray-800">Ahoj, {{ authStore.name }}! 👋</h1>
-        <p class="text-gray-600 mt-1">Tu je tvoj prehľad pokroku</p>
+        <h1 class="text-3xl font-bold text-gray-800">{{ t('hi') }}, {{ authStore.name }}! 👋</h1>
+        <p class="text-gray-600 mt-1">{{ t('dashboardSubtitle') }}</p>
       </div>
-      <button 
-        @click="fetchData" 
+      <button
+        @click="fetchData"
         :disabled="loading"
         class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 flex items-center gap-2">
         <i class="fa-solid fa-rotate" :class="{'fa-spin': loading}"></i>
-        Obnoviť
+        {{ t('refresh') }}
       </button>
     </div>
 
     <div v-if="loading && skills.length === 0" class="text-gray-500 text-center py-12">
       <i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i>
-      <p>Načítavam tvoj pokrok...</p>
+      <p>{{ t('loadingYourProgress') }}</p>
     </div>
-    
+
     <div v-else-if="error" class="text-red-600 bg-red-50 p-4 rounded border border-red-200">
       <i class="fa-solid fa-exclamation-triangle mr-2"></i>
-      Chyba: {{ error }}
+      {{ t('errorLabel') }} {{ error }}
     </div>
-    
+
     <div v-else-if="!authStore.isAuthenticated || authStore.role === 'admin'" class="text-gray-500 text-center py-12">
       <i class="fa-solid fa-user-lock text-4xl mb-4"></i>
-      <p>Prihlás sa ako študent, aby si videl svoj dashboard.</p>
+      <p>{{ t('loginToSeeDashboard') }}</p>
     </div>
     
     <div v-else>
@@ -36,7 +36,7 @@
       <!-- Level & XP bar -->
       <div class="col-span-2 bg-gradient-to-br from-violet-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg">
         <div class="flex justify-between items-center mb-1">
-          <span class="font-bold text-lg">⭐ Level {{ gamStore.level }}</span>
+          <span class="font-bold text-lg">⭐ {{ t('level') }} {{ gamStore.level }}</span>
           <span class="text-sm text-violet-200">{{ gamStore.xp }} XP</span>
         </div>
         <div class="w-full bg-violet-800/40 rounded-full h-3 overflow-hidden">
@@ -46,7 +46,7 @@
           </div>
         </div>
         <div class="text-xs text-violet-200 mt-1">
-          {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP do ďalšieho levelu
+          {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} {{ t('xpToNextLevel') }}
         </div>
       </div>
 
@@ -54,7 +54,7 @@
       <div class="bg-gradient-to-br from-orange-400 to-red-500 text-white p-5 rounded-2xl shadow-lg flex flex-col justify-center">
         <div class="text-4xl">🔥</div>
         <div class="text-3xl font-black mt-1">{{ gamStore.streak }}</div>
-        <div class="text-sm text-orange-100">dní za sebou</div>
+        <div class="text-sm text-orange-100">{{ t('daysInARow') }}</div>
       </div>
 
       <!-- Rank -->
@@ -64,28 +64,28 @@
           <span v-if="gamStore.rank">#{{ gamStore.rank }}</span>
           <span v-else>–</span>
         </div>
-        <div class="text-sm text-yellow-100">na rebríčku</div>
+        <div class="text-sm text-yellow-100">{{ t('onLeaderboard') }}</div>
       </div>
     </div>
 
     <!-- Recent badges (last 3) -->
     <div v-if="recentEarnedBadges.length > 0" class="mb-6 bg-white rounded-2xl shadow p-4 flex items-center gap-4 flex-wrap">
-      <span class="font-semibold text-gray-700 text-sm">Posledné odznaky:</span>
+      <span class="font-semibold text-gray-700 text-sm">{{ t('recentBadges') }}</span>
       <div v-for="badge in recentEarnedBadges" :key="badge.key" class="flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-xl px-3 py-1">
         <span class="text-xl">{{ badge.icon }}</span>
         <span class="text-sm font-semibold text-violet-700">{{ badge.name }}</span>
       </div>
-      <router-link to="/achievements" class="ml-auto text-xs text-indigo-500 hover:underline">Všetky odznaky →</router-link>
+      <router-link to="/achievements" class="ml-auto text-xs text-indigo-500 hover:underline">{{ t('allBadgesArrow') }}</router-link>
     </div>
 
 
       <!-- No data yet -->
       <div v-if="skills.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
         <i class="fa-solid fa-book-open text-6xl text-gray-400 mb-4"></i>
-        <h3 class="text-xl font-semibold text-gray-700 mb-2">Začni svoju cestu učenia!</h3>
-        <p class="text-gray-600 mb-6">Zatiaľ si neriešil žiadne príklady. Vyber si skill a začni cvičiť!</p>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">{{ t('startLearningJourney') }}</h3>
+        <p class="text-gray-600 mb-6">{{ t('noExamplesYetChooseSkill') }}</p>
         <router-link to="/grade-view" class="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold">
-          Vybrať témy
+          {{ t('chooseTopics') }}
         </router-link>
       </div>
 
@@ -96,7 +96,7 @@
           <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-blue-100 text-sm font-medium">Cvičených príkladov</p>
+                <p class="text-blue-100 text-sm font-medium">{{ t('examplesPracticed') }}</p>
                 <p class="text-3xl font-bold mt-2">{{ totalExamples }}</p>
               </div>
               <i class="fa-solid fa-list-check text-4xl text-blue-200"></i>
@@ -106,7 +106,7 @@
           <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-green-100 text-sm font-medium">Správne vyriešené</p>
+                <p class="text-green-100 text-sm font-medium">{{ t('correctlySolved') }}</p>
                 <p class="text-3xl font-bold mt-2">{{ totalSolved }}</p>
               </div>
               <i class="fa-solid fa-check-circle text-4xl text-green-200"></i>
@@ -116,7 +116,7 @@
           <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-purple-100 text-sm font-medium">Celková presnosť</p>
+                <p class="text-purple-100 text-sm font-medium">{{ t('overallAccuracy') }}</p>
                 <p class="text-3xl font-bold mt-2">{{ (overallAccuracy * 100).toFixed(0) }}%</p>
               </div>
               <i class="fa-solid fa-bullseye text-4xl text-purple-200"></i>
@@ -126,7 +126,7 @@
           <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-lg shadow-lg">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-orange-100 text-sm font-medium">Priemerné zvládnutie</p>
+                <p class="text-orange-100 text-sm font-medium">{{ t('avgMastery') }}</p>
                 <p class="text-3xl font-bold mt-2">{{ (overallMastery * 100).toFixed(0) }}%</p>
               </div>
               <i class="fa-solid fa-star text-4xl text-orange-200"></i>
@@ -139,8 +139,8 @@
           <div class="flex items-center gap-3 mb-4">
             <i class="fa-solid fa-lightbulb text-3xl text-yellow-600"></i>
             <div>
-              <h2 class="text-2xl font-bold text-yellow-900">Odporúčame na precvičenie</h2>
-              <p class="text-yellow-700 text-sm">Tieto témy by si mal precvičiť – sú slabšie alebo si ich dlho necvičil</p>
+              <h2 class="text-2xl font-bold text-yellow-900">{{ t('recommendedForPractice') }}</h2>
+              <p class="text-yellow-700 text-sm">{{ t('recommendedSkillsDesc') }}</p>
             </div>
           </div>
           
@@ -158,27 +158,27 @@
               
               <div class="space-y-2 text-sm mb-4">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Zvládnutie:</span>
+                  <span class="text-gray-600">{{ t('mastery') }}:</span>
                   <span :class="masteryColor(skill.mastery_mean)" class="font-semibold">
                     {{ (skill.mastery_mean * 100).toFixed(0) }}%
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Presnosť:</span>
+                  <span class="text-gray-600">{{ t('accuracy') }}:</span>
                   <span :class="accuracyColor(skill.accuracy)" class="font-semibold">
                     {{ (skill.accuracy * 100).toFixed(0) }}%
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Naposledy:</span>
+                  <span class="text-gray-600">{{ t('lastPracticedColon') }}</span>
                   <span class="text-gray-800 font-medium">{{ formatDate(skill.last_practiced) }}</span>
                 </div>
               </div>
 
-              <button 
+              <button
                 @click="startPractice(skill.skill_ids)"
                 class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded transition-colors">
-                <i class="fa-solid fa-play mr-2"></i>Začať cvičiť
+                <i class="fa-solid fa-play mr-2"></i>{{ t('startPracticeButton') }}
               </button>
             </div>
           </div>
@@ -188,7 +188,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6">
           <h2 class="text-2xl font-bold mb-4 text-gray-800">
             <i class="fa-solid fa-chart-line mr-2 text-blue-500"></i>
-            Tvoje zručnosti
+            {{ t('yourSkills') }}
           </h2>
 
           <div class="space-y-4">
@@ -202,11 +202,11 @@
                 <div class="flex items-center gap-4 text-sm">
                   <span class="text-gray-600">
                     <i class="fa-solid fa-list-check mr-1"></i>
-                    {{ skill.examples_practiced }} príkladov
+                    {{ skill.examples_practiced }} {{ t('examplesCount') }}
                   </span>
                   <span class="text-green-600 font-semibold">
                     <i class="fa-solid fa-check mr-1"></i>
-                    {{ skill.solved_count }} správne
+                    {{ skill.solved_count }} {{ t('correctSuffix') }}
                   </span>
                 </div>
               </div>
@@ -214,7 +214,7 @@
               <!-- Mastery Progress Bar -->
               <div class="mb-3">
                 <div class="flex justify-between text-sm mb-1">
-                  <span class="text-gray-600 font-medium">Zvládnutie</span>
+                  <span class="text-gray-600 font-medium">{{ t('mastery') }}</span>
                   <span :class="masteryColor(skill.mastery_mean)" class="font-bold">
                     {{ (skill.mastery_mean * 100).toFixed(1) }}%
                   </span>
@@ -231,7 +231,7 @@
               <!-- Accuracy Progress Bar -->
               <div class="mb-3">
                 <div class="flex justify-between text-sm mb-1">
-                  <span class="text-gray-600 font-medium">Presnosť (Accuracy)</span>
+                  <span class="text-gray-600 font-medium">{{ t('accuracy') }}</span>
                   <span :class="accuracyColor(skill.accuracy)" class="font-bold">
                     {{ (skill.accuracy * 100).toFixed(1) }}%
                   </span>
@@ -249,7 +249,7 @@
               <div class="flex justify-between items-center text-sm text-gray-600">
                 <span>
                   <i class="fa-solid fa-clock mr-1"></i>
-                  Priem. čas: {{ (skill.avg_duration_ms / 1000).toFixed(1) }}s
+                  {{ t('avgTimeLabelColon') }} {{ (skill.avg_duration_ms / 1000).toFixed(1) }}s
                 </span>
                 <span>
                   <i class="fa-solid fa-calendar mr-1"></i>
@@ -269,12 +269,14 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getStudentSkillCombinations } from '../api/apiClient'
 
 const authStore = useAuthStore()
 const gamStore = useGamificationStore()
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 // Last 3 earned badges for quick display
 const recentEarnedBadges = computed(() => gamStore.badges.slice(0, 3))
@@ -325,7 +327,7 @@ function fetchData() {
     })
     .catch(e => {
       console.error('StudentDashboardView: Error fetching combinations:', e)
-      error.value = e.message || 'Chyba pri načítaní dát.'
+      error.value = e.message || t('dataLoadError')
       loading.value = false
     })
 }
@@ -366,16 +368,16 @@ function masteryBarColor(val) {
 }
 
 function formatDate(dt) {
-  if (!dt) return 'Nikdy'
+  if (!dt) return t('never')
   const date = new Date(dt)
   const now = new Date()
   const diffMs = now - date
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  
-  if (diffDays === 0) return 'Dnes'
-  if (diffDays === 1) return 'Včera'
-  if (diffDays < 7) return `Pred ${diffDays} dňami`
-  if (diffDays < 30) return `Pred ${Math.floor(diffDays / 7)} týždňami`
+
+  if (diffDays === 0) return t('today')
+  if (diffDays === 1) return t('yesterday')
+  if (diffDays < 7) return t('daysAgo', { n: diffDays })
+  if (diffDays < 30) return t('weeksAgo', { n: Math.floor(diffDays / 7) })
   return date.toLocaleDateString('sk-SK')
 }
 

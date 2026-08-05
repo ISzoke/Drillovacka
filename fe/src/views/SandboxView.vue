@@ -8,8 +8,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ExamplesList from '@/components/TaskCreator/ExamplesList.vue';
 import LatexToolbar from '@/components/TaskCreator/LatexToolbar.vue';
+
+const { t } = useI18n();
 
 const taskName = ref('');
 const examplesType = ref(null);
@@ -47,13 +50,13 @@ onMounted(() => {
 
       <!-- Task name input -->
       <div class="flex w-full items-center my-2">
-        <h2 class="text-2xl font-bold text-primary mr-8">Název cvičení:</h2>
+        <h2 class="text-2xl font-bold text-primary mr-8">{{ t('exerciseNameLabel') }}</h2>
         <input v-model="taskName" type="text" class="p-1 text-2xl border border-tertiary rounded-md">
       </div>
 
       <!-- Grade level picker -->
       <div class="flex w-full items-center flex-wrap gap-2 my-2">
-        <h2 class="text-2xl font-bold text-primary mr-4">Ročník:</h2>
+        <h2 class="text-2xl font-bold text-primary mr-4">{{ t('gradeLevel') }}:</h2>
         <button
           v-for="grade in GRADES"
           :key="grade"
@@ -71,16 +74,16 @@ onMounted(() => {
 
       <!-- Examples form selector -->
       <div class="flex w-full justify-start items-center mt-4 space-x-8">
-        <h1 class="text-primary font-bold text-2xl">Forma zadání:</h1>
+        <h1 class="text-primary font-bold text-2xl">{{ t('formOfAssignmentLabel') }}</h1>
         <label class="flex items-center space-x-2 cursor-pointer text-lg font-medium">
           <input type="radio" v-model="examplesType" value="classic"
             class="h-5 w-5 text-primary bg-transparent border-gray-500 checked:bg-primary checked:border-primary focus:ring-primary" />
-          <span class="text-primary text-2xl font-semibold">Klasické příklady</span>
+          <span class="text-primary text-2xl font-semibold">{{ t('classicExamplesLabel') }}</span>
         </label>
         <label class="flex items-center space-x-2 cursor-pointer text-lg font-medium">
           <input type="radio" v-model="examplesType" value="word-problem"
             class="h-5 w-5 text-primary bg-transparent border-gray-500 checked:bg-primary checked:border-primary focus:ring-primary" />
-          <span class="text-primary text-2xl font-semibold">Slovní úlohy</span>
+          <span class="text-primary text-2xl font-semibold">{{ t('wordProblemsLabel') }}</span>
         </label>
       </div>
 

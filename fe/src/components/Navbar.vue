@@ -8,13 +8,13 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
-import { dictionary } from '@/utils/dictionary';
 import csFlag from '@/assets/img/cs-flag.png';
 import enFlag from '@/assets/img/en-flag.png';
 import skFlag from '@/assets/img/sk-flag.png';
@@ -24,6 +24,7 @@ import TeacherIcon from '@/components/TeacherIcon.vue';
 // Stores
 const authStore = useAuthStore();
 const langStore = useLanguageStore();
+const { t } = useI18n();
 const recorderStore = useRecorderStore();
 
 const router = useRouter();
@@ -102,88 +103,88 @@ const handleLogoClick = () => {
           <!-- Dark mode toggle (desktop) -->
           <button @click="darkStore.toggle()"
             class="text-white hover:text-yellow-300 transition focus:outline-none"
-            :title="darkStore.isDark ? 'Svetlý režim' : 'Tmavý režim'">
+            :title="darkStore.isDark ? t('lightMode') : t('darkMode')">
             <i :class="darkStore.isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
           </button>
 
           <!-- Unauthenticated user menu -->
           <template v-if="!isAuthenticated">
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].contact }}
+              {{ t('contact') }}
             </RouterLink>
             <RouterLink to="/teacher" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🏫 {{ dictionary[langStore.language].teacherLogin || 'Pre učiteľov' }}
+              🏫 {{ t('teacherLogin') || 'Pre učiteľov' }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].login }}
+              {{ t('login') }}
             </RouterLink>
             <RouterLink to="/profile?register=1" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].register }}
+              {{ t('register') }}
             </RouterLink>
             <div class="flex items-center gap-2">
-              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 
           <!-- Admin menu -->
           <template v-else-if="authStore.role == 'admin'">
-            <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].tasks }}</RouterLink>
-            <RouterLink to="/tasks/grades" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].tasksByGrade }}</RouterLink>
-            <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].skills }}</RouterLink>
-            <RouterLink to="/analytics/activity" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Aktivita</RouterLink>
-            <RouterLink to="/admin/teachers" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">Učitelia</RouterLink>
-            <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].myData }}</RouterLink>
-            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].contact }}</RouterLink>
-            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
+            <RouterLink to="/tasks" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('tasks') }}</RouterLink>
+            <RouterLink to="/tasks/grades" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('tasksByGrade') }}</RouterLink>
+            <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('skills') }}</RouterLink>
+            <RouterLink to="/analytics/activity" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('navActivity') }}</RouterLink>
+            <RouterLink to="/admin/teachers" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('navTeachers') }}</RouterLink>
+            <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('myData') }}</RouterLink>
+            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('contact') }}</RouterLink>
+            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('logout') }}</button>
           </template>
 
           <!-- Teacher menu -->
           <template v-else-if="authStore.role == 'teacher'">
             <RouterLink to="/teacher/dashboard" active-class="border-white"
               class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+              {{ t('myClassrooms') || 'Moje triedy' }}
             </RouterLink>
             <RouterLink to="/teacher/library" active-class="border-white"
               class="flex items-center gap-1.5 text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              <TeacherIcon name="library" :size="14" /> Moja knižnica
+              <TeacherIcon name="library" :size="14" /> {{ t('myLibrary') }}
             </RouterLink>
             <RouterLink to="/teacher/print" active-class="border-white"
               class="flex items-center gap-1.5 text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              <TeacherIcon name="print" :size="14" /> Tlač písomky
+              <TeacherIcon name="print" :size="14" /> {{ t('printExamNav') }}
             </RouterLink>
-            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].contact }}</RouterLink>
-            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ dictionary[langStore.language].logout }}</button>
+            <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('contact') }}</RouterLink>
+            <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('logout') }}</button>
           </template>
 
           <!-- Logged in user (student) -->
           <template v-else>
             <RouterLink to="/" @click="handleLogoClick" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              📚 {{ dictionary[langStore.language].examples }}
+              📚 {{ t('examples') }}
             </RouterLink>
             <RouterLink to="/progress" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              <i class="fa-solid fa-chart-line mr-1"></i>{{ dictionary[langStore.language].progress }}
+              <i class="fa-solid fa-chart-line mr-1"></i>{{ t('progress') }}
             </RouterLink>
             <RouterLink to="/my-classrooms" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🏫 {{ dictionary[langStore.language].myClassrooms || 'Triedy' }}
+              🏫 {{ t('myClassrooms') || 'Triedy' }}
             </RouterLink>
             <RouterLink to="/leaderboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🏆 {{ dictionary[langStore.language].leaderboard }}
+              🏆 {{ t('leaderboard') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              👤 {{ dictionary[langStore.language].profile }}
+              👤 {{ t('profile') }}
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].contact }}
+              {{ t('contact') }}
             </RouterLink>
             <button @click="authStore.logout(router)" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].logout }}
+              {{ t('logout') }}
             </button>
             <div class="flex items-center gap-2">
-              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 
@@ -198,78 +199,78 @@ const handleLogoClick = () => {
           <!-- Unauthenticated user menu -->
           <template v-if="!isAuthenticated">
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition" @click="isMenuOpen = false">
-              {{ dictionary[langStore.language].contact }}
+              {{ t('contact') }}
             </RouterLink>
             <RouterLink to="/teacher" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🏫 {{ dictionary[langStore.language].teacherLogin || 'Pre učiteľov' }}
+              🏫 {{ t('teacherLogin') || 'Pre učiteľov' }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].login }}
+              {{ t('login') }}
             </RouterLink>
             <RouterLink to="/profile?register=1" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              {{ dictionary[langStore.language].register }}
+              {{ t('register') }}
             </RouterLink>
             <div class="flex items-center gap-2">
-              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 
           <!-- Admin menu -->
           <template v-else-if="authStore.role == 'admin'">
-            <RouterLink to="/tasks" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasks }}</RouterLink>
-            <RouterLink to="/tasks/grades" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].tasksByGrade }}</RouterLink>
-            <RouterLink to="/skill-creator" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].skills }}</RouterLink>
-            <RouterLink to="/analytics/activity" class="text-white text-xl font-semibold" @click="isMenuOpen = false">Aktivita</RouterLink>
-            <RouterLink to="/admin/teachers" class="text-white text-xl font-semibold" @click="isMenuOpen = false">Učitelia</RouterLink>
-            <RouterLink to="/analytics/my-data" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].myData }}</RouterLink>
-            <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].contact }}</RouterLink>
-            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>
+            <RouterLink to="/tasks" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('tasks') }}</RouterLink>
+            <RouterLink to="/tasks/grades" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('tasksByGrade') }}</RouterLink>
+            <RouterLink to="/skill-creator" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('skills') }}</RouterLink>
+            <RouterLink to="/analytics/activity" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('navActivity') }}</RouterLink>
+            <RouterLink to="/admin/teachers" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('navTeachers') }}</RouterLink>
+            <RouterLink to="/analytics/my-data" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('myData') }}</RouterLink>
+            <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('contact') }}</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ t('logout') }}</button>
           </template>
 
           <!-- Teacher menu (mobile) -->
           <template v-else-if="authStore.role == 'teacher'">
             <RouterLink to="/teacher/dashboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              {{ dictionary[langStore.language].myClassrooms || 'Moje triedy' }}
+              {{ t('myClassrooms') || 'Moje triedy' }}
             </RouterLink>
             <RouterLink to="/teacher/library" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              Moja knižnica
+              {{ t('myLibrary') }}
             </RouterLink>
             <RouterLink to="/teacher/print" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              Tlač písomky
+              {{ t('printExamNav') }}
             </RouterLink>
-            <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ dictionary[langStore.language].contact }}</RouterLink>
-            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ dictionary[langStore.language].logout }}</button>
+            <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('contact') }}</RouterLink>
+            <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">{{ t('logout') }}</button>
           </template>
 
           <!-- Logged in user (student) -->
           <template v-else>
             <RouterLink to="/" class="text-white text-xl font-semibold" @click="handleLogoClick; isMenuOpen = false">
-              📚 {{ dictionary[langStore.language].examples }}
+              📚 {{ t('examples') }}
             </RouterLink>
             <RouterLink to="/progress" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              <i class="fa-solid fa-chart-line mr-2"></i>{{ dictionary[langStore.language].progress }}
+              <i class="fa-solid fa-chart-line mr-2"></i>{{ t('progress') }}
             </RouterLink>
             <RouterLink to="/my-classrooms" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🏫 {{ dictionary[langStore.language].myClassrooms || 'Triedy' }}
+              🏫 {{ t('myClassrooms') || 'Triedy' }}
             </RouterLink>
             <RouterLink to="/leaderboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🏆 {{ dictionary[langStore.language].leaderboard }}
+              🏆 {{ t('leaderboard') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              👤 {{ dictionary[langStore.language].profile }}
+              👤 {{ t('profile') }}
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              {{ dictionary[langStore.language].contact }}
+              {{ t('contact') }}
             </RouterLink>
             <button @click="authStore.logout(router); isMenuOpen = false" class="text-white text-xl font-semibold">
-              {{ dictionary[langStore.language].logout }}
+              {{ t('logout') }}
             </button>
             <div class="flex items-center gap-2">
-              <button @click="changeLanguage('cs')"><img :src="csFlag" alt="Čeština" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('en')"><img :src="enFlag" alt="English" class="w-8 h-8 ml-2" /></button>
-              <button @click="changeLanguage('sk')"><img :src="skFlag" alt="Slovenčina" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
+              <button @click="changeLanguage('cs')"><img :src="csFlag" :alt="t('languageCzech')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('en')"><img :src="enFlag" :alt="t('languageEnglish')" class="w-8 h-8 ml-2" /></button>
+              <button @click="changeLanguage('sk')"><img :src="skFlag" :alt="t('languageSlovak')" class="w-8 h-8 ml-2 rounded-full object-cover" style="object-position: 33% center" /></button>
             </div>
           </template>
 

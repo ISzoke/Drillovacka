@@ -7,6 +7,7 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { getGradeLevels } from '@/api/apiClient';
 import { useRouter } from 'vue-router';
@@ -14,10 +15,9 @@ import Spinner from '../Spinner.vue';
 import RegistrationPromptModal from '../RegistrationPromptModal.vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { dictionary } from '@/utils/dictionary';
-
 const router = useRouter();
 const langStore = useLanguageStore();
+const { t } = useI18n();
 const authStore = useAuthStore();
 
 const gradeLevels = ref([]);
@@ -122,9 +122,9 @@ const onPromptRegister = () => {
 
     <div v-else-if="gradeLevels.length === 0" class="flex justify-center py-16 px-4">
       <div class="w-full max-w-xl rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] bg-white dark:bg-slate-800 p-8 text-center">
-        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100">Ročníky zatiaľ nie sú nastavené</h2>
+        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ t('gradeLevelsNotConfiguredTitle') }}</h2>
         <p class="mt-3 text-slate-500 dark:text-slate-400">
-          Databáza je v čistom stave po migráciách. Keď budú ročníky znovu pripravené, zobrazia sa tu automaticky.
+          {{ t('gradeLevelsNotConfiguredDesc') }}
         </p>
       </div>
     </div>
@@ -145,7 +145,7 @@ const onPromptRegister = () => {
           <i :class="colorOf(grade).icon" class="text-3xl mb-3 opacity-80"></i>
           <div class="text-5xl font-black leading-none">{{ grade.grade }}.</div>
           <div class="text-sm font-bold mt-2 opacity-80 uppercase tracking-wider">
-            {{ dictionary[langStore.language].grade }}
+            {{ t('grade') }}
           </div>
         </div>
       </div>

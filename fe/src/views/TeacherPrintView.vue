@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import {
@@ -15,6 +16,7 @@ import ToggleSwitch from '@/components/ToggleSwitch.vue';
 const route = useRoute();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
+const { t } = useI18n();
 
 const RECOMMENDED_SPACING = 24;
 
@@ -35,8 +37,10 @@ const scrollToPreview = () => {
   previewSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
+const defaultTestTitle = t('writtenTestDefaultTitle');
+
 const settings = ref({
-  title: 'Písomná práca',
+  title: defaultTestTitle,
   class_name: '',
   note: '',
   groups: 1,
@@ -55,16 +59,21 @@ const settings = ref({
 const SAMPLE_COMPACT_TEXTS = ['12 + 8', '45 − 9', '1/2 + 1/3', '6 × 7'];
 
 // answer_lines per item: null = auto (podľa typu), 0 = kompaktné (bez riadkov), 1-6 = počet riadkov
-const ANSWER_LINES_OPTIONS = [
-  { value: null, label: 'Auto (podľa typu)' },
-  { value: 0, label: 'Kompaktné (=___)' },
-  { value: 1, label: '1 riadok' },
-  { value: 2, label: '2 riadky' },
-  { value: 3, label: '3 riadky' },
-  { value: 4, label: '4 riadky' },
-  { value: 5, label: '5 riadkov' },
-  { value: 6, label: '6 riadkov' },
-];
+const lineCountWord = (n) => {
+  if (n === 1) return t('answerLinesWordSingular');
+  if (n >= 2 && n <= 4) return t('answerLinesWordFew');
+  return t('answerLinesWordMany');
+};
+const ANSWER_LINES_OPTIONS = computed(() => [
+  { value: null, label: t('answerLinesAutoLabel') },
+  { value: 0, label: t('answerLinesCompactLabel') },
+  { value: 1, label: `1 ${lineCountWord(1)}` },
+  { value: 2, label: `2 ${lineCountWord(2)}` },
+  { value: 3, label: `3 ${lineCountWord(3)}` },
+  { value: 4, label: `4 ${lineCountWord(4)}` },
+  { value: 5, label: `5 ${lineCountWord(5)}` },
+  { value: 6, label: `6 ${lineCountWord(6)}` },
+]);
 
 const generating = ref(false);
 
@@ -81,12 +90,12 @@ const mixSegments = ref([
   { type: 'fractions', count: 10 },
 ]);
 
-const AI_TYPES = [
-  { value: 'arithmetic', label: 'Aritmetika', icon: '±' },
-  { value: 'fractions', label: 'Zlomky', icon: '½' },
-  { value: 'word', label: 'Slovná úloha', icon: '📖' },
-  { value: 'algebra', label: 'Algebra', icon: 'x' },
-];
+const AI_TYPES = computed(() => [
+  { value: 'arithmetic', label: t('aiTypeArithmetic'), icon: '±' },
+  { value: 'fractions', label: t('aiTypeFractions'), icon: '½' },
+  { value: 'word', label: t('aiTypeWordProblem'), icon: '📖' },
+  { value: 'algebra', label: t('aiTypeAlgebra'), icon: 'x' },
+]);
 
 const mixTotal = computed(() => mixSegments.value.reduce((s, seg) => s + Number(seg.count), 0));
 const genTotal = computed(() => (isMix.value ? mixTotal.value : genCount.value));
@@ -200,11 +209,11 @@ const addTask = async (task) => {
     const fresh = data.examples.filter(ex => !itemIds.value.has(ex.id));
     items.value = [...items.value, ...fresh.map(ex => toItem(ex, DOTS[taskColorIdx(task.id)]))];
     addedTaskIds.value = new Set([...addedTaskIds.value, task.id]);
-    if (items.value.length && settings.value.title === 'Písomná práca') {
+    if (items.value.length && settings.value.title === defaultTestTitle) {
       settings.value.title = task.name;
     }
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri načítaní sady.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('loadTaskError'), type: 'error', visible: true });
   }
   addingTaskId.value = null;
 };
@@ -215,7 +224,7 @@ const loadFromIds = async (ids) => {
     const byId = new Map(all.map(e => [e.id, e]));
     items.value = ids.filter(id => byId.has(id)).map(id => toItem(byId.get(id)));
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri načítaní príkladov.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('loadExamplesError'), type: 'error', visible: true });
   }
 };
 
@@ -248,7 +257,7 @@ const generateExamples = async () => {
   if (genRunning.value) return;
   genError.value = '';
   if (!genDescription.value.trim()) {
-    genError.value = 'Popis je povinný.';
+    genError.value = t('descriptionRequired');
     return;
   }
   genRunning.value = true;
@@ -274,12 +283,12 @@ const generateExamples = async () => {
       points: 1,
       dot: 'bg-secondary',
     }));
-    if (!generated.length) throw new Error('Generátor nevrátil žiadne príklady.');
+    if (!generated.length) throw new Error(t('generatorNoExamplesError'));
     items.value = [...items.value, ...generated];
     genOpen.value = false;
-    toastStore.addToast({ message: `Pridaných ${generated.length} vygenerovaných príkladov.`, type: 'success', visible: true });
+    toastStore.addToast({ message: t('addedGeneratedExamplesToast', { n: generated.length }), type: 'success', visible: true });
   } catch (e) {
-    genError.value = e?.response?.data?.error || e?.message || 'Chyba pri generovaní.';
+    genError.value = e?.response?.data?.error || e?.message || t('generationError');
   }
   genRunning.value = false;
 };
@@ -360,7 +369,7 @@ watch([items, settings], () => {
 
 const generatePdf = async (openInTab) => {
   if (!items.value.length) {
-    toastStore.addToast({ message: 'Písomka nemá žiadne príklady.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('noExamplesInTest'), type: 'error', visible: true });
     return;
   }
   generating.value = true;
@@ -377,7 +386,7 @@ const generatePdf = async (openInTab) => {
     }
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri generovaní PDF.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('pdfGenerationError'), type: 'error', visible: true });
   }
   generating.value = false;
 };
@@ -388,14 +397,14 @@ const generatePdf = async (openInTab) => {
 
     <div class="flex items-start justify-between gap-3">
       <TeacherPageHeader
-        title="Generovanie PDF"
-        subtitle="Vyberte príklady a nakonfigurujte nastavenia tlače." />
+        :title="t('printPdfPageTitle')"
+        :subtitle="t('printPdfPageSubtitle')" />
       <button @click="generatePdf(true)" :disabled="generating || !items.length"
               class="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
                      border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200
                      bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40">
         <TeacherIcon name="eye" :size="15" />
-        Otvoriť PDF
+        {{ t('openPdfButton') }}
       </button>
     </div>
 
@@ -416,8 +425,8 @@ const generatePdf = async (openInTab) => {
               <TeacherIcon name="sparkle" :size="16" />
             </div>
             <div class="flex-1 text-left">
-              <div class="text-sm font-medium text-slate-800 dark:text-slate-100">Vytvoriť príklady</div>
-              <div class="text-xs text-gray-400">Automaticky generovať príklady podľa typu a obtiažnosti</div>
+              <div class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ t('createExamplesHeading') }}</div>
+              <div class="text-xs text-gray-400">{{ t('autoGenerateExamplesDesc') }}</div>
             </div>
             <TeacherIcon name="chevronDown" :size="16"
                          class="text-gray-400 transition-transform flex-shrink-0"
@@ -432,36 +441,36 @@ const generatePdf = async (openInTab) => {
               <button @click="isMix = false"
                       :class="['flex-1 py-2 rounded-lg text-sm font-semibold transition-all',
                                !isMix ? 'bg-primary text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700']">
-                Jeden typ
+                {{ t('singleTypeToggle') }}
               </button>
               <button @click="isMix = true"
                       :class="['flex-1 py-2 rounded-lg text-sm font-semibold transition-all',
                                isMix ? 'bg-primary text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700']">
-                🎲 Mix / Písomka
+                {{ t('mixTestToggle') }}
               </button>
             </div>
 
             <!-- Single type -->
             <template v-if="!isMix">
               <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Typ príkladov</label>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ t('exampleTypeLabel') }}</label>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <button v-for="t in AI_TYPES" :key="t.value"
-                          @click="genType = t.value"
+                  <button v-for="aiType in AI_TYPES" :key="aiType.value"
+                          @click="genType = aiType.value"
                           :class="[
                             'py-2.5 px-3 rounded-xl text-sm font-medium border-2 transition-all',
-                            genType === t.value
+                            genType === aiType.value
                               ? 'border-secondary bg-secondary/10 dark:bg-secondary/20 text-secondary'
                               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                           ]">
-                    <span class="mr-1">{{ t.icon }}</span> {{ t.label }}
+                    <span class="mr-1">{{ aiType.icon }}</span> {{ aiType.label }}
                   </button>
                 </div>
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Počet príkladov <span class="text-secondary font-bold ml-1">{{ genCount }}</span>
+                  {{ t('exampleCountLabel') }} <span class="text-secondary font-bold ml-1">{{ genCount }}</span>
                 </label>
                 <input type="range" v-model.number="genCount" min="3" max="30" step="1"
                        class="w-full accent-secondary" />
@@ -474,13 +483,13 @@ const generatePdf = async (openInTab) => {
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Typy príkladov
-                    <span class="ml-2 text-xs text-gray-400">celkom: {{ mixTotal }} príkladov</span>
+                    {{ t('exampleTypesLabel') }}
+                    <span class="ml-2 text-xs text-gray-400">{{ t('totalCountLabel', { n: mixTotal }) }}</span>
                   </label>
                   <button @click="addMixSegment"
                           class="text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary
                                  rounded-lg hover:bg-secondary/20 font-medium">
-                    + Pridať typ
+                    {{ t('addTypeButton') }}
                   </button>
                 </div>
                 <div class="space-y-2">
@@ -491,8 +500,8 @@ const generatePdf = async (openInTab) => {
                             class="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                                    bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm
                                    focus:outline-none focus:ring-1 focus:ring-secondary">
-                      <option v-for="t in AI_TYPES" :key="t.value" :value="t.value">
-                        {{ t.icon }} {{ t.label }}
+                      <option v-for="aiType in AI_TYPES" :key="aiType.value" :value="aiType.value">
+                        {{ aiType.icon }} {{ aiType.label }}
                       </option>
                     </select>
                     <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -514,12 +523,12 @@ const generatePdf = async (openInTab) => {
             <!-- Description -->
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {{ isMix ? 'Téma / kontext písomky' : 'Popis príkladov' }}
+                {{ isMix ? t('testTopicContextLabel') : t('exampleDescriptionLabel') }}
               </label>
               <textarea v-model="genDescription" rows="3"
                         :placeholder="isMix
-                          ? 'Napr: 5. ročník, precvičiť zlomky a slovné úlohy z geometrie...'
-                          : 'Napr: násobilka 7, príklady so zvyškom, rovnice s dvoma premennými...'"
+                          ? t('mixDescriptionPlaceholder')
+                          : t('singleTypeDescriptionPlaceholder')"
                         class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600
                                bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                                focus:outline-none focus:ring-2 focus:ring-secondary resize-none text-sm" />
@@ -528,15 +537,15 @@ const generatePdf = async (openInTab) => {
 
             <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
               <p class="text-xs text-gray-400">
-                Vygeneruje sa
-                <span class="font-medium text-slate-700 dark:text-slate-200">{{ genTotal }} príkladov</span>
+                {{ t('willGenerateLabel') }}
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ genTotal }} {{ t('examplesCount') }}</span>
               </p>
               <button @click="generateExamples" :disabled="genRunning"
                       class="flex items-center gap-1.5 px-3 py-2 bg-secondary text-white rounded-lg
                              font-semibold text-xs hover:bg-blue-600 disabled:opacity-50">
                 <Spinner v-if="genRunning" class="w-3.5 h-3.5" />
                 <TeacherIcon v-else name="sparkle" :size="13" />
-                {{ genRunning ? 'Generujem…' : 'Generovať a pridať' }}
+                {{ genRunning ? t('generatingEllipsis') : t('generateAndAddButton') }}
               </button>
             </div>
           </div>
@@ -546,7 +555,7 @@ const generatePdf = async (openInTab) => {
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="px-5 py-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
             <div class="flex items-center gap-2">
-              <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">Vybraté príklady</h3>
+              <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ t('selectedExamplesHeading') }}</h3>
               <span class="text-xs font-semibold px-1.5 h-5 flex items-center rounded-md
                            bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                 {{ items.length }}
@@ -554,25 +563,24 @@ const generatePdf = async (openInTab) => {
             </div>
             <div v-if="items.length" class="flex items-center gap-1.5 text-xs text-gray-400">
               <template v-if="settings.show_points">
-                <span class="font-medium text-slate-700 dark:text-slate-200">{{ totalPoints }} b</span>
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ totalPoints }} {{ t('pointsAbbreviation') }}</span>
                 <span>·</span>
               </template>
-              <button @click="clearItems" class="hover:text-accent transition-colors">Vyprázdniť</button>
+              <button @click="clearItems" class="hover:text-accent transition-colors">{{ t('clearAllButton') }}</button>
             </div>
           </div>
 
           <p v-if="items.length" class="px-5 pt-2.5 text-[11px] text-gray-400 leading-relaxed">
-            Miesto na odpoveď pri každom príklade: <strong class="text-slate-500 dark:text-slate-300">Auto</strong> necháva
-            voľné miesto podľa typu príkladu (INLINE/FRAC kompaktne na riadku, WORD/VAR viac voľného miesta pod zadaním).
-            Vyber si konkrétny počet riadkov, ak chceš pre daný príklad viac alebo menej miesta ručne.
+            {{ t('answerSpaceInfoPart1') }} <strong class="text-slate-500 dark:text-slate-300">{{ t('answerLinesAutoWord') }}</strong>
+            {{ t('answerSpaceInfoPart2') }}
           </p>
 
           <div v-if="!items.length" class="py-12 text-center">
             <TeacherIcon name="book" :size="38" class="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-            <p class="text-sm text-slate-500 dark:text-slate-400">Žiadne príklady neboli pridané</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t('noExamplesAddedYet') }}</p>
             <p class="text-xs text-gray-400 mt-1">
-              Použite generátor alebo pridajte sadu zo zoznamu nižšie — prípadne označte príklady v
-              <router-link :to="{ name: 'teacher-library' }" class="text-secondary hover:underline">knižnici</router-link>.
+              {{ t('useGeneratorOrAddSetText') }}
+              <router-link :to="{ name: 'teacher-library' }" class="text-secondary hover:underline">{{ t('libraryLinkText') }}</router-link>.
             </p>
           </div>
 
@@ -592,14 +600,14 @@ const generatePdf = async (openInTab) => {
               <div class="flex-1 min-w-0 font-mono text-sm text-slate-800 dark:text-slate-100 cursor-pointer"
                    :class="expandedItemKey === it.key ? 'whitespace-normal break-words' : 'truncate'"
                    @click="expandedItemKey = expandedItemKey === it.key ? null : it.key"
-                   title="Klikni pre zobrazenie celého textu">
+                   :title="t('clickToShowFullText')">
                 {{ it.example }}
                 <span class="text-secondary font-semibold">= {{ it.answer }}</span>
               </div>
               <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-gray-400 flex-shrink-0">
                 {{ it.input_type || 'INLINE' }}
               </span>
-              <select v-model="it.answer_lines" title="Miesto na odpoveď"
+              <select v-model="it.answer_lines" :title="t('answerSpaceLabel')"
                       class="flex-shrink-0 px-1.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600
                              bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px]
                              focus:outline-none focus:ring-1 focus:ring-secondary">
@@ -612,9 +620,9 @@ const generatePdf = async (openInTab) => {
                        class="w-14 px-1.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600
                               bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs text-right
                               focus:outline-none focus:ring-1 focus:ring-secondary" />
-                b.
+                {{ t('pointsAbbreviationDot') }}
               </label>
-              <button @click="removeItem(i)" title="Odstrániť z písomky"
+              <button @click="removeItem(i)" :title="t('removeFromTestTooltip')"
                       class="w-6 h-6 rounded flex items-center justify-center flex-shrink-0
                              text-gray-400 hover:text-accent hover:bg-accent/10 transition-colors">
                 <TeacherIcon name="close" :size="13" />
@@ -626,41 +634,41 @@ const generatePdf = async (openInTab) => {
         <!-- Example sets -->
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 space-y-3">
-            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">Príkladové sady</h3>
+            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ t('taskSetsTitle') }}</h3>
             <div class="relative">
               <TeacherIcon name="search" :size="14"
                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input v-model="taskSearch" type="text" placeholder="Hľadať sady..."
+              <input v-model="taskSearch" type="text" :placeholder="t('searchTasks')"
                      class="w-full pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                             bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                             focus:outline-none focus:ring-1 focus:ring-secondary" />
             </div>
           </div>
           <div class="divide-y divide-slate-100 dark:divide-slate-700">
-            <div v-for="t in filteredTasks" :key="t.id"
+            <div v-for="task in filteredTasks" :key="task.id"
                  class="flex items-center gap-3 px-5 py-3 transition-colors"
-                 :class="addedTaskIds.has(t.id) ? 'opacity-40' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'">
-              <span class="w-2 h-2 rounded-full flex-shrink-0" :class="DOTS[taskColorIdx(t.id)]" />
+                 :class="addedTaskIds.has(task.id) ? 'opacity-40' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'">
+              <span class="w-2 h-2 rounded-full flex-shrink-0" :class="DOTS[taskColorIdx(task.id)]" />
               <div class="flex-1 min-w-0">
-                <p class="text-sm text-slate-800 dark:text-slate-100 truncate">{{ t.name }}</p>
-                <p class="text-xs text-gray-400">{{ t.example_count }} príkladov</p>
+                <p class="text-sm text-slate-800 dark:text-slate-100 truncate">{{ task.name }}</p>
+                <p class="text-xs text-gray-400">{{ task.example_count }} {{ t('examplesCount') }}</p>
               </div>
-              <span v-if="t.grade_levels?.length"
+              <span v-if="task.grade_levels?.length"
                     class="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
-                    :class="PILLS[taskColorIdx(t.id)]">
-                {{ t.grade_levels.join('., ') }}. ročník
+                    :class="PILLS[taskColorIdx(task.id)]">
+                {{ task.grade_levels.join('., ') }}. {{ t('grade') }}
               </span>
-              <button @click="addTask(t)" :disabled="addedTaskIds.has(t.id) || addingTaskId === t.id"
+              <button @click="addTask(task)" :disabled="addedTaskIds.has(task.id) || addingTaskId === task.id"
                       class="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-lg text-xs font-medium border transition-colors"
-                      :class="addedTaskIds.has(t.id)
+                      :class="addedTaskIds.has(task.id)
                         ? 'bg-slate-100 dark:bg-slate-700 border-transparent text-slate-500 dark:text-slate-400'
                         : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'">
-                <TeacherIcon :name="addedTaskIds.has(t.id) ? 'check' : 'plus'" :size="12" />
-                {{ addedTaskIds.has(t.id) ? 'Pridaná' : (addingTaskId === t.id ? '…' : 'Pridať') }}
+                <TeacherIcon :name="addedTaskIds.has(task.id) ? 'check' : 'plus'" :size="12" />
+                {{ addedTaskIds.has(task.id) ? t('addedLabel') : (addingTaskId === task.id ? '…' : t('addButtonLabel')) }}
               </button>
             </div>
             <p v-if="!filteredTasks.length" class="py-8 text-center text-sm text-gray-400">
-              Žiadne sady neboli nájdené
+              {{ t('taskSetsNoResults') }}
             </p>
           </div>
 
@@ -672,15 +680,15 @@ const generatePdf = async (openInTab) => {
                         hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
               <span class="w-2 h-2 rounded-full flex-shrink-0 bg-slate-400" />
               <div class="flex-1 min-w-0 text-left">
-                <p class="text-sm text-slate-800 dark:text-slate-100">Nezaradené príklady</p>
-                <p class="text-xs text-gray-400">{{ unattached.length }} príkladov mimo sád</p>
+                <p class="text-sm text-slate-800 dark:text-slate-100">{{ t('unattachedExamplesHeading') }}</p>
+                <p class="text-xs text-gray-400">{{ t('examplesOutsideSetsText', { n: unattached.length }) }}</p>
               </div>
               <button v-if="unattachedOpen" @click.stop="addAllUnattached"
                       class="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 rounded-lg text-xs font-medium border transition-colors
                              border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200
                              hover:bg-slate-50 dark:hover:bg-slate-700">
                 <TeacherIcon name="plus" :size="12" />
-                Pridať všetky
+                {{ t('addAllButton') }}
               </button>
               <TeacherIcon name="chevronDown" :size="15"
                            class="text-gray-400 transition-transform flex-shrink-0"
@@ -701,7 +709,7 @@ const generatePdf = async (openInTab) => {
                           ? 'bg-slate-100 dark:bg-slate-700 border-transparent text-slate-500 dark:text-slate-400'
                           : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'">
                   <TeacherIcon :name="itemIds.has(ex.id) ? 'check' : 'plus'" :size="12" />
-                  {{ itemIds.has(ex.id) ? 'Pridaný' : 'Pridať' }}
+                  {{ itemIds.has(ex.id) ? t('addedLabelMasculine') : t('addButtonLabel') }}
                 </button>
               </div>
             </div>
@@ -714,7 +722,7 @@ const generatePdf = async (openInTab) => {
         <div v-if="items.length" ref="previewSection"
              class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-            <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Náhľad (presne ako v PDF)</p>
+            <p class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ t('previewExactAsPdf') }}</p>
             <Spinner v-if="previewLoading" class="w-4 h-4" />
           </div>
           <div class="flex justify-center bg-slate-200 dark:bg-slate-900 p-4">
@@ -729,22 +737,22 @@ const generatePdf = async (openInTab) => {
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
             <TeacherIcon name="settings" :size="15" class="text-gray-400" />
-            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">Nastavenia tlače</h3>
+            <h3 class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ t('printSettingsHeading') }}</h3>
           </div>
 
           <div class="p-5 space-y-5">
             <!-- Document -->
             <div class="space-y-2">
-              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Dokument</p>
-              <input v-model="settings.title" type="text" placeholder="Názov dokumentu"
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">{{ t('documentLabel') }}</p>
+              <input v-model="settings.title" type="text" :placeholder="t('documentTitlePlaceholder')"
                      class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                             bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                             focus:outline-none focus:ring-1 focus:ring-secondary" />
-              <input v-model="settings.class_name" type="text" placeholder="Trieda (napr. 5.A)"
+              <input v-model="settings.class_name" type="text" :placeholder="t('classNamePlaceholder')"
                      class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                             bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                             focus:outline-none focus:ring-1 focus:ring-secondary" />
-              <input v-model="settings.note" type="text" placeholder="Pokyny pre žiakov (voliteľné)"
+              <input v-model="settings.note" type="text" :placeholder="t('instructionsForStudentsPlaceholder')"
                      class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                             bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                             focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -754,41 +762,41 @@ const generatePdf = async (openInTab) => {
 
             <!-- Display toggles -->
             <div class="space-y-0.5">
-              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2">Zobrazenie</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold mb-2">{{ t('displayLabel') }}</p>
 
               <div class="flex items-center justify-between py-2">
                 <div>
-                  <p class="text-sm text-slate-800 dark:text-slate-100">Zobraziť body</p>
-                  <p class="text-xs text-gray-400">Každý príklad s bodovou hodnotou</p>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">{{ t('showPointsToggleLabel') }}</p>
+                  <p class="text-xs text-gray-400">{{ t('showPointsToggleDesc') }}</p>
                 </div>
                 <ToggleSwitch v-model="settings.show_points" />
               </div>
 
               <div class="flex items-center justify-between py-2">
                 <div>
-                  <p class="text-sm text-slate-800 dark:text-slate-100">Úvodná strana</p>
-                  <p class="text-xs text-gray-400">Pridať titulnú stranu</p>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">{{ t('coverPageToggleLabel') }}</p>
+                  <p class="text-xs text-gray-400">{{ t('coverPageToggleDesc') }}</p>
                 </div>
                 <ToggleSwitch v-model="settings.cover_page" />
               </div>
 
               <div class="flex items-center justify-between py-2">
                 <div>
-                  <p class="text-sm text-slate-800 dark:text-slate-100">Hlavička</p>
-                  <p class="text-xs text-gray-400">Záhlavie na každej strane</p>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">{{ t('headerToggleLabel') }}</p>
+                  <p class="text-xs text-gray-400">{{ t('headerToggleDesc') }}</p>
                 </div>
                 <ToggleSwitch v-model="settings.show_header" />
               </div>
               <input v-if="settings.show_header" v-model="settings.header_text" type="text"
-                     placeholder="Napr. Meno a priezvisko: ______"
+                     :placeholder="t('headerTextPlaceholder')"
                      class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                             bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                             focus:outline-none focus:ring-1 focus:ring-secondary" />
 
               <div class="flex items-center justify-between py-2">
                 <div>
-                  <p class="text-sm text-slate-800 dark:text-slate-100">Kľúč odpovedí</p>
-                  <p class="text-xs text-gray-400">Strana so správnymi odpoveďami</p>
+                  <p class="text-sm text-slate-800 dark:text-slate-100">{{ t('answerKeyToggleLabel') }}</p>
+                  <p class="text-xs text-gray-400">{{ t('answerKeyToggleDesc') }}</p>
                 </div>
                 <ToggleSwitch v-model="settings.answer_key" />
               </div>
@@ -800,7 +808,7 @@ const generatePdf = async (openInTab) => {
             <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">
-                  Vertikálne medzery
+                  {{ t('verticalSpacingLabel') }}
                 </p>
                 <span class="text-xs font-medium tabular-nums text-slate-700 dark:text-slate-200">
                   {{ settings.spacing }} px
@@ -815,8 +823,8 @@ const generatePdf = async (openInTab) => {
                         : 'text-gray-400 hover:text-slate-700 dark:hover:text-slate-200'">
                 <TeacherIcon name="reset" :size="12" />
                 {{ settings.spacing === RECOMMENDED_SPACING
-                  ? 'Odporúčané (aktívne)'
-                  : `Nastaviť odporúčané (${RECOMMENDED_SPACING} px)` }}
+                  ? t('recommendedActiveLabel')
+                  : t('setRecommendedLabel', { px: RECOMMENDED_SPACING }) }}
               </button>
             </div>
 
@@ -824,41 +832,41 @@ const generatePdf = async (openInTab) => {
 
             <!-- Layout -->
             <div class="space-y-2">
-              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Rozloženie</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">{{ t('layoutLabel') }}</p>
               <div class="grid grid-cols-2 gap-2">
                 <label class="block">
-                  <span class="text-[11px] font-semibold text-gray-400">Skupiny</span>
+                  <span class="text-[11px] font-semibold text-gray-400">{{ t('groupsLabel') }}</span>
                   <select v-model.number="settings.groups"
                           class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                                  bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
                                  focus:outline-none focus:ring-1 focus:ring-secondary">
-                    <option :value="1">1 (bez skupín)</option>
+                    <option :value="1">1 ({{ t('groupsOption1') }})</option>
                     <option :value="2">2 (A, B)</option>
                     <option :value="3">3 (A–C)</option>
                     <option :value="4">4 (A–D)</option>
                   </select>
                 </label>
                 <label class="block">
-                  <span class="text-[11px] font-semibold text-gray-400">Písomiek na A4</span>
+                  <span class="text-[11px] font-semibold text-gray-400">{{ t('testsPerA4Label') }}</span>
                   <select v-model.number="settings.per_page"
                           class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                                  bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
                                  focus:outline-none focus:ring-1 focus:ring-secondary">
-                    <option :value="1">1 (celá strana)</option>
-                    <option :value="2">2 (šetrenie papiera)</option>
+                    <option :value="1">1 ({{ t('perPageOption1') }})</option>
+                    <option :value="2">2 ({{ t('perPageOption2') }})</option>
                   </select>
                 </label>
               </div>
               <p v-if="settings.groups > 1" class="text-[11px] text-gray-400">
-                Skupina A má tvoje poradie, ďalšie skupiny majú premiešané poradie príkladov.
+                {{ t('groupOrderInfo') }}
               </p>
               <p v-if="settings.per_page === 2 && items.length > 12" class="text-[11px] text-gray-400">
-                Pri 2 písomkách na A4 sa dlhšia sada rozdelí na viac strán (tá istá polovica pokračuje na ďalšej strane) — nič sa neoreže.
+                {{ t('twoPerA4Info') }}
               </p>
 
               <div class="grid grid-cols-2 gap-2 pt-1">
                 <label class="block">
-                  <span class="text-[11px] font-semibold text-gray-400">Stĺpce (INLINE/FRAC)</span>
+                  <span class="text-[11px] font-semibold text-gray-400">{{ t('columnsLabel') }}</span>
                   <select v-model.number="settings.columns"
                           class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                                  bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
@@ -867,7 +875,7 @@ const generatePdf = async (openInTab) => {
                   </select>
                 </label>
                 <label class="block">
-                  <span class="text-[11px] font-semibold text-gray-400">Riadky (WORD/VAR)</span>
+                  <span class="text-[11px] font-semibold text-gray-400">{{ t('rowsLabel') }}</span>
                   <select v-model.number="settings.default_answer_lines"
                           class="mt-1 w-full px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                                  bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
@@ -880,7 +888,7 @@ const generatePdf = async (openInTab) => {
               <!-- Instant local sandbox — updates on every keystroke, no server round-trip -->
               <div class="rounded-lg border border-dashed border-slate-300 dark:border-slate-600 p-2.5
                           bg-slate-50 dark:bg-slate-900/40 space-y-1.5">
-                <p class="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Ukážka naživo</p>
+                <p class="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">{{ t('liveSampleLabel') }}</p>
                 <div class="grid gap-1.5" :style="{ gridTemplateColumns: `repeat(${settings.columns}, minmax(0, 1fr))` }">
                   <div v-for="n in settings.columns" :key="n"
                        class="text-[11px] font-mono bg-white dark:bg-slate-800 rounded px-2 py-1.5
@@ -890,16 +898,16 @@ const generatePdf = async (openInTab) => {
                 </div>
                 <div class="text-[11px] font-mono bg-white dark:bg-slate-800 rounded px-2 py-1.5
                             border border-slate-200 dark:border-slate-700">
-                  <div>Koľko jabĺk zostane, ak zjeme 3 z 10?</div>
+                  <div>{{ t('sampleWordProblemText') }}</div>
                   <div class="mt-1 rounded border border-dashed border-slate-300 dark:border-slate-600
                               flex items-center justify-center text-[10px] text-gray-400 transition-all"
                        :style="{ height: (settings.default_answer_lines * 16) + 'px' }">
                     {{ settings.default_answer_lines }}
-                    {{ settings.default_answer_lines === 1 ? 'riadok' : settings.default_answer_lines < 5 ? 'riadky' : 'riadkov' }}
-                    voľného miesta
+                    {{ lineCountWord(settings.default_answer_lines) }}
+                    {{ t('freeSpaceOfText') }}
                   </div>
                 </div>
-                <p class="text-[10px] text-gray-400">Schematicky — v PDF bude toto miesto úplne prázdne, bez orámovania.</p>
+                <p class="text-[10px] text-gray-400">{{ t('schematicNoteText') }}</p>
               </div>
             </div>
 
@@ -908,15 +916,15 @@ const generatePdf = async (openInTab) => {
             <!-- Summary -->
             <div class="rounded-lg bg-slate-50 dark:bg-slate-700/40 px-4 py-3.5 space-y-2">
               <div class="flex justify-between text-xs">
-                <span class="text-gray-400">Celkom príkladov</span>
+                <span class="text-gray-400">{{ t('totalExamples') }}</span>
                 <span class="font-medium tabular-nums text-slate-800 dark:text-slate-100">{{ items.length }}</span>
               </div>
               <div v-if="settings.show_points" class="flex justify-between text-xs">
-                <span class="text-gray-400">Celkové body</span>
+                <span class="text-gray-400">{{ t('totalPointsLabel') }}</span>
                 <span class="font-medium tabular-nums text-slate-800 dark:text-slate-100">{{ totalPoints }}</span>
               </div>
               <div class="flex justify-between text-xs">
-                <span class="text-gray-400">Odhadované strany</span>
+                <span class="text-gray-400">{{ t('estimatedPagesLabel') }}</span>
                 <span class="font-medium tabular-nums text-slate-800 dark:text-slate-100">~{{ estimatedPages }}</span>
               </div>
             </div>
@@ -927,10 +935,10 @@ const generatePdf = async (openInTab) => {
                 class="w-full h-11 flex items-center justify-center gap-2 bg-secondary text-white rounded-lg
                        font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
           <TeacherIcon name="download" :size="16" />
-          {{ generating ? 'Sťahujem…' : 'Stiahnuť PDF' }}
+          {{ generating ? t('downloadingEllipsis') : t('downloadPdfButton') }}
         </button>
         <p v-if="!items.length" class="text-xs text-center text-gray-400">
-          Najprv pridajte aspoň jeden príklad
+          {{ t('addAtLeastOneExampleFirst') }}
         </p>
       </div>
     </div>
@@ -940,7 +948,7 @@ const generatePdf = async (openInTab) => {
             class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2.5
                    bg-slate-800 dark:bg-secondary text-white rounded-full shadow-lg text-sm font-medium
                    hover:bg-slate-700 dark:hover:bg-blue-600 transition-colors">
-      Živý náhľad
+      {{ t('livePreviewButton') }}
       <TeacherIcon name="chevronDown" :size="14" class="animate-bounce" />
     </button>
   </div>

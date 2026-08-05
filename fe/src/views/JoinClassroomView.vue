@@ -1,9 +1,9 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
 import { getClassroomByCode, joinClassroom } from '@/api/apiClient';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useToastStore } from '@/stores/useToastStore';
 import Spinner from '@/components/Spinner.vue';
@@ -14,7 +14,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
 const toastStore = useToastStore();
-const d = dictionary[langStore.language];
+const { t } = useI18n();
 
 const classroom = ref(null);
 const loading = ref(true);
@@ -29,7 +29,7 @@ const fetchClassroom = async (code) => {
   try {
     classroom.value = await getClassroomByCode(code);
   } catch (e) {
-    error.value = d.classroomNotFound || 'Trieda nenájdená. Skontroluj kód.';
+    error.value = t('classroomNotFound');
   }
   loading.value = false;
 };
@@ -43,15 +43,15 @@ const handleJoin = async () => {
   joining.value = true;
   try {
     await joinClassroom(authStore.id, classroom.value.code || props.code || manualCode.value);
-    toastStore.addToast({ message: d.joinedClassroom || 'Prihlásený do triedy!', type: 'success', visible: true });
+    toastStore.addToast({ message: t('joinedClassroom'), type: 'success', visible: true });
     router.push({ name: 'student-classrooms' });
   } catch (e) {
     const msg = e?.response?.data?.error;
     if (msg === 'already_member') {
-      toastStore.addToast({ message: d.alreadyMember || 'Už si členom tejto triedy.', type: 'info', visible: true });
+      toastStore.addToast({ message: t('alreadyMember'), type: 'info', visible: true });
       router.push({ name: 'student-classrooms' });
     } else {
-      toastStore.addToast({ message: d.joinError || 'Chyba pri pridávaní do triedy.', type: 'error', visible: true });
+      toastStore.addToast({ message: t('joinError'), type: 'error', visible: true });
     }
   }
   joining.value = false;
@@ -85,10 +85,10 @@ onMounted(async () => {
         <span class="text-3xl">🏫</span>
       </div>
       <h1 class="text-3xl font-bold text-primary dark:text-white mb-2">
-        {{ d.joinClassroom || 'Pridať sa do triedy' }}
+        {{ t('joinClassroom') }}
       </h1>
       <p class="text-gray-500 dark:text-gray-400 text-sm">
-        {{ d.joinClassroomDesc || 'Zadaj kód triedy od učiteľa.' }}
+        {{ t('joinClassroomDesc') }}
       </p>
     </div>
 
@@ -99,7 +99,7 @@ onMounted(async () => {
           v-model="manualCode"
           type="text"
           maxlength="8"
-          :placeholder="d.enterCode || 'Zadaj kód...'"
+          :placeholder="t('enterCode')"
           class="flex-1 px-4 py-3 text-center text-xl font-mono uppercase tracking-widest
                  rounded-2xl border-2 border-slate-200 dark:border-slate-600
                  bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
@@ -112,7 +112,7 @@ onMounted(async () => {
                  border-b-4 border-blue-700 hover:-translate-y-0.5 active:translate-y-0.5
                  active:border-b-2 transition-all"
         >
-          {{ d.search || 'Hľadať' }}
+          {{ t('search') }}
         </button>
       </div>
     </div>
@@ -146,7 +146,7 @@ onMounted(async () => {
             👤 {{ classroom.teacher_name }}
           </span>
           <span class="flex items-center gap-1">
-            👥 {{ classroom.student_count }} {{ d.students || 'študentov' }}
+            👥 {{ classroom.student_count }} {{ t('students') }}
           </span>
         </div>
       </div>
@@ -156,7 +156,7 @@ onMounted(async () => {
            class="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/30
                   border border-amber-200 dark:border-amber-700
                   text-amber-700 dark:text-amber-300 text-sm text-center">
-        {{ d.loginToJoin || 'Pre pripojenie sa musíš byť prihlásený ako študent.' }}
+        {{ t('loginToJoin') }}
       </div>
 
       <button
@@ -170,17 +170,17 @@ onMounted(async () => {
       >
         <span v-if="joining">...</span>
         <span v-else-if="!authStore.isAuthenticated || authStore.role !== 'student'">
-          {{ d.loginAndJoin || 'Prihlásiť sa a pripojiť' }}
+          {{ t('loginAndJoin') }}
         </span>
         <span v-else>
-          {{ d.joinNow || 'Pripojiť sa' }}
+          {{ t('joinNow') }}
         </span>
       </button>
     </div>
 
     <!-- Empty state -->
     <div v-else-if="!props.code && !manualCode" class="text-center py-12 text-gray-400 text-sm">
-      {{ d.enterCodeAbove || 'Zadaj kód triedy vyššie.' }}
+      {{ t('enterCodeAbove') }}
     </div>
 
   </div>

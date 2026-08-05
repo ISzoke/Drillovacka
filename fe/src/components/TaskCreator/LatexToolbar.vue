@@ -9,6 +9,9 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 // Defined latex symbols
 const frac = computed(() => `\\(\\frac{a}{b}\\)`);
@@ -81,7 +84,7 @@ function insertTextIntoActiveInput(text) {
               { '-translate-x-48': isHidden, 'translate-x-0': !isHidden }]">
 
         <div class="flex flex-col items-center">
-            <div class="text-center text-primary text-3xl font-black my-4">LaTeX zápis</div>
+            <div class="text-center text-primary text-3xl font-black my-4">{{ t('latexNotationTitle') }}</div>
             
             <!-- Buttons for each symbol -->
             <div class="grid grid-cols-2 justify-center gap-4">

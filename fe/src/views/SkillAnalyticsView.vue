@@ -1,31 +1,31 @@
 <template>
   <div class="p-6 max-w-6xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Analytika zručností</h1>
-    
+    <h1 class="text-2xl font-bold mb-4">{{ t('skillAnalytics') }}</h1>
+
     <!-- Filter: Student ID or All Students -->
     <div class="mb-4 flex gap-2 items-end">
-      <label class="font-semibold">Študent ID:</label>
-      <input v-model="studentId" type="number" class="border rounded px-2 py-1 w-32" @keyup.enter="fetchData" placeholder="alebo prázdne pre všetkých" />
-      <button @click="fetchData" class="bg-blue-600 text-white px-3 py-1 rounded">Načítať</button>
+      <label class="font-semibold">{{ t('studentIdLabel') }}</label>
+      <input v-model="studentId" type="number" class="border rounded px-2 py-1 w-32" @keyup.enter="fetchData" :placeholder="t('orEmptyForAll')" />
+      <button @click="fetchData" class="bg-blue-600 text-white px-3 py-1 rounded">{{ t('load') }}</button>
     </div>
 
-    <div v-if="loading" class="text-gray-500">Načítavam...</div>
-    <div v-else-if="error" class="text-red-600">Chyba: {{ error }}</div>
+    <div v-if="loading" class="text-gray-500">{{ t('loadingEllipsis') }}</div>
+    <div v-else-if="error" class="text-red-600">{{ t('errorPrefix') }} {{ error }}</div>
 
     <!-- All Students View -->
     <div v-else-if="showingAllStudents">
-      <h2 class="text-xl font-semibold mb-3">Všetci študenti</h2>
+      <h2 class="text-xl font-semibold mb-3">{{ t('allStudents') }}</h2>
       <table class="min-w-full border mt-4">
         <thead>
           <tr class="bg-gray-100">
-            <th class="p-2 border">Používateľ</th>
-            <th class="p-2 border">Príklady</th>
-            <th class="p-2 border">Správne</th>
-            <th class="p-2 border">Presnosť</th>
-            <th class="p-2 border">Pokusy</th>
-            <th class="p-2 border">Priem. čas (ms)</th>
-            <th class="p-2 border">Posledné cvičenie</th>
-            <th class="p-2 border">Detail</th>
+            <th class="p-2 border">{{ t('username') }}</th>
+            <th class="p-2 border">{{ t('examples') }}</th>
+            <th class="p-2 border">{{ t('correctColumn') }}</th>
+            <th class="p-2 border">{{ t('accuracy') }}</th>
+            <th class="p-2 border">{{ t('attempts') }}</th>
+            <th class="p-2 border">{{ t('avgTimeMs') }}</th>
+            <th class="p-2 border">{{ t('lastPracticed') }}</th>
+            <th class="p-2 border">{{ t('detail') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -40,29 +40,29 @@
             <td class="border p-2 text-center">{{ formatDuration(st.avg_duration_ms) }}</td>
             <td class="border p-2 text-center">{{ formatDate(st.last_practiced) }}</td>
             <td class="border p-2 text-center">
-              <button @click="viewStudentDetail(st.student_id)" class="text-blue-600 underline">Zobraziť</button>
+              <button @click="viewStudentDetail(st.student_id)" class="text-blue-600 underline">{{ t('view') }}</button>
             </td>
           </tr>
         </tbody>
       </table>
-      <div v-if="allStudents.length === 0" class="mt-4 text-gray-500">Žiadni študenti v databáze.</div>
+      <div v-if="allStudents.length === 0" class="mt-4 text-gray-500">{{ t('noStudentsInDb') }}</div>
     </div>
 
     <!-- Single Student Skill Breakdown -->
     <div v-else>
-      <h2 class="text-xl font-semibold mb-3">Detail študenta ID: {{ studentId }}</h2>
-      <button @click="backToAll" class="text-blue-600 underline mb-3">← Späť na zoznam študentov</button>
+      <h2 class="text-xl font-semibold mb-3">{{ t('studentDetailId', { id: studentId }) }}</h2>
+      <button @click="backToAll" class="text-blue-600 underline mb-3">{{ t('backToStudentList') }}</button>
       <table class="min-w-full border mt-4">
         <thead>
           <tr class="bg-gray-100">
-            <th class="p-2 border">Zručnosť</th>
-            <th class="p-2 border">Pokusy</th>
-            <th class="p-2 border">Správne</th>
-            <th class="p-2 border">Presnosť</th>
-            <th class="p-2 border">Zvládnutie</th>
-            <th class="p-2 border">Priem. pokusy</th>
-            <th class="p-2 border">Priem. čas (ms)</th>
-            <th class="p-2 border">Posledné cvičenie</th>
+            <th class="p-2 border">{{ t('skillColumn') }}</th>
+            <th class="p-2 border">{{ t('attempts') }}</th>
+            <th class="p-2 border">{{ t('correctColumn') }}</th>
+            <th class="p-2 border">{{ t('accuracy') }}</th>
+            <th class="p-2 border">{{ t('mastery') }}</th>
+            <th class="p-2 border">{{ t('avgAttempts') }}</th>
+            <th class="p-2 border">{{ t('avgTimeMs') }}</th>
+            <th class="p-2 border">{{ t('lastPracticed') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -82,14 +82,17 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="skills.length === 0" class="mt-4 text-gray-500">Žiadne dáta pre tohto študenta.</div>
+      <div v-if="skills.length === 0" class="mt-4 text-gray-500">{{ t('noDataForStudent') }}</div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getStudentSkillStats, getAllStudentsStats } from '../api/apiClient'
+
+const { t } = useI18n()
 
 const studentId = ref('')
 const skills = ref([])
@@ -110,7 +113,7 @@ function fetchData() {
         loading.value = false
       })
       .catch(e => {
-        error.value = e.message || 'Chyba pri načítaní študentov.'
+        error.value = e.message || t('errorLoadingStudents')
         loading.value = false
       })
   } else {
@@ -124,7 +127,7 @@ function fetchData() {
         loading.value = false
       })
       .catch(e => {
-        error.value = e.message || 'Chyba pri načítaní dát.'
+        error.value = e.message || t('errorLoadingData')
         loading.value = false
       })
   }

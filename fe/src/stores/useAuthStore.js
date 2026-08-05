@@ -11,7 +11,7 @@
 import { defineStore } from 'pinia';
 import { loginStudent, loginAdmin, loginTeacher } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
-import { dictionary } from '@/utils/dictionary';
+import { i18n } from '@/i18n';
 import { useLanguageStore } from './useLanguageStore';
 
 export const useAuthStore = defineStore('auth', {
@@ -83,7 +83,7 @@ export const useAuthStore = defineStore('auth', {
           const toastStore = useToastStore();
 
           toastStore.addToast({
-            message: isLogin ? dictionary[langStore.language].loginSuccess : dictionary[langStore.language].registrationSuccess,
+            message: isLogin ? i18n.global.t('loginSuccess') : i18n.global.t('registrationSuccess'),
             type: 'success',
             visible: true,
           });
@@ -102,11 +102,10 @@ export const useAuthStore = defineStore('auth', {
         // Unsuccessful login
         } else {
           const langStore = useLanguageStore();
-          this.errorMessage = langStore.language == 'cs' ? result.error : dictionary[langStore.language].invalidCredentials;
+          this.errorMessage = langStore.language == 'cs' ? result.error : i18n.global.t('invalidCredentials');
         }
       } catch (error) {
-        const langStore = useLanguageStore();
-        this.errorMessage = dictionary[langStore.language].somethingWentWrong;
+        this.errorMessage = i18n.global.t('somethingWentWrong');
       }
     },
 
@@ -133,10 +132,9 @@ export const useAuthStore = defineStore('auth', {
       this.clearInactivityTimer();
 
       const toastStore = useToastStore();
-      const langStore = useLanguageStore();
 
       toastStore.addToast({
-        message: dictionary[langStore.language].logoutSuccess,
+        message: i18n.global.t('logoutSuccess'),
         type: 'info',
         visible: true,
       });
@@ -188,9 +186,8 @@ export const useAuthStore = defineStore('auth', {
         this.logout(router);
         
         const toastStore = useToastStore();
-        const langStore = useLanguageStore();
         toastStore.addToast({
-          message: dictionary[langStore.language].inactivityLogout, 
+          message: i18n.global.t('inactivityLogout'),
           type: 'info',
           visible: true,
         });

@@ -9,6 +9,9 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   number: {
@@ -92,33 +95,33 @@ defineExpose({ getData, importExample, clearInput });
       <!-- Example inputs -->
       <div class="flex justify-center p-3">
         <div class="flex flex-col w-full">
-          <h2 class="text-secondary font-bold mb-1">Zadání slovní úlohy:</h2>
+          <h2 class="text-secondary font-bold mb-1">{{ t('wordProblemPromptLabel') }}</h2>
 
           <!-- Example text input field -->
           <textarea
             v-model="exampleInput"
-            placeholder="Zde vložte zadání slovní úlohy"
+            :placeholder="t('wordProblemPromptPlaceholder')"
             class="h-32 p-3 border border-gray-300 rounded w-full"
           ></textarea>
-          
-          
-          <h2 class="text-secondary font-bold mt-3 mb-1">Správná odpověď:</h2>
+
+
+          <h2 class="text-secondary font-bold mt-3 mb-1">{{ t('correctAnswer') }}:</h2>
 
           <!-- Answer input field -->
           <input
             type="text"
             v-model="answerInput"
-            placeholder="Zde vložte správnou odpověď"
+            :placeholder="t('correctAnswerPlaceholder')"
             class="h-14 p-3 border border-gray-300 rounded w-full"
           />
-  
+
           <!-- Steps input fields -->
           <div v-if="stepInputs.length > 0" class="mt-3">
-            <h2 class="text-secondary font-bold mb-1">Kroky řešení:</h2>
+            <h2 class="text-secondary font-bold mb-1">{{ t('solutionStepsLabel') }}</h2>
             <div v-for="(step, index) in stepInputs" :key="index" class="flex items-center mb-2">
               <textarea
                 v-model="step.value"
-                :placeholder="`Zde vložte ${index + 1}. krok řešení`"
+                :placeholder="t('solutionStepPlaceholder', { n: index + 1 })"
                 class="h-16 p-3 border border-gray-300 rounded w-full"
               ></textarea>
             </div>
@@ -135,7 +138,7 @@ defineExpose({ getData, importExample, clearInput });
         >
           +
         </div>
-        <p class="text-sm text-secondary font-medium mt-1">Přidat krok řešení</p>
+        <p class="text-sm text-secondary font-medium mt-1">{{ t('addSolutionStepLabel') }}</p>
       </div>
 
     </div>

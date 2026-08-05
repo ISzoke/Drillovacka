@@ -1,5 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import {
@@ -13,6 +14,7 @@ import TeacherBulkOrganizeModal from '@/components/TeacherBulkOrganizeModal.vue'
 
 const authStore = useAuthStore();
 const toastStore = useToastStore();
+const { t } = useI18n();
 
 const myTasks = ref([]);
 
@@ -97,26 +99,26 @@ const bulkApplyGrade = async () => {
   bulkGrading.value = true;
   try {
     await teacherBulkSetGrade(authStore.id, [...selectedIds.value], bulkGradeChoice.value);
-    toastStore.addToast({ message: 'Ročník nastavený pre vybrané príklady.', type: 'success', visible: true });
+    toastStore.addToast({ message: t('gradeSetForSelected'), type: 'success', visible: true });
     clearSelection();
     await loadExamples();
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri nastavovaní ročníka.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('errorSettingGrade'), type: 'error', visible: true });
   }
   bulkGrading.value = false;
 };
 
 const bulkDeleteSelected = async () => {
   const n = selectedIds.value.size;
-  if (!confirm(`Natrvalo zmazať ${n} príkladov? Zmaže sa aj história precvičovania žiakmi.`)) return;
+  if (!confirm(t('confirmBulkDeleteExamples', { n }))) return;
   bulkDeleting.value = true;
   try {
     await teacherBulkDelete(authStore.id, [...selectedIds.value]);
-    toastStore.addToast({ message: `${n} príkladov zmazaných.`, type: 'success', visible: true });
+    toastStore.addToast({ message: t('examplesDeletedCount', { n }), type: 'success', visible: true });
     clearSelection();
     await loadExamples();
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri mazaní.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('errorDeleting'), type: 'error', visible: true });
   }
   bulkDeleting.value = false;
 };
@@ -152,27 +154,27 @@ const saveEdit = async (ex) => {
     const i = examples.value.findIndex(e => e.id === ex.id);
     if (i !== -1) examples.value[i] = updated;
     editingId.value = null;
-    toastStore.addToast({ message: 'Príklad uložený.', type: 'success', visible: true });
+    toastStore.addToast({ message: t('exampleSaved'), type: 'success', visible: true });
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri ukladaní príkladu.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('errorSavingExample'), type: 'error', visible: true });
   }
   saving.value = false;
 };
 
-const deleteForever = async (ex) => {
-  if (!confirm(`Natrvalo zmazať "${ex.example}"? Zmaže sa aj história precvičovania žiakmi.`)) return;
+const deleteForeverAction = async (ex) => {
+  if (!confirm(t('confirmDeleteExample', { example: ex.example }))) return;
   try {
     await teacherDeleteExample(ex.id, authStore.id);
     examples.value = examples.value.filter(e => e.id !== ex.id);
-    toastStore.addToast({ message: 'Príklad zmazaný.', type: 'success', visible: true });
+    toastStore.addToast({ message: t('exampleDeleted'), type: 'success', visible: true });
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri mazaní.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('errorDeleting'), type: 'error', visible: true });
   }
 };
 
 const submitNewExample = async () => {
   if (!newExample.example.trim() || !newExample.answer.trim()) {
-    toastStore.addToast({ message: 'Vyplň príklad aj odpoveď.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('fillExampleAndAnswer'), type: 'error', visible: true });
     return;
   }
   creating.value = true;
@@ -187,9 +189,9 @@ const submitNewExample = async () => {
     }
     newExample.example = ''; newExample.answer = ''; newExample.steps = []; newExample.grade = null;
     showNewForm.value = false;
-    toastStore.addToast({ message: 'Príklad pridaný do knižnice.', type: 'success', visible: true });
+    toastStore.addToast({ message: t('exampleAddedToLibrary'), type: 'success', visible: true });
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri vytváraní príkladu.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('errorCreatingExample'), type: 'error', visible: true });
   }
   creating.value = false;
 };
@@ -199,15 +201,15 @@ const submitNewExample = async () => {
   <div class="pt-20 px-4 max-w-3xl mx-auto pb-16">
 
     <TeacherPageHeader
-      :crumbs="[{ label: 'Moja knižnica', to: { name: 'teacher-library' } }]"
-      current="Nezaradené"
-      title="Nezaradené príklady"
-      subtitle="Príklady mimo akejkoľvek sady — vyber si a pridaj do existujúcej alebo novej sady." />
+      :crumbs="[{ label: t('myLibrary'), to: { name: 'teacher-library' } }]"
+      :current="t('unassigned')"
+      :title="t('unassignedExamplesTitle')"
+      :subtitle="t('unassignedExamplesSubtitle')" />
 
     <div class="flex items-center justify-between mb-3 gap-2">
       <div class="flex-1"></div>
       <div class="flex items-center gap-2">
-        <input v-model="searchQuery" type="text" placeholder="Hľadať..."
+        <input v-model="searchQuery" type="text" :placeholder="t('search') + '...'"
                class="w-36 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                       bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
                       focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -215,45 +217,45 @@ const submitNewExample = async () => {
                 class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                        bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
                        focus:outline-none focus:ring-1 focus:ring-secondary">
-          <option :value="null">Všetky ročníky</option>
-          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. ročník</option>
+          <option :value="null">{{ t('allGrades') }}</option>
+          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. {{ t('grade') }}</option>
         </select>
       </div>
     </div>
 
     <!-- Selection toolbar -->
     <div v-if="selectedIds.size" class="flex items-center flex-wrap gap-2 mb-3 px-3 py-2 rounded-xl bg-secondary/10">
-      <span class="text-xs font-semibold text-secondary mr-1">{{ selectedIds.size }} vybraných</span>
+      <span class="text-xs font-semibold text-secondary mr-1">{{ selectedIds.size }} {{ t('selectedCount') }}</span>
       <button @click="openOrganizeModal(false)"
               class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
-        <TeacherIcon name="library" :size="12" /> Vytvoriť sadu
+        <TeacherIcon name="library" :size="12" /> {{ t('createSet') }}
       </button>
       <button @click="openOrganizeModal(true)"
               class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
-        <TeacherIcon name="calendar" :size="12" /> Priradiť ako DÚ
+        <TeacherIcon name="calendar" :size="12" /> {{ t('assignAsHomework') }}
       </button>
       <router-link :to="{ name: 'teacher-print', query: { ids: [...selectedIds].join(',') } }"
                    class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
-        <TeacherIcon name="print" :size="12" /> Tlačiť PDF
+        <TeacherIcon name="print" :size="12" /> {{ t('printPdf') }}
       </router-link>
       <div class="flex items-center gap-1">
         <select v-model="bulkGradeChoice"
                 class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                        bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs">
-          <option :value="null">roč. —</option>
-          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. roč.</option>
+          <option :value="null">{{ t('gradeAbbrNone') }}</option>
+          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. {{ t('gradeAbbr') }}</option>
         </select>
         <button @click="bulkApplyGrade" :disabled="bulkGrading"
                 class="text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-secondary rounded-lg hover:bg-secondary/20 font-medium disabled:opacity-50">
-          {{ bulkGrading ? '...' : 'Nastaviť ročník' }}
+          {{ bulkGrading ? '...' : t('setGrade') }}
         </button>
       </div>
       <button @click="bulkDeleteSelected" :disabled="bulkDeleting"
               class="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-white dark:bg-slate-800 text-accent rounded-lg hover:bg-accent/10 font-medium disabled:opacity-50">
-        <TeacherIcon name="delete" :size="12" /> {{ bulkDeleting ? '...' : 'Zmazať' }}
+        <TeacherIcon name="delete" :size="12" /> {{ bulkDeleting ? '...' : t('delete') }}
       </button>
       <button @click="clearSelection" class="text-xs px-2 py-1.5 text-gray-400 hover:text-gray-600 ml-auto">
-        Zrušiť výber
+        {{ t('clearSelectionAction') }}
       </button>
     </div>
 
@@ -261,7 +263,7 @@ const submitNewExample = async () => {
 
     <div v-else class="space-y-2 mb-4">
       <div v-if="examples.length" class="flex justify-end -mt-1">
-        <button @click="selectAllVisible" class="text-xs text-secondary hover:underline">Vybrať všetky zobrazené</button>
+        <button @click="selectAllVisible" class="text-xs text-secondary hover:underline">{{ t('selectAllVisible') }}</button>
       </div>
       <div v-for="ex in examples" :key="ex.id"
            class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -277,17 +279,17 @@ const submitNewExample = async () => {
             {{ ex.example }} <span class="text-secondary font-semibold">= {{ ex.answer }}</span>
           </div>
           <span v-if="ex.grade" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-tertiary/50 text-primary dark:bg-tertiary/20 dark:text-tertiary flex-shrink-0">
-            {{ ex.grade }}. roč.
+            {{ ex.grade }}. {{ t('gradeAbbr') }}
           </span>
           <span v-else class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-gray-400 flex-shrink-0">
-            bez ročníka
+            {{ t('noGrade') }}
           </span>
           <div class="flex items-center gap-0.5 pl-2 border-l border-slate-100 dark:border-slate-700 flex-shrink-0" @click.stop>
-            <button @click="startEdit(ex)" title="Upraviť"
+            <button @click="startEdit(ex)" :title="t('edit')"
                     class="p-1.5 rounded-lg text-gray-400 hover:text-secondary hover:bg-secondary/10">
               <TeacherIcon name="edit" :size="14" />
             </button>
-            <button @click="deleteForever(ex)" title="Zmazať natrvalo"
+            <button @click="deleteForeverAction(ex)" :title="t('deleteForever')"
                     class="p-1.5 rounded-lg text-gray-400 hover:text-accent hover:bg-accent/10">
               <TeacherIcon name="delete" :size="14" />
             </button>
@@ -298,13 +300,13 @@ const submitNewExample = async () => {
         <div v-if="expandedId === ex.id" class="border-t border-slate-100 dark:border-slate-700 px-3 py-3 bg-slate-50 dark:bg-slate-900/40">
 
           <div v-if="editingId !== ex.id" class="text-xs text-gray-500 dark:text-gray-400 space-y-1.5">
-            <div><span class="text-gray-400">Typ:</span> {{ ex.input_type }}</div>
+            <div><span class="text-gray-400">{{ t('type') }}:</span> {{ ex.input_type }}</div>
             <div>
-              <span class="text-gray-400">Umiestnenie:</span>
-              voľný (nie je v žiadnej sade)
+              <span class="text-gray-400">{{ t('location') }}:</span>
+              {{ t('unassignedLocationText') }}
             </div>
             <div v-if="ex.steps.length">
-              <span class="text-gray-400">Kroky riešenia:</span>
+              <span class="text-gray-400">{{ t('solutionSteps') }}:</span>
               <ol class="list-decimal list-inside mt-1 space-y-0.5">
                 <li v-for="(s, i) in ex.steps" :key="i">{{ s }}</li>
               </ol>
@@ -312,7 +314,7 @@ const submitNewExample = async () => {
           </div>
 
           <div v-else class="space-y-2">
-            <input v-model="editDraft.example" type="text" placeholder="Príklad"
+            <input v-model="editDraft.example" type="text" :placeholder="t('examplePlaceholder')"
                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                           bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                           font-mono focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -326,7 +328,7 @@ const submitNewExample = async () => {
                 <option value="WORD">WORD</option>
                 <option value="VAR">VAR</option>
               </select>
-              <input v-model="editDraft.answer" type="text" placeholder="Odpoveď"
+              <input v-model="editDraft.answer" type="text" :placeholder="t('answerPlaceholder')"
                      class="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                             bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                             font-mono focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -334,27 +336,27 @@ const submitNewExample = async () => {
                       class="w-20 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                              bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
                              focus:outline-none focus:ring-1 focus:ring-secondary">
-                <option :value="null">roč. —</option>
-                <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. roč.</option>
+                <option :value="null">{{ t('gradeAbbrNone') }}</option>
+                <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. {{ t('gradeAbbr') }}</option>
               </select>
             </div>
             <div class="space-y-1.5">
               <div v-for="(step, i) in editDraft.steps" :key="i" class="flex gap-2">
-                <input v-model="editDraft.steps[i]" type="text" :placeholder="`Krok ${i + 1}`"
+                <input v-model="editDraft.steps[i]" type="text" :placeholder="t('stepPlaceholder', { n: i + 1 })"
                        class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                               bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm
                               focus:outline-none focus:ring-1 focus:ring-secondary" />
                 <button @click="removeStep(editDraft, i)" class="text-accent/70 hover:text-accent text-lg leading-none">×</button>
               </div>
-              <button @click="addStep(editDraft)" class="text-xs text-secondary hover:underline">+ Pridať krok</button>
+              <button @click="addStep(editDraft)" class="text-xs text-secondary hover:underline">{{ t('addStep') }}</button>
             </div>
             <div class="flex gap-2 pt-1 justify-end">
               <button @click="cancelEdit" class="px-3 py-1.5 rounded-lg text-gray-500 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs">
-                Zrušiť
+                {{ t('cancel') }}
               </button>
               <button @click="saveEdit(ex)" :disabled="saving"
                       class="px-3 py-1.5 rounded-lg bg-secondary text-white text-xs font-semibold hover:bg-blue-600 disabled:opacity-50">
-                {{ saving ? 'Ukladám...' : 'Uložiť' }}
+                {{ saving ? t('saving') : t('save') }}
               </button>
             </div>
           </div>
@@ -362,19 +364,19 @@ const submitNewExample = async () => {
       </div>
 
       <div v-if="!examples.length" class="text-sm text-gray-400 text-center py-6">
-        <template v-if="searchQuery">Žiadne príklady pre „{{ searchQuery }}".</template>
-        <template v-else-if="gradeFilter">Žiadne príklady pre {{ gradeFilter }}. ročník.</template>
-        <template v-else>Žiadne nezaradené príklady.</template>
+        <template v-if="searchQuery">{{ t('noExamplesForSearch', { query: searchQuery }) }}</template>
+        <template v-else-if="gradeFilter">{{ t('noExamplesForGrade', { grade: gradeFilter }) }}</template>
+        <template v-else>{{ t('noUnassignedExamples') }}</template>
       </div>
     </div>
 
     <button @click="showNewForm = !showNewForm"
             class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-lg hover:bg-secondary/20 font-medium">
-      <TeacherIcon name="plus" :size="12" /> Nový príklad do knižnice
+      <TeacherIcon name="plus" :size="12" /> {{ t('newExampleToLibrary') }}
     </button>
 
     <div v-if="showNewForm" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-3 space-y-2 mt-3">
-      <input v-model="newExample.example" type="text" placeholder="Príklad"
+      <input v-model="newExample.example" type="text" :placeholder="t('examplePlaceholder')"
              class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                     bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm
                     font-mono focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -388,7 +390,7 @@ const submitNewExample = async () => {
           <option value="WORD">WORD</option>
           <option value="VAR">VAR</option>
         </select>
-        <input v-model="newExample.answer" type="text" placeholder="Odpoveď"
+        <input v-model="newExample.answer" type="text" :placeholder="t('answerPlaceholder')"
                class="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                       bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm
                       font-mono focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -396,23 +398,23 @@ const submitNewExample = async () => {
                 class="w-20 px-2 py-2 rounded-lg border border-slate-200 dark:border-slate-600
                        bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs
                        focus:outline-none focus:ring-1 focus:ring-secondary">
-          <option :value="null">roč. —</option>
-          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. roč.</option>
+          <option :value="null">{{ t('gradeAbbrNone') }}</option>
+          <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. {{ t('gradeAbbr') }}</option>
         </select>
       </div>
       <div class="space-y-1.5">
         <div v-for="(step, i) in newExample.steps" :key="i" class="flex gap-2">
-          <input v-model="newExample.steps[i]" type="text" :placeholder="`Krok ${i + 1}`"
+          <input v-model="newExample.steps[i]" type="text" :placeholder="t('stepPlaceholder', { n: i + 1 })"
                  class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                         bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-sm
                         focus:outline-none focus:ring-1 focus:ring-secondary" />
           <button @click="removeStep(newExample, i)" class="text-accent/70 hover:text-accent text-lg leading-none">×</button>
         </div>
-        <button @click="addStep(newExample)" class="text-xs text-secondary hover:underline">+ Pridať krok</button>
+        <button @click="addStep(newExample)" class="text-xs text-secondary hover:underline">{{ t('addStep') }}</button>
       </div>
       <button @click="submitNewExample" :disabled="creating"
               class="w-full py-2 bg-secondary text-white rounded-lg font-semibold text-sm hover:bg-blue-600 disabled:opacity-50">
-        {{ creating ? 'Pridávam...' : 'Pridať do knižnice' }}
+        {{ creating ? t('addingEllipsis') : t('addToLibrary') }}
       </button>
     </div>
 

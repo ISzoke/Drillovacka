@@ -5,7 +5,7 @@
     <div v-if="!authStore.isAuthenticated || authStore.role === 'admin'"
          class="text-center py-16 text-slate-400">
       <i class="fa-solid fa-user-lock text-4xl mb-4"></i>
-      <p>Prihlás sa ako študent, aby si videl svoj pokrok.</p>
+      <p>{{ t('loginToSeeProgress') }}</p>
     </div>
 
     <div v-else class="max-w-2xl mx-auto space-y-5">
@@ -13,8 +13,8 @@
       <!-- ── Level / XP card ── -->
       <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
         <div class="mb-6">
-          <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight mb-1">Tvoj pokrok 📈</h2>
-          <p class="text-slate-500 font-medium">Pozri sa, ako sa ti darí a čo si už dosiahol!</p>
+          <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight mb-1">{{ t('yourProgressTitle') }}</h2>
+          <p class="text-slate-500 font-medium">{{ t('progressPageSubtitle') }}</p>
         </div>
 
         <div class="bg-violet-50 dark:bg-violet-900/30 rounded-3xl p-5 border-[3px] border-violet-200 dark:border-violet-800 border-b-[6px]">
@@ -23,10 +23,10 @@
               <div class="w-10 h-10 bg-violet-500 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-sm">
                 {{ gamStore.level }}
               </div>
-              <span class="font-black text-violet-900 dark:text-violet-200 text-lg uppercase tracking-wider">Level {{ gamStore.level }}</span>
+              <span class="font-black text-violet-900 dark:text-violet-200 text-lg uppercase tracking-wider">{{ t('level') }} {{ gamStore.level }}</span>
             </div>
             <span class="font-black text-violet-700 dark:text-violet-300 bg-white dark:bg-slate-700 px-3 py-1 rounded-xl shadow-sm text-sm">
-              {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP
+              {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} {{ t('xp') }}
             </span>
           </div>
           <div class="h-6 bg-white dark:bg-slate-700 rounded-full overflow-hidden border-2 border-violet-100 dark:border-violet-800 shadow-inner">
@@ -53,12 +53,12 @@
         <!-- ── No data ── -->
         <div v-if="combinations.length === 0"
              class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-8 text-center">
-          <p class="text-2xl font-black text-slate-800 mb-2">Začni svoju cestu! 🚀</p>
-          <p class="text-slate-500 font-medium mb-6">Zatiaľ si neriešil žiadne príklady. Vyber si tému a začni cvičiť!</p>
+          <p class="text-2xl font-black text-slate-800 mb-2">{{ t('startYourJourney') }}</p>
+          <p class="text-slate-500 font-medium mb-6">{{ t('noExamplesYetPrompt') }}</p>
           <router-link to="/"
             class="inline-block px-8 py-4 bg-violet-500 text-white rounded-2xl font-black text-lg
                    border-b-[6px] border-violet-700 hover:-translate-y-0.5 transition-transform">
-            Vybrať témy
+            {{ t('selectTopicsBtn') }}
           </router-link>
         </div>
 
@@ -69,28 +69,28 @@
               <div class="inline-flex bg-violet-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-violet-700">
                 🎯
               </div>
-              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Cvičených</p>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{{ t('practicedLabel') }}</p>
               <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ totalExamples }}</p>
             </div>
             <div class="bg-emerald-50 dark:bg-emerald-900/30 rounded-3xl border-[3px] border-emerald-200 dark:border-emerald-800 border-b-[6px] p-5 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
               <div class="inline-flex bg-emerald-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-emerald-700">
                 ✅
               </div>
-              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Správne</p>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{{ t('correctLabel') }}</p>
               <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ totalSolved }}</p>
             </div>
             <div class="bg-sky-50 dark:bg-sky-900/30 rounded-3xl border-[3px] border-sky-200 dark:border-sky-800 border-b-[6px] p-5 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
               <div class="inline-flex bg-sky-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-sky-700">
                 ⚡
               </div>
-              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Presnosť</p>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{{ t('accuracy') }}</p>
               <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ (overallAccuracy * 100).toFixed(0) }}%</p>
             </div>
             <div class="bg-amber-50 dark:bg-amber-900/30 rounded-3xl border-[3px] border-amber-200 dark:border-amber-800 border-b-[6px] p-5 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
               <div class="inline-flex bg-amber-500 text-white p-3 rounded-2xl mb-3 shadow-sm border-b-4 border-amber-700">
                 🧠
               </div>
-              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Zvládnutie</p>
+              <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{{ t('mastery') }}</p>
               <p class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ (overallMastery * 100).toFixed(0) }}%</p>
             </div>
           </div>
@@ -98,7 +98,7 @@
           <!-- ── Recommended skills ── -->
           <div v-if="recommendedSkills.length > 0"
                class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
-            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6">Odporúčame precvičiť 🎯</h3>
+            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6">{{ t('recommendedToPractice') }}</h3>
             <div class="space-y-4">
               <div
                 v-for="skill in recommendedSkills"
@@ -112,7 +112,7 @@
                   <div class="flex-1">
                     <h4 class="font-black text-xl text-slate-800 dark:text-slate-100 mb-1">{{ skill.combination_display }}</h4>
                     <p class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">
-                      Zvládnutie:
+                      {{ t('mastery') }}:
                       <span class="font-black px-2 py-0.5 rounded-lg"
                             :class="valueColor(skill.mastery_mean) + ' bg-orange-100 dark:bg-orange-900/40'">
                         {{ (skill.mastery_mean * 100).toFixed(0) }}%
@@ -124,7 +124,7 @@
                       class="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white
                              px-6 py-3 rounded-2xl font-black text-base border-b-[4px] border-orange-700
                              active:border-b-0 active:translate-y-1 transition-all">
-                      POĎ CVIČIŤ
+                      {{ t('letsGoPractice') }}
                     </button>
                   </div>
                 </div>
@@ -134,7 +134,7 @@
 
           <!-- ── Skills overview ── -->
           <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
-            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6">Tvoje zručnosti 🧠</h3>
+            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-6">{{ t('yourSkillsTitle') }}</h3>
             <div class="space-y-4">
               <div
                 v-for="skill in sortedCombinations"
@@ -144,7 +144,7 @@
                   <span class="font-black text-lg text-slate-700 dark:text-slate-200 truncate pr-2">{{ skill.combination_display }}</span>
                   <div class="flex items-center gap-3 flex-shrink-0">
                     <span class="text-sm font-bold text-slate-400 hidden sm:block">
-                      {{ skill.examples_practiced }} príkl. · {{ skill.solved_count }} správne
+                      {{ t('exercisesAndCorrectText', { examples: skill.examples_practiced, correct: skill.solved_count }) }}
                     </span>
                     <span class="font-black text-xl text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-600 px-3 py-1 rounded-xl shadow-sm">
                       {{ (skill.mastery_mean * 100).toFixed(0) }}%
@@ -154,7 +154,7 @@
                 <!-- Mastery bar -->
                 <div class="mb-2">
                   <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-                    <span class="font-bold">Zvládnutie</span>
+                    <span class="font-bold">{{ t('mastery') }}</span>
                     <span class="font-black" :class="valueColor(skill.mastery_mean)">{{ (skill.mastery_mean * 100).toFixed(0) }}%</span>
                   </div>
                   <div class="h-5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden shadow-inner">
@@ -168,7 +168,7 @@
                 <!-- Accuracy bar -->
                 <div>
                   <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-                    <span class="font-bold">Presnosť</span>
+                    <span class="font-bold">{{ t('accuracy') }}</span>
                     <span class="font-black" :class="valueColor(skill.accuracy)">{{ (skill.accuracy * 100).toFixed(0) }}%</span>
                   </div>
                   <div class="h-5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden shadow-inner">
@@ -180,7 +180,7 @@
                   </div>
                 </div>
                 <div class="flex justify-between text-[11px] text-slate-400 mt-2">
-                  <span>Priem. čas: {{ (skill.avg_duration_ms / 1000).toFixed(1) }}s</span>
+                  <span>{{ t('avgTimeText', { seconds: (skill.avg_duration_ms / 1000).toFixed(1) }) }}</span>
                   <span>{{ formatDate(skill.last_practiced) }}</span>
                 </div>
               </div>
@@ -195,12 +195,12 @@
                   🔥
                 </div>
                 <div>
-                  <p class="text-sm font-black text-orange-200 uppercase tracking-wider">Aktuálna séria</p>
-                  <p class="text-4xl font-black">{{ gamStore.streak }} <span class="text-2xl">deň</span></p>
+                  <p class="text-sm font-black text-orange-200 uppercase tracking-wider">{{ t('currentStreakLabel') }}</p>
+                  <p class="text-4xl font-black">{{ gamStore.streak }} <span class="text-2xl">{{ t('dayUnit') }}</span></p>
                 </div>
               </div>
               <p class="text-sm font-bold text-orange-100 bg-black/10 p-3 rounded-xl">
-                Pokračuj každý deň a udržuj si sériu! 🔥
+                {{ t('keepStreakMessage') }}
               </p>
             </div>
 
@@ -210,12 +210,12 @@
                   🏆
                 </div>
                 <div>
-                  <p class="text-sm font-black text-amber-100 uppercase tracking-wider">Najlepšia séria</p>
-                  <p class="text-4xl font-black">{{ gamStore.longestStreak ?? gamStore.streak }} <span class="text-2xl">deň</span></p>
+                  <p class="text-sm font-black text-amber-100 uppercase tracking-wider">{{ t('bestStreakLabel') }}</p>
+                  <p class="text-4xl font-black">{{ gamStore.longestStreak ?? gamStore.streak }} <span class="text-2xl">{{ t('dayUnit') }}</span></p>
                 </div>
               </div>
               <p class="text-sm font-bold text-amber-100 bg-black/10 p-3 rounded-xl">
-                Skús prekonať svoj vlastný rekord! ⭐
+                {{ t('beatRecordMessage') }}
               </p>
             </div>
           </div>
@@ -225,21 +225,21 @@
             <button
               @click="showTable = !showTable"
               class="flex items-center justify-between w-full font-black text-slate-700 text-lg">
-              <span>📊 Detailný prehľad</span>
+              <span>{{ t('detailedOverview') }}</span>
               <i class="fa-solid text-slate-400" :class="showTable ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             </button>
             <div v-if="showTable" class="mt-5 overflow-x-auto">
-              <div v-if="loadingStats" class="text-slate-400 text-sm py-4 text-center">Načítavam...</div>
+              <div v-if="loadingStats" class="text-slate-400 text-sm py-4 text-center">{{ t('loadingText') }}</div>
               <table v-else class="min-w-full text-sm">
                 <thead>
                   <tr class="border-b-2 border-slate-100">
-                    <th class="p-2 text-left text-slate-400 font-black text-xs uppercase tracking-wider">Zručnosť</th>
-                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Príkl.</th>
-                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Správne</th>
-                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Presnosť</th>
-                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Zvládnutie</th>
-                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Čas (s)</th>
-                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">Posledné</th>
+                    <th class="p-2 text-left text-slate-400 font-black text-xs uppercase tracking-wider">{{ t('skillLabel') }}</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">{{ t('exercisesAbbrev') }}</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">{{ t('correctLabel') }}</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">{{ t('accuracy') }}</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">{{ t('mastery') }}</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">{{ t('timeSecondsLabel') }}</th>
+                    <th class="p-2 text-slate-400 font-black text-xs uppercase tracking-wider">{{ t('lastPracticedLabel') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -267,6 +267,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { useRoute, useRouter } from 'vue-router'
@@ -276,6 +277,7 @@ const authStore = useAuthStore()
 const gamStore = useGamificationStore()
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const combinations = ref([])
 const skillStats = ref([])
@@ -304,7 +306,7 @@ function fetchCombinations() {
   errorCombinations.value = ''
   getStudentSkillCombinations(authStore.id)
     .then(data => { combinations.value = data })
-    .catch(e => { errorCombinations.value = e.message || 'Chyba pri načítaní dát.' })
+    .catch(e => { errorCombinations.value = e.message || t('errorLoadingData') })
     .finally(() => { loadingCombinations.value = false })
 }
 
@@ -332,12 +334,12 @@ function barColor(val) {
   return 'bg-red-400'
 }
 function formatDate(dt) {
-  if (!dt) return 'Nikdy'
+  if (!dt) return t('never')
   const diffDays = Math.floor((new Date() - new Date(dt)) / 86400000)
-  if (diffDays === 0) return 'Dnes'
-  if (diffDays === 1) return 'Včera'
-  if (diffDays < 7)  return `Pred ${diffDays} dňami`
-  if (diffDays < 30) return `Pred ${Math.floor(diffDays / 7)} týždňami`
+  if (diffDays === 0) return t('today')
+  if (diffDays === 1) return t('yesterday')
+  if (diffDays < 7)  return t('daysAgo', { n: diffDays })
+  if (diffDays < 30) return t('weeksAgo', { n: Math.floor(diffDays / 7) })
   return new Date(dt).toLocaleDateString('sk-SK')
 }
 

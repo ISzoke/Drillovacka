@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { getClassroomStudentDetail } from '@/api/apiClient';
+import { useI18n } from 'vue-i18n';
 import Spinner from '@/components/Spinner.vue';
 
 const props = defineProps({
@@ -10,6 +11,7 @@ const props = defineProps({
 });
 
 const authStore = useAuthStore();
+const { t } = useI18n();
 const data = ref(null);
 const loading = ref(true);
 
@@ -40,7 +42,7 @@ onMounted(fetchData);
       <!-- Breadcrumb -->
       <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
         <router-link :to="{ name: 'teacher-dashboard' }" class="hover:underline text-secondary">
-          Dashboard
+          {{ t('dashboard') }}
         </router-link>
         <span>&rsaquo;</span>
         <router-link :to="{ name: 'teacher-classroom', params: { classroomId } }" class="hover:underline text-secondary">
@@ -58,8 +60,8 @@ onMounted(fetchData);
         <div>
           <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ data.student.username }}</h1>
           <p class="text-gray-500 dark:text-gray-400 text-sm">
-            <span v-if="data.student.grade">{{ data.student.grade }}. ročník &nbsp;&middot;&nbsp;</span>
-            Level {{ data.student.level }} &nbsp;&middot;&nbsp;
+            <span v-if="data.student.grade">{{ data.student.grade }}. {{ t('grade') }} &nbsp;&middot;&nbsp;</span>
+            {{ t('level') }} {{ data.student.level }} &nbsp;&middot;&nbsp;
             {{ data.student.total_xp }} XP
           </p>
         </div>
@@ -69,34 +71,34 @@ onMounted(fetchData);
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
           <div class="text-2xl font-bold text-secondary">{{ data.stats.examples_practiced }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Príkladov</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t('examplesCount') }}</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
           <div class="text-2xl font-bold text-green-600">{{ data.stats.accuracy }}%</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Úspešnosť</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t('accuracy') }}</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
           <div class="text-2xl font-bold text-amber-500">{{ data.stats.avg_mastery }}%</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Zvládnutie</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t('mastery') }}</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
           <div class="text-2xl font-bold text-purple-500">{{ data.stats.streak_days }}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Séria dní</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t('streakDays') }}</div>
         </div>
       </div>
 
       <!-- Task progress -->
       <div v-if="data.task_progress?.length" class="mb-8">
-        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Priradené úlohy</h2>
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{{ t('assignedTasks') }}</h2>
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-slate-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-xs">
-                <th class="py-2 px-4 text-left">Úloha</th>
-                <th class="py-2 px-4 text-right">Spravne</th>
-                <th class="py-2 px-4 text-right">Nesprávne</th>
-                <th class="py-2 px-4 text-right">Ø čas</th>
-                <th class="py-2 px-4 text-right">Dokončenie</th>
+                <th class="py-2 px-4 text-left">{{ t('taskColumnLabel') }}</th>
+                <th class="py-2 px-4 text-right">{{ t('correctSuffix') }}</th>
+                <th class="py-2 px-4 text-right">{{ t('incorrectLabel') }}</th>
+                <th class="py-2 px-4 text-right">{{ t('avgTimeShort') }}</th>
+                <th class="py-2 px-4 text-right">{{ t('completionLabel') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -120,14 +122,14 @@ onMounted(fetchData);
 
       <!-- Skill mastery -->
       <div v-if="data.skill_mastery?.length" class="mb-8">
-        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Zvládnutie zručností</h2>
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{{ t('skillMasteryHeading') }}</h2>
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-slate-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 text-xs">
-                <th class="py-2 px-4 text-left">Zručnosť</th>
-                <th class="py-2 px-4 text-right">Zvládnutie</th>
-                <th class="py-2 px-4 text-right">Príkladov</th>
+                <th class="py-2 px-4 text-left">{{ t('skillLabel') }}</th>
+                <th class="py-2 px-4 text-right">{{ t('mastery') }}</th>
+                <th class="py-2 px-4 text-right">{{ t('examplesCount') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -153,7 +155,7 @@ onMounted(fetchData);
 
       <!-- Recent attempts -->
       <div v-if="data.recent_attempts?.length">
-        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Posledné pokusy</h2>
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{{ t('recentAttempts') }}</h2>
         <div class="space-y-2">
           <div v-for="a in data.recent_attempts" :key="a.id"
                class="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg
@@ -176,12 +178,12 @@ onMounted(fetchData);
 
       <div v-if="!data.task_progress?.length && !data.skill_mastery?.length && !data.recent_attempts?.length"
            class="text-center py-12 text-gray-400">
-        Žiadna aktivita zatiaľ.
+        {{ t('noActivityYet') }}
       </div>
     </template>
 
     <div v-else-if="!loading" class="text-center py-16 text-gray-400">
-      Študent nenájdený.
+      {{ t('studentNotFound') }}
     </div>
   </div>
 </template>

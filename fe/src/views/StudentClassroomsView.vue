@@ -1,16 +1,16 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
 import { getStudentClassrooms } from '@/api/apiClient';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import Spinner from '@/components/Spinner.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
-const d = dictionary[langStore.language];
+const { t } = useI18n();
 
 const classrooms = ref([]);
 const loading = ref(true);
@@ -43,10 +43,10 @@ onMounted(fetchClassrooms);
     <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-3xl font-bold text-primary dark:text-white">
-          {{ d.myClassrooms || 'Moje triedy' }}
+          {{ t('myClassrooms') || 'Moje triedy' }}
         </h1>
         <p v-if="!loading && classrooms.length > 0" class="text-sm text-gray-400 mt-1">
-          {{ classrooms.length }} {{ classrooms.length === 1 ? (d.classroom || 'trieda') : (d.classrooms || 'tried') }}
+          {{ classrooms.length }} {{ classrooms.length === 1 ? (t('classroom') || 'trieda') : (t('classrooms') || 'tried') }}
         </p>
       </div>
       <router-link
@@ -56,7 +56,7 @@ onMounted(fetchClassrooms);
                hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 transition-all"
       >
         <span class="text-lg leading-none">+</span>
-        {{ d.joinClassroom || 'Pridať sa' }}
+        {{ t('joinClassroom') || 'Pridať sa' }}
       </router-link>
     </div>
 
@@ -68,10 +68,10 @@ onMounted(fetchClassrooms);
                 border-slate-200 dark:border-slate-700">
       <div class="text-5xl mb-4">🏫</div>
       <p class="text-gray-500 dark:text-gray-400 text-lg font-medium mb-1">
-        {{ d.noClassroomsYet || 'Nie si v žiadnej triede.' }}
+        {{ t('noClassroomsYet') || 'Nie si v žiadnej triede.' }}
       </p>
       <p class="text-gray-400 dark:text-gray-500 text-sm mb-6">
-        {{ d.askTeacherForCode || 'Požiadaj učiteľa o kód triedy.' }}
+        {{ t('askTeacherForCode') || 'Požiadaj učiteľa o kód triedy.' }}
       </p>
       <router-link
         to="/join"
@@ -79,7 +79,7 @@ onMounted(fetchClassrooms);
                font-semibold border-b-4 border-blue-700
                hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 transition-all"
       >
-        {{ d.joinClassroom || 'Pridať sa do triedy' }}
+        {{ t('joinClassroom') || 'Pridať sa do triedy' }}
       </router-link>
     </div>
 
@@ -103,7 +103,7 @@ onMounted(fetchClassrooms);
           <span v-if="c.homework_count > 0"
                 class="text-xs bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300
                        px-2.5 py-1 rounded-full font-semibold border border-amber-200 dark:border-amber-700">
-            📝 {{ c.homework_count }} DÚ
+            📝 {{ c.homework_count }} {{ t('homeworkAbbrev') }}
           </span>
         </div>
 
@@ -122,7 +122,7 @@ onMounted(fetchClassrooms);
             👤 {{ c.teacher_name }}
           </span>
           <span :class="['font-semibold', cardColors[i % cardColors.length].text]">
-            {{ c.task_count }} {{ d.tasks || 'úloh' }}
+            {{ c.task_count }} {{ t('tasks') || 'úloh' }}
           </span>
         </div>
       </router-link>

@@ -8,12 +8,12 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import Signup from '@/components/Profile/Signup.vue'
 import Login from '@/components/Profile/Login.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { dictionary } from '@/utils/dictionary'
 import { RouterLink } from 'vue-router'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
@@ -24,6 +24,7 @@ import { useDarkStore } from '@/stores/useDarkStore'
 const authStore = useAuthStore()
 const gamStore = useGamificationStore()
 const langStore = useLanguageStore()
+const { t } = useI18n()
 const darkStore = useDarkStore()
 const route = useRoute()
 const showLogin = ref(route.query.register !== '1')
@@ -65,7 +66,7 @@ async function saveGrade() {
     localStorage.setItem('grade_change_used', JSON.stringify(res.grade_change_used))
     selectedGrade.value = null
   } catch (e) {
-    gradeChangeError.value = typeof e === 'string' ? e : 'Chyba pri zmene ročníka'
+    gradeChangeError.value = typeof e === 'string' ? e : t('errorSettingGrade')
   }
   gradeChanging.value = false
 }
@@ -120,7 +121,7 @@ onMounted(async () => {
           <div class="flex-1 text-center sm:text-left">
             <h2 class="text-3xl font-black text-slate-800 dark:text-slate-100 mb-2">{{ authStore.name }}</h2>
             <p class="text-slate-500 dark:text-slate-400 font-bold mb-4 bg-slate-100 dark:bg-slate-700 inline-block px-3 py-1 rounded-xl">
-              {{ authStore.grade ? authStore.grade + '. ročník' : 'ročník nenastavený' }}
+              {{ authStore.grade ? t('gradeFullLabel', { grade: authStore.grade }) : t('noGrade') }}
             </p>
 
             <div class="flex flex-wrap justify-center sm:justify-start gap-2">
@@ -132,7 +133,7 @@ onMounted(async () => {
                 <span v-else>–</span>
               </div>
               <div class="bg-orange-100 dark:bg-orange-900/40 border-2 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 px-4 py-2 rounded-2xl flex items-center gap-2 font-black shadow-sm">
-                🔥 {{ gamStore.streak }} deň
+                🔥 {{ gamStore.streak }} {{ t('streakDaySuffix') }}
               </div>
             </div>
           </div>
@@ -142,7 +143,7 @@ onMounted(async () => {
         <div class="mt-8 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-600">
           <div class="flex justify-between items-center mb-3">
             <span class="text-sm font-black text-slate-500 uppercase tracking-wider">
-              Cesta k Levelu {{ gamStore.level + 1 }}
+              {{ t('pathToLevelLabel', { level: gamStore.level + 1 }) }}
             </span>
             <span class="text-sm font-black text-violet-600">
               {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} XP
@@ -160,8 +161,8 @@ onMounted(async () => {
 
       <!-- ── Grade card ── -->
       <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
-        <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-2">Môj ročník 🎒</h3>
-        <p class="text-slate-500 font-medium mb-6">Prispôsob si obtiažnosť podľa svojho ročníka.</p>
+        <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-2">{{ t('myGradeHeading') }}</h3>
+        <p class="text-slate-500 font-medium mb-6">{{ t('adjustDifficultyText') }}</p>
 
         <div v-if="!authStore.grade_change_used">
           <div class="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-3 mb-6">
@@ -186,17 +187,17 @@ onMounted(async () => {
             :class="selectedGrade && !gradeChanging
               ? 'bg-emerald-500 hover:bg-emerald-400 text-white border-b-[6px] border-emerald-700 active:border-b-0 active:translate-y-[6px]'
               : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-b-[4px] border-slate-200 dark:border-slate-600 cursor-not-allowed'">
-            {{ gradeChanging ? 'Ukladám...' : (authStore.grade ? 'ZMENIŤ ROČNÍK' : 'NASTAVIŤ ROČNÍK') }}
+            {{ gradeChanging ? t('saving') : (authStore.grade ? t('changeGradeButtonCaps') : t('setGradeButtonCaps')) }}
           </button>
 
           <p v-if="gradeChangeError" class="text-red-500 text-sm mt-3 font-semibold">{{ gradeChangeError }}</p>
           <p v-if="authStore.grade" class="text-xs text-amber-600 dark:text-amber-400 mt-3 font-semibold bg-amber-50 dark:bg-amber-900/30 p-3 rounded-xl border border-amber-200 dark:border-amber-800">
-            ⚠️ Túto zmenu môžeš urobiť len raz.
+            {{ t('gradeChangeOnceWarning') }}
           </p>
         </div>
 
         <div v-else class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-semibold text-sm">
-          Ročník bol už zmenený a viac ho nie je možné meniť.
+          {{ t('gradeAlreadyChangedText') }}
         </div>
       </div>
 
@@ -204,8 +205,8 @@ onMounted(async () => {
       <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ darkStore.isDark ? '🌙 Tmavý režim' : '☀️ Svetlý režim' }}</h3>
-            <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Prepni vzhľad aplikácie</p>
+            <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ darkStore.isDark ? t('darkModeOnLabel') : t('lightModeOnLabel') }}</h3>
+            <p class="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">{{ t('toggleAppearanceText') }}</p>
           </div>
           <button
             @click="darkStore.toggle()"
@@ -224,7 +225,7 @@ onMounted(async () => {
       <!-- ── Badges ── -->
       <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700 border-b-[8px] p-6 sm:p-8">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100">Tvoje odznaky 🏆</h3>
+          <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100">{{ t('yourBadgesHeading') }}</h3>
           <span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-black px-4 py-1.5 rounded-xl border-2 border-amber-200 dark:border-amber-700">
             {{ earnedBadges.length }} / {{ allBadges.length }}
           </span>
@@ -237,7 +238,7 @@ onMounted(async () => {
         <div v-else>
           <!-- Earned badges -->
           <div v-if="earnedBadges.length > 0" class="mb-8">
-            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Získané</h4>
+            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{{ t('earnedSectionLabel') }}</h4>
             <div class="grid sm:grid-cols-2 gap-4">
               <div
                 v-for="(badge, idx) in earnedBadges"
@@ -261,14 +262,14 @@ onMounted(async () => {
           </div>
 
           <div v-else class="text-center py-8 text-slate-400 mb-4">
-            <p class="text-lg font-bold mb-1">Zatiaľ žiadne odznaky.</p>
-            <p class="text-sm">Rieš príklady a získaj prvý! 💪</p>
+            <p class="text-lg font-bold mb-1">{{ t('noBadgesYet') }}.</p>
+            <p class="text-sm">{{ t('firstBadgeEncouragement') }}</p>
           </div>
 
           <!-- Locked badges -->
           <div v-if="unearnedBadges.length > 0">
             <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-              Ešte zamknuté ({{ unearnedBadges.length }})
+              {{ t('lockedBadgesHeading', { n: unearnedBadges.length }) }}
             </h4>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div
@@ -303,11 +304,11 @@ onMounted(async () => {
     <Signup v-else />
 
     <button @click="showLogin = !showLogin" class="underline w-full text-slate-500 text-lg mt-4">
-      {{ showLogin ? dictionary[langStore.language].registerText : dictionary[langStore.language].loginText }}
+      {{ showLogin ? t('registerText') : t('loginText') }}
     </button>
 
     <RouterLink to="/admin" class="underline w-full text-slate-400 text-lg mt-12 flex justify-center">
-      {{ dictionary[langStore.language].adminText }}
+      {{ t('adminText') }}
     </RouterLink>
   </div>
 </template>

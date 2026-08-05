@@ -1,9 +1,9 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'vue-router';
 import { getTasks, assignTaskToClassroom, getClassroomDetail } from '@/api/apiClient';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useToastStore } from '@/stores/useToastStore';
 import Spinner from '@/components/Spinner.vue';
@@ -14,7 +14,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
 const toastStore = useToastStore();
-const d = dictionary[langStore.language];
+const { t } = useI18n();
 
 const allTasks = ref([]);
 const assignedTaskIds = ref(new Set());
@@ -74,14 +74,14 @@ const confirmAssign = async () => {
     );
     assignedTaskIds.value.add(pendingTask.value.id);
     toastStore.addToast({
-      message: d.taskAssigned || 'Úloha priradená',
+      message: t('taskAssigned') || 'Úloha priradená',
       type: 'success',
       visible: true,
     });
   } catch (e) {
     console.error('Error assigning task:', e);
     toastStore.addToast({
-      message: d.errorAssigning || 'Chyba pri priraďovaní',
+      message: t('errorAssigning') || 'Chyba pri priraďovaní',
       type: 'error',
       visible: true,
     });
@@ -99,11 +99,11 @@ onMounted(fetchData);
     <div class="flex items-center gap-3 mb-6">
       <router-link :to="{ name: 'teacher-classroom', params: { classroomId } }"
                    class="text-secondary hover:underline text-sm">
-        &larr; {{ d.backToClassroom || 'Späť do triedy' }}
+        &larr; {{ t('backToClassroom') || 'Späť do triedy' }}
       </router-link>
     </div>
     <h1 class="text-2xl font-bold text-primary mb-6">
-      {{ d.assignTasks || 'Priradiť úlohy' }}
+      {{ t('assignTasks') || 'Priradiť úlohy' }}
     </h1>
 
     <Spinner v-if="loading" />
@@ -114,7 +114,7 @@ onMounted(fetchData);
         <input
           v-model="search"
           type="text"
-          :placeholder="d.searchTasks || 'Hľadať úlohy...'"
+          :placeholder="t('searchTasks')"
           class="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600
                  bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                  focus:outline-none focus:ring-2 focus:ring-secondary"
@@ -125,15 +125,15 @@ onMounted(fetchData);
                  bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
                  focus:outline-none focus:ring-2 focus:ring-secondary"
         >
-          <option value="">{{ d.allGrades || 'Všetky ročníky' }}</option>
+          <option value="">{{ t('allGrades') }}</option>
           <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">
-            {{ g }}. {{ d.grade || 'ročník' }}
+            {{ g }}. {{ t('grade') || 'ročník' }}
           </option>
         </select>
       </div>
 
       <div v-if="filteredTasks.length === 0" class="text-center py-12 text-gray-400">
-        {{ d.noTasksFound || 'Žiadne úlohy nenájdené.' }}
+        {{ t('noTasksFound') || 'Žiadne úlohy nenájdené.' }}
       </div>
 
       <div v-else class="space-y-3">
@@ -146,7 +146,7 @@ onMounted(fetchData);
             </div>
             <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex gap-2 flex-wrap">
               <span v-if="task.example_count">
-                {{ task.example_count }} {{ d.examples || 'príkladov' }}
+                {{ task.example_count }} {{ t('examples') || 'príkladov' }}
               </span>
               <span v-if="task.grade_levels?.length">
                 &middot; {{ task.grade_levels.map(g => g + '.').join(', ') }}
@@ -158,14 +158,14 @@ onMounted(fetchData);
             <span v-if="assignedTaskIds.has(task.id)"
                   class="text-xs text-green-600 dark:text-green-400 font-medium px-3 py-1
                          bg-green-50 dark:bg-green-900/30 rounded-full">
-              {{ d.assigned || 'Priradené' }}
+              {{ t('assigned') || 'Priradené' }}
             </span>
             <button v-else
                     @click="openAssignModal(task)"
                     :disabled="assigning === task.id"
                     class="px-4 py-1.5 bg-secondary text-white rounded-lg text-sm font-medium
                            hover:bg-blue-600 transition-colors disabled:opacity-50">
-              {{ assigning === task.id ? '...' : (d.assign || 'Priradiť') }}
+              {{ assigning === task.id ? '...' : (t('assign') || 'Priradiť') }}
             </button>
           </div>
         </div>
@@ -181,19 +181,19 @@ onMounted(fetchData);
           {{ pendingTask?.title }}
         </h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          {{ d.configureAssignment || 'Nastavte priradenie' }}
+          {{ t('configureAssignment') || 'Nastavte priradenie' }}
         </p>
 
         <label class="flex items-center gap-3 mb-4 cursor-pointer">
           <input type="checkbox" v-model="isHomework" class="w-4 h-4 accent-secondary" />
           <span class="text-sm text-slate-700 dark:text-slate-300">
-            {{ d.markAsHomework || 'Označiť ako domácu úlohu' }}
+            {{ t('markAsHomework') || 'Označiť ako domácu úlohu' }}
           </span>
         </label>
 
         <div v-if="isHomework" class="mb-4">
           <label class="block text-sm text-slate-700 dark:text-slate-300 mb-1">
-            {{ d.dueDate || 'Termín odovzdania' }}
+            {{ t('dueDate') || 'Termín odovzdania' }}
           </label>
           <input type="date" v-model="dueDate"
                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600
@@ -205,11 +205,11 @@ onMounted(fetchData);
           <button @click="showHomeworkModal = false"
                   class="px-4 py-2 rounded-md text-gray-600 dark:text-gray-300
                          hover:bg-gray-100 dark:hover:bg-slate-700">
-            {{ d.cancel || 'Zrušiť' }}
+            {{ t('cancel') || 'Zrušiť' }}
           </button>
           <button @click="confirmAssign"
                   class="px-4 py-2 bg-secondary text-white rounded-md hover:bg-blue-600 font-semibold">
-            {{ d.assign || 'Priradiť' }}
+            {{ t('assign') || 'Priradiť' }}
           </button>
         </div>
       </div>

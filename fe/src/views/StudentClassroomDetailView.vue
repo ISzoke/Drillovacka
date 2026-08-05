@@ -1,8 +1,8 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { leaveClassroom, getClassroomDetail, getClassroomTasks } from '@/api/apiClient';
-import { dictionary } from '@/utils/dictionary';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useToastStore } from '@/stores/useToastStore';
 import { useRouter } from 'vue-router';
@@ -14,7 +14,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 const langStore = useLanguageStore();
 const toastStore = useToastStore();
-const d = dictionary[langStore.language];
+const { t } = useI18n();
 
 const classroom = ref(null);
 const tasks = ref([]);
@@ -26,9 +26,9 @@ const homeworkTasks = computed(() => tasks.value.filter(t => t.is_homework));
 const regularTasks = computed(() => tasks.value.filter(t => !t.is_homework));
 
 const tabs = computed(() => [
-  { key: 'tasks', label: d.tasks || 'Úlohy', count: regularTasks.value.length, icon: '📚' },
-  { key: 'homework', label: d.homework || 'Domáce úlohy', count: homeworkTasks.value.length, icon: '📝' },
-  { key: 'classmates', label: d.classmates || 'Spolužiaci', count: classroom.value?.students?.length || 0, icon: '👥' },
+  { key: 'tasks', label: t('tasks') || 'Úlohy', count: regularTasks.value.length, icon: '📚' },
+  { key: 'homework', label: t('homework') || 'Domáce úlohy', count: homeworkTasks.value.length, icon: '📝' },
+  { key: 'classmates', label: t('classmates') || 'Spolužiaci', count: classroom.value?.students?.length || 0, icon: '👥' },
 ]);
 
 const fetchData = async () => {
@@ -49,11 +49,11 @@ const fetchData = async () => {
 const handleLeave = async () => {
   try {
     await leaveClassroom(props.classroomId, authStore.id);
-    toastStore.addToast({ message: d.leftClassroom || 'Opustil si triedu.', type: 'info', visible: true });
+    toastStore.addToast({ message: t('leftClassroom') || 'Opustil si triedu.', type: 'info', visible: true });
     router.push({ name: 'student-classrooms' });
   } catch (e) {
     console.error('Error leaving classroom:', e);
-    toastStore.addToast({ message: d.leaveError || 'Chyba pri opúšťaní triedy.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('leaveError') || 'Chyba pri opúšťaní triedy.', type: 'error', visible: true });
   }
 };
 
@@ -71,7 +71,7 @@ onMounted(fetchData);
         :to="{ name: 'student-classrooms' }"
         class="inline-flex items-center gap-1 text-secondary hover:underline text-sm mb-5"
       >
-        ← {{ d.myClassrooms || 'Moje triedy' }}
+        ← {{ t('myClassrooms') || 'Moje triedy' }}
       </router-link>
 
       <!-- Header card -->
@@ -102,7 +102,7 @@ onMounted(fetchData);
                    px-3 py-1.5 rounded-lg hover:bg-accent/10 border border-transparent
                    hover:border-accent/20"
           >
-            {{ d.leaveClassroom || 'Opustiť' }}
+            {{ t('leaveClassroom') || 'Opustiť' }}
           </button>
         </div>
       </div>
@@ -137,7 +137,7 @@ onMounted(fetchData);
              class="text-center py-16 rounded-3xl border-2 border-dashed
                     border-slate-200 dark:border-slate-700">
           <div class="text-4xl mb-3">📚</div>
-          <p class="text-gray-400">{{ d.noTasksAssigned || 'Žiadne úlohy nie sú priradené.' }}</p>
+          <p class="text-gray-400">{{ t('noTasksAssigned') }}</p>
         </div>
         <div v-else class="space-y-3">
           <router-link
@@ -158,7 +158,7 @@ onMounted(fetchData);
               <div>
                 <div class="font-semibold text-slate-800 dark:text-slate-100">{{ t.task_name }}</div>
                 <div class="text-xs text-gray-400 mt-0.5">
-                  {{ t.example_count }} {{ d.examples || 'príkladov' }}
+                  {{ t.example_count }} {{ t('examples') || 'príkladov' }}
                   <span v-if="t.grade_levels?.length">
                     &middot; {{ t.grade_levels.map(g => g + '.').join(', ') }}
                   </span>
@@ -176,7 +176,7 @@ onMounted(fetchData);
              class="text-center py-16 rounded-3xl border-2 border-dashed
                     border-slate-200 dark:border-slate-700">
           <div class="text-4xl mb-3">📝</div>
-          <p class="text-gray-400">{{ d.noHomework || 'Žiadne domáce úlohy.' }}</p>
+          <p class="text-gray-400">{{ t('noHomework') }}</p>
         </div>
         <div v-else class="space-y-3">
           <router-link
@@ -198,12 +198,12 @@ onMounted(fetchData);
                 <div class="flex items-center gap-2">
                   <span class="font-semibold text-slate-800 dark:text-slate-100">{{ t.task_name }}</span>
                   <span class="text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200
-                               px-2 py-0.5 rounded-full font-medium">DÚ</span>
+                               px-2 py-0.5 rounded-full font-medium">{{ t('homeworkAbbrev') }}</span>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {{ t.example_count }} {{ d.examples || 'príkladov' }}
+                  {{ t.example_count }} {{ t('examples') || 'príkladov' }}
                   <span v-if="t.due_date" class="text-amber-600 dark:text-amber-400 ml-1 font-medium">
-                    · {{ d.dueDate || 'Termín' }}: {{ new Date(t.due_date).toLocaleDateString() }}
+                    · {{ t('dueDate') || 'Termín' }}: {{ new Date(t.due_date).toLocaleDateString() }}
                   </span>
                 </div>
               </div>
@@ -219,7 +219,7 @@ onMounted(fetchData);
              class="text-center py-16 rounded-3xl border-2 border-dashed
                     border-slate-200 dark:border-slate-700">
           <div class="text-4xl mb-3">👥</div>
-          <p class="text-gray-400">{{ d.noClassmatesYet || 'Zatiaľ žiadni spolužiaci.' }}</p>
+          <p class="text-gray-400">{{ t('noClassmatesYet') }}</p>
         </div>
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div
@@ -255,10 +255,10 @@ onMounted(fetchData);
                   p-6 w-full max-w-sm">
         <div class="text-3xl mb-3 text-center">⚠️</div>
         <h3 class="text-lg font-bold text-primary dark:text-white mb-2 text-center">
-          {{ d.confirmLeave || 'Opustiť triedu?' }}
+          {{ t('confirmLeave') || 'Opustiť triedu?' }}
         </h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-5 text-center">
-          {{ d.leaveClassroomWarning || 'Budeš odhlásený z tejto triedy. Tvoje dáta zostanú zachované.' }}
+          {{ t('leaveClassroomWarning') || 'Budeš odhlásený z tejto triedy. Tvoje dáta zostanú zachované.' }}
         </p>
         <div class="flex gap-3">
           <button
@@ -268,7 +268,7 @@ onMounted(fetchData);
                    text-gray-600 dark:text-gray-300
                    hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
-            {{ d.cancel || 'Zrušiť' }}
+            {{ t('cancel') || 'Zrušiť' }}
           </button>
           <button
             @click="handleLeave"
@@ -276,7 +276,7 @@ onMounted(fetchData);
                    bg-accent text-white border-b-4 border-red-700
                    hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 transition-all"
           >
-            {{ d.leave || 'Opustiť' }}
+            {{ t('leave') || 'Opustiť' }}
           </button>
         </div>
       </div>

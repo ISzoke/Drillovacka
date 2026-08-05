@@ -11,13 +11,15 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { getSessionId } from '@/utils/sessionManager';
 import { updateSessionLanguage, updateStudentLanguage } from '@/api/apiClient';
+import { i18n } from '@/i18n';
 
 export const useLanguageStore = defineStore('language', () => {
   const language = ref(localStorage.getItem('lang') || 'sk');
 
   watch(language, async (newVal, oldVal) => {
     localStorage.setItem('lang', newVal);
-    
+    i18n.global.locale.value = newVal;
+
     // Don't make API call if value hasn't actually changed
     if (newVal === oldVal) {
       return;

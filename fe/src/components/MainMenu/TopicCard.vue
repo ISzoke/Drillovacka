@@ -10,7 +10,8 @@
 import { defineProps } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { getSkillName } from '@/utils/dictionary'
+import { useI18n } from 'vue-i18n'
+import { getSkillName } from '@/utils/contentNameMaps'
 
 const props = defineProps({
   topic: { type: String, required: true },
@@ -20,6 +21,7 @@ const props = defineProps({
 
 const router = useRouter()
 const langStore = useLanguageStore()
+const { t } = useI18n()
 
 function goToTopicDetail() {
   router.push({ name: 'topic', params: { id: Number(props.id) } })
@@ -40,7 +42,7 @@ function goToTopicDetail() {
         {{ getSkillName(topic, langStore.language) }}
       </h2>
       <p v-if="exampleCount !== null" class="text-sm font-bold text-slate-400 dark:text-slate-500">
-        {{ exampleCount }} príkladov
+        {{ exampleCount }} {{ t('examplesCount') }}
       </p>
     </div>
   </div>

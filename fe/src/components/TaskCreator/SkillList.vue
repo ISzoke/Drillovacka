@@ -9,7 +9,10 @@
 
 <script setup>
 import { ref, defineEmits, defineExpose, nextTick, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { searchSkills, getSandboxSkillPaths } from '@/api/apiClient';
+
+const { t } = useI18n();
 
 // Selected skill paths and skills
 const selectedSkillPaths = ref([]);
@@ -157,7 +160,7 @@ defineExpose({ importSkills, clearSkills });
 <template>
   <div ref="componentRef" class="flex flex-col items-start w-full">
 
-    <h1 class="text-primary font-bold text-2xl mb-2">Schopnosti</h1>
+    <h1 class="text-primary font-bold text-2xl mb-2">{{ t('skills') }}</h1>
 
     <div class="relative w-full max-w-4xl">
       <div v-if="selectedSkillPaths.length" class="mb-2 p-2 border border-gray-300 rounded">
@@ -199,7 +202,7 @@ defineExpose({ importSkills, clearSkills });
 
         <!-- Input field -->
         <input ref="inputRef" type="text" v-model="query" @input="fetchSkills" @focus="handleFocus"
-          @keydown="handleKeyDown" placeholder="Vložte dovednost..."
+          @keydown="handleKeyDown" :placeholder="t('skillInputPlaceholder')"
           class="border-none outline-none focus:ring-0 focus:border-transparent bg-transparent flex-grow p-1 min-w-[150px]" />
 
         <!-- Add skill to path -->

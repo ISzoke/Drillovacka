@@ -9,7 +9,7 @@
 <script setup>
 import { defineProps, ref, computed, defineEmits } from 'vue';
 import { useLanguageStore } from '@/stores/useLanguageStore';
-import { getSkillName } from '@/utils/dictionary';
+import { getSkillName } from '@/utils/contentNameMaps';
 
 const props = defineProps({
   operation: { type: Object, required: true },

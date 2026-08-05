@@ -8,18 +8,18 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import Topics from '@/components/MainMenu/Topics.vue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { onMounted } from 'vue';
 import { useRoute} from 'vue-router';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
-import { dictionary } from '@/utils/dictionary';
-
 // Stores
 const authStore = useAuthStore();
 const route = useRoute();
 const langStore = useLanguageStore();
+const { t } = useI18n();
 const recorderStore = useRecorderStore();
 
 onMounted(() => {
@@ -42,7 +42,7 @@ onMounted(() => {
   <!-- View for admin - tasks and skills management -->
   <div v-else>
     <p class="text-4xl text-primary flex justify-center font-bold pt-16">
-      {{ dictionary[langStore.language].adminHomeTitle }}
+      {{ t('adminHomeTitle') }}
     </p>
 
     <div class="flex flex-col items-center justify-center gap-5 pt-16">
@@ -53,7 +53,7 @@ onMounted(() => {
                bg-white dark:bg-slate-800 flex items-center justify-center
                text-2xl text-center font-black text-slate-800 dark:text-slate-100 p-6
                hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm">
-        {{ dictionary[langStore.language].tasks }}
+        {{ t('tasks') }}
       </RouterLink>
 
       <RouterLink to="/skill-creator"
@@ -62,7 +62,7 @@ onMounted(() => {
                bg-white dark:bg-slate-800 flex items-center justify-center
                text-2xl text-center font-black text-slate-800 dark:text-slate-100 p-6
                hover:-translate-y-1 active:translate-y-1 active:border-b-[3px] transition-all shadow-sm">
-        {{ dictionary[langStore.language].skills }}
+        {{ t('skills') }}
       </RouterLink>
       
     </div>

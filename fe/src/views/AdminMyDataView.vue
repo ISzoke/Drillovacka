@@ -1,36 +1,36 @@
 <template>
   <div class="p-6 max-w-7xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Moje zaznamenané dáta</h1>
+    <h1 class="text-2xl font-bold mb-4">{{ t('myDataPageTitle') }}</h1>
 
     <div class="border rounded-lg p-4 mb-6">
       <div class="flex items-center justify-between gap-4 mb-3">
-        <h2 class="text-lg font-semibold">Nahlásené príklady</h2>
+        <h2 class="text-lg font-semibold">{{ t('reportedExamplesTitle') }}</h2>
         <button
           @click="loadReports"
           class="bg-amber-500 text-white px-4 py-2 rounded"
         >
-          Obnoviť nahlásenia
+          {{ t('refreshReports') }}
         </button>
       </div>
 
-      <div v-if="reportsLoading" class="text-gray-500">Načítavam nahlásenia...</div>
+      <div v-if="reportsLoading" class="text-gray-500">{{ t('loadingReports') }}</div>
       <div v-else-if="reportsError" class="text-red-600">{{ reportsError }}</div>
-      <div v-else-if="exampleReports.length === 0" class="text-gray-500">Zatiaľ nie sú žiadne nahlásenia.</div>
+      <div v-else-if="exampleReports.length === 0" class="text-gray-500">{{ t('noReportsYet') }}</div>
       <div v-else class="overflow-x-auto">
         <table class="min-w-full border-collapse text-sm">
           <thead>
             <tr class="bg-gray-100">
-              <th class="p-2 border">Čas</th>
-              <th class="p-2 border">Používateľ</th>
-              <th class="p-2 border">Dôvod</th>
-              <th class="p-2 border">Poznámka</th>
-              <th class="p-2 border">Task</th>
-              <th class="p-2 border">Príklad</th>
-              <th class="p-2 border">Správna odpoveď</th>
-              <th class="p-2 border">Typ vstupu</th>
-              <th class="p-2 border">Jazyk</th>
-              <th class="p-2 border">Zručnosti</th>
-              <th class="p-2 border">MEGA / meta</th>
+              <th class="p-2 border">{{ t('colTime') }}</th>
+              <th class="p-2 border">{{ t('colUser') }}</th>
+              <th class="p-2 border">{{ t('colReason') }}</th>
+              <th class="p-2 border">{{ t('colNote') }}</th>
+              <th class="p-2 border">{{ t('colTask') }}</th>
+              <th class="p-2 border">{{ t('colExample') }}</th>
+              <th class="p-2 border">{{ t('correctAnswer') }}</th>
+              <th class="p-2 border">{{ t('colInputType') }}</th>
+              <th class="p-2 border">{{ t('colLanguage') }}</th>
+              <th class="p-2 border">{{ t('skills') }}</th>
+              <th class="p-2 border">{{ t('colMegaMeta') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -38,11 +38,11 @@
               <td class="p-2 border whitespace-nowrap">{{ formatDate(report.created_at) }}</td>
               <td class="p-2 border">
                 <div v-if="report.student_id">
-                  <div class="font-semibold">{{ report.student_username || 'študent' }}</div>
+                  <div class="font-semibold">{{ report.student_username || t('studentFallbackName') }}</div>
                   <div class="text-xs text-gray-600">ID: {{ report.student_id }}</div>
                 </div>
                 <div v-else>
-                  <div class="font-semibold">anonymný používateľ</div>
+                  <div class="font-semibold">{{ t('anonymousUserLabel') }}</div>
                   <div class="text-xs text-gray-600 break-all">{{ report.anonymous_session_id || '-' }}</div>
                 </div>
               </td>
@@ -50,7 +50,7 @@
               <td class="p-2 border">{{ report.note || '-' }}</td>
               <td class="p-2 border">
                 <div class="font-semibold">{{ report.task_name || '-' }}</div>
-                <div class="text-xs text-gray-600">Example ID: {{ report.example_id }}</div>
+                <div class="text-xs text-gray-600">{{ t('exampleIdLabel') }} {{ report.example_id }}</div>
               </td>
               <td class="p-2 border">{{ report.example_text }}</td>
               <td class="p-2 border">{{ report.correct_answer || '-' }}</td>
@@ -60,9 +60,9 @@
               <td class="p-2 border min-w-56">
                 <div class="text-xs space-y-2">
                   <div>
-                    <span class="font-semibold">Uploaded:</span>
+                    <span class="font-semibold">{{ t('uploadedLabel') }}</span>
                     <span :class="report.mega_uploaded ? 'text-green-700' : 'text-gray-600'">
-                      {{ report.mega_uploaded ? 'áno' : 'nie' }}
+                      {{ report.mega_uploaded ? t('yesLabel') : t('noLabel') }}
                     </span>
                   </div>
                   <div v-if="report.mega_json_url">
@@ -72,14 +72,14 @@
                       rel="noopener noreferrer"
                       class="text-blue-600 underline break-all"
                     >
-                      JSON na MEGA
+                      {{ t('jsonOnMega') }}
                     </a>
                   </div>
-                  <div v-else class="text-gray-500">MEGA link: -</div>
+                  <div v-else class="text-gray-500">{{ t('megaLinkNone') }}</div>
                   <div class="break-all text-gray-600">{{ report.local_json_name || '' }}</div>
                   <div v-if="report.mega_error" class="text-red-600 break-all">{{ report.mega_error }}</div>
                   <details class="mt-2">
-                    <summary class="cursor-pointer text-gray-700">Raw meta</summary>
+                    <summary class="cursor-pointer text-gray-700">{{ t('rawMetaLabel') }}</summary>
                     <pre class="mt-2 whitespace-pre-wrap break-all text-[11px] text-gray-600">{{ JSON.stringify(report.meta || {}, null, 2) }}</pre>
                   </details>
                 </div>
@@ -92,31 +92,31 @@
 
     <div class="border rounded-lg p-4 mb-6">
       <div class="flex items-center justify-between gap-4 mb-3">
-        <h2 class="text-lg font-semibold">Feedback a dotazníky</h2>
+        <h2 class="text-lg font-semibold">{{ t('feedbackSurveysTitle') }}</h2>
         <button
           @click="loadSurveyFeedbacks"
           class="bg-emerald-600 text-white px-4 py-2 rounded"
         >
-          Obnoviť feedbacky
+          {{ t('refreshFeedbacks') }}
         </button>
       </div>
 
-      <div v-if="feedbacksLoading" class="text-gray-500">Načítavam feedbacky...</div>
+      <div v-if="feedbacksLoading" class="text-gray-500">{{ t('loadingFeedbacks') }}</div>
       <div v-else-if="feedbacksError" class="text-red-600">{{ feedbacksError }}</div>
-      <div v-else-if="surveyFeedbacks.length === 0" class="text-gray-500">Zatiaľ nie sú žiadne feedbacky.</div>
+      <div v-else-if="surveyFeedbacks.length === 0" class="text-gray-500">{{ t('noFeedbacksYet') }}</div>
       <div v-else class="overflow-x-auto">
         <table class="min-w-full border-collapse text-sm">
           <thead>
             <tr class="bg-gray-100">
-              <th class="p-2 border">Čas</th>
-              <th class="p-2 border">Používateľ</th>
-              <th class="p-2 border">Typ</th>
-              <th class="p-2 border">Zdroj</th>
-              <th class="p-2 border">Otázka</th>
-              <th class="p-2 border">Odpoveď</th>
-              <th class="p-2 border">Jazyk</th>
-              <th class="p-2 border">Zručnosti</th>
-              <th class="p-2 border">Audio / MEGA</th>
+              <th class="p-2 border">{{ t('colTime') }}</th>
+              <th class="p-2 border">{{ t('colUser') }}</th>
+              <th class="p-2 border">{{ t('colType') }}</th>
+              <th class="p-2 border">{{ t('colSource') }}</th>
+              <th class="p-2 border">{{ t('colQuestion') }}</th>
+              <th class="p-2 border">{{ t('colAnswer') }}</th>
+              <th class="p-2 border">{{ t('colLanguage') }}</th>
+              <th class="p-2 border">{{ t('skills') }}</th>
+              <th class="p-2 border">{{ t('colAudioMega') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -124,11 +124,11 @@
               <td class="p-2 border whitespace-nowrap">{{ formatDate(feedback.created_at) }}</td>
               <td class="p-2 border">
                 <div v-if="feedback.student_id">
-                  <div class="font-semibold">{{ feedback.student_username || 'študent' }}</div>
+                  <div class="font-semibold">{{ feedback.student_username || t('studentFallbackName') }}</div>
                   <div class="text-xs text-gray-600">ID: {{ feedback.student_id }}</div>
                 </div>
                 <div v-else>
-                  <div class="font-semibold">anonymný používateľ</div>
+                  <div class="font-semibold">{{ t('anonymousUserLabel') }}</div>
                   <div class="text-xs text-gray-600 break-all">{{ feedback.anonymous_session_id || '-' }}</div>
                 </div>
               </td>
@@ -147,11 +147,11 @@
                     preload="none"
                     class="w-full"
                   />
-                  <div v-else class="text-gray-500">Audio: -</div>
+                  <div v-else class="text-gray-500">{{ t('audioNone') }}</div>
                   <div>
-                    <span class="font-semibold">Uploaded:</span>
+                    <span class="font-semibold">{{ t('uploadedLabel') }}</span>
                     <span :class="feedback.mega_uploaded ? 'text-green-700' : 'text-gray-600'">
-                      {{ feedback.mega_uploaded ? 'áno' : 'nie' }}
+                      {{ feedback.mega_uploaded ? t('yesLabel') : t('noLabel') }}
                     </span>
                   </div>
                   <div v-if="feedback.mega_json_url" class="break-all">
@@ -161,7 +161,7 @@
                       rel="noopener noreferrer"
                       class="text-blue-600 underline"
                     >
-                      JSON na MEGA
+                      {{ t('jsonOnMega') }}
                     </a>
                   </div>
                   <div v-if="feedback.mega_audio_url" class="break-all">
@@ -171,12 +171,12 @@
                       rel="noopener noreferrer"
                       class="text-blue-600 underline"
                     >
-                      Audio na MEGA
+                      {{ t('audioOnMega') }}
                     </a>
                   </div>
                   <div v-if="feedback.mega_error" class="text-red-600 break-all">{{ feedback.mega_error }}</div>
                   <details>
-                    <summary class="cursor-pointer text-gray-700">Raw meta</summary>
+                    <summary class="cursor-pointer text-gray-700">{{ t('rawMetaLabel') }}</summary>
                     <pre class="mt-2 whitespace-pre-wrap break-all text-[11px] text-gray-600">{{ JSON.stringify(feedback.meta || {}, null, 2) }}</pre>
                   </details>
                 </div>
@@ -190,25 +190,25 @@
     <!-- AI Generated Batches -->
     <div class="border rounded-lg p-4 mb-6">
       <div class="flex items-center justify-between gap-4 mb-3 flex-wrap">
-        <h2 class="text-lg font-semibold">AI generované tasky 🤖</h2>
+        <h2 class="text-lg font-semibold">{{ t('aiGeneratedTasksTitle') }} 🤖</h2>
         <div class="flex gap-2 items-center flex-wrap">
           <select v-model="generatedBatchStatusFilter" @change="loadGeneratedBatches" class="border rounded px-2 py-1 text-sm">
-            <option value="">Všetky</option>
-            <option value="pending_review">Čakajú na schválenie</option>
-            <option value="approved">Schválené</option>
-            <option value="rejected">Zamietnuté</option>
-            <option value="preview">Preview</option>
-            <option value="survey_done">Anketa dokončená</option>
+            <option value="">{{ t('allLabel') }}</option>
+            <option value="pending_review">{{ t('statusPendingReview') }}</option>
+            <option value="approved">{{ t('statusApproved') }}</option>
+            <option value="rejected">{{ t('statusRejected') }}</option>
+            <option value="preview">{{ t('statusPreview') }}</option>
+            <option value="survey_done">{{ t('statusSurveyDone') }}</option>
           </select>
           <button @click="loadGeneratedBatches" class="bg-violet-600 text-white px-4 py-2 rounded text-sm">
-            Obnoviť
+            {{ t('refresh') }}
           </button>
         </div>
       </div>
 
-      <div v-if="generatedBatchesLoading" class="text-gray-500">Načítavam...</div>
+      <div v-if="generatedBatchesLoading" class="text-gray-500">{{ t('loadingGeneric') }}</div>
       <div v-else-if="generatedBatchesError" class="text-red-600">{{ generatedBatchesError }}</div>
-      <div v-else-if="!generatedBatches.length" class="text-gray-500">Žiadne záznamy.</div>
+      <div v-else-if="!generatedBatches.length" class="text-gray-500">{{ t('noRecordsFound') }}</div>
       <div v-else class="space-y-4">
         <div
           v-for="batch in generatedBatches"
@@ -218,8 +218,8 @@
           <!-- Header row -->
           <div class="flex items-start justify-between gap-3 mb-2 flex-wrap">
             <div>
-              <span class="font-bold text-base">{{ batch.raw_json?.task_name || 'Bez názvu' }}</span>
-              <span class="ml-2 text-xs text-gray-500">{{ formatDate(batch.created_at) }} · {{ batch.grade }}. ročník</span>
+              <span class="font-bold text-base">{{ batch.raw_json?.task_name || t('untitledLabel') }}</span>
+              <span class="ml-2 text-xs text-gray-500">{{ formatDate(batch.created_at) }} · {{ batch.grade }}. {{ t('grade') }}</span>
             </div>
             <span
               class="text-xs font-bold px-2 py-0.5 rounded-full"
@@ -236,7 +236,7 @@
 
           <!-- Student + description -->
           <div class="text-sm text-gray-600 mb-2">
-            <span class="font-semibold">{{ batch.student_username || 'neznámy' }}</span>
+            <span class="font-semibold">{{ batch.student_username || t('unknownLabel') }}</span>
             <span class="text-gray-400"> (ID {{ batch.student_id }})</span>
           </div>
           <p class="text-sm italic text-gray-500 mb-3">"{{ batch.description }}"</p>
@@ -244,15 +244,15 @@
           <!-- Examples preview (collapsible) -->
           <details class="mb-3">
             <summary class="cursor-pointer text-xs font-bold text-violet-600 mb-2">
-              Zobraziť príklady ({{ batch.raw_json?.examples?.length || 0 }})
+              {{ t('showExamplesLabel') }} ({{ batch.raw_json?.examples?.length || 0 }})
             </summary>
             <div class="overflow-x-auto mt-2">
               <table class="min-w-full text-xs border-collapse">
                 <thead>
                   <tr class="bg-gray-100">
-                    <th class="p-1.5 border">Príklad</th>
-                    <th class="p-1.5 border">Typ</th>
-                    <th class="p-1.5 border">Odpoveď</th>
+                    <th class="p-1.5 border">{{ t('colExample') }}</th>
+                    <th class="p-1.5 border">{{ t('colType') }}</th>
+                    <th class="p-1.5 border">{{ t('colAnswer') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -268,11 +268,11 @@
 
           <!-- Survey answers (if any) -->
           <div v-if="batch.survey" class="text-xs text-gray-500 mb-3 grid grid-cols-2 gap-x-4 gap-y-1 bg-gray-50 rounded p-2">
-            <div>Q1 – O čo žiadal: <strong>{{ batch.survey.q1_as_requested ? 'Áno' : 'Nie' }}</strong></div>
-            <div>Q2 – Počitateľné: <strong>{{ batch.survey.q2_solvable_display ? 'Áno' : 'Nie' }}</strong></div>
-            <div>Q3 – Obtiažnosť: <strong>{{ batch.survey.q3_difficulty }}</strong></div>
-            <div>Q4 – Chyby: <strong>{{ batch.survey.q4_has_errors ? 'Áno' : 'Nie' }}</strong></div>
-            <div class="col-span-2">Q5 – Spokojný: <strong>{{ batch.survey.q5_satisfied ? '✅ Áno' : '❌ Nie' }}</strong></div>
+            <div>{{ t('surveyQ1Label') }}: <strong>{{ batch.survey.q1_as_requested ? t('yesLabel') : t('noLabel') }}</strong></div>
+            <div>{{ t('surveyQ2Label') }}: <strong>{{ batch.survey.q2_solvable_display ? t('yesLabel') : t('noLabel') }}</strong></div>
+            <div>{{ t('surveyQ3Label') }}: <strong>{{ batch.survey.q3_difficulty }}</strong></div>
+            <div>{{ t('surveyQ4Label') }}: <strong>{{ batch.survey.q4_has_errors ? t('yesLabel') : t('noLabel') }}</strong></div>
+            <div class="col-span-2">{{ t('surveyQ5Label') }}: <strong>{{ batch.survey.q5_satisfied ? `✅ ${t('yesLabel')}` : `❌ ${t('noLabel')}` }}</strong></div>
           </div>
 
           <!-- Approve / Reject (only for pending_review) -->
@@ -281,17 +281,17 @@
               @click="approveBatch(batch.id)"
               class="px-4 py-1.5 bg-emerald-600 text-white rounded text-sm font-bold hover:bg-emerald-700"
             >
-              ✅ Schváliť
+              ✅ {{ t('approveLabel') }}
             </button>
             <button
               @click="rejectBatch(batch.id)"
               class="px-4 py-1.5 bg-red-500 text-white rounded text-sm font-bold hover:bg-red-600"
             >
-              ❌ Zamietnuť
+              ❌ {{ t('rejectLabel') }}
             </button>
           </div>
           <div v-else-if="batch.rejection_note" class="text-xs text-red-600 mt-1">
-            Dôvod: {{ batch.rejection_note }}
+            {{ t('reasonLabel') }} {{ batch.rejection_note }}
           </div>
         </div>
       </div>
@@ -300,24 +300,24 @@
     <!-- Example requests ("Málo príkladov? Klikni sem.") -->
     <div class="border rounded-lg p-4 mb-6">
       <div class="flex items-center justify-between gap-4 mb-3">
-        <h2 class="text-lg font-semibold">Požiadavky na príklady 💡</h2>
+        <h2 class="text-lg font-semibold">{{ t('exampleRequestsTitle') }} 💡</h2>
         <button @click="loadExampleRequests" class="bg-violet-600 text-white px-4 py-2 rounded">
-          Obnoviť
+          {{ t('refresh') }}
         </button>
       </div>
 
-      <div v-if="requestsLoading" class="text-gray-500">Načítavam...</div>
+      <div v-if="requestsLoading" class="text-gray-500">{{ t('loadingGeneric') }}</div>
       <div v-else-if="requestsError" class="text-red-600">{{ requestsError }}</div>
-      <div v-else-if="exampleRequests.length === 0" class="text-gray-500">Zatiaľ žiadne požiadavky.</div>
+      <div v-else-if="exampleRequests.length === 0" class="text-gray-500">{{ t('noRequestsYet') }}</div>
       <div v-else class="overflow-x-auto">
         <table class="min-w-full border-collapse text-sm">
           <thead>
             <tr class="bg-gray-100">
-              <th class="p-2 border">Čas</th>
-              <th class="p-2 border">Ročník</th>
-              <th class="p-2 border">Požiadavka</th>
-              <th class="p-2 border">Zdroj</th>
-              <th class="p-2 border">Používateľ</th>
+              <th class="p-2 border">{{ t('colTime') }}</th>
+              <th class="p-2 border">{{ t('gradeLevel') }}</th>
+              <th class="p-2 border">{{ t('colRequest') }}</th>
+              <th class="p-2 border">{{ t('colSource') }}</th>
+              <th class="p-2 border">{{ t('colUser') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -328,11 +328,11 @@
               <td class="p-2 border text-center">{{ req.source }}</td>
               <td class="p-2 border">
                 <div v-if="req.student_id">
-                  <div class="font-semibold">{{ req.student_username || 'študent' }}</div>
+                  <div class="font-semibold">{{ req.student_username || t('studentFallbackName') }}</div>
                   <div class="text-xs text-gray-600">ID: {{ req.student_id }}</div>
                 </div>
                 <div v-else>
-                  <div class="font-semibold">anonymný</div>
+                  <div class="font-semibold">{{ t('anonymousLabel') }}</div>
                   <div class="text-xs text-gray-600 break-all">{{ req.anonymous_session_id || '-' }}</div>
                 </div>
               </td>
@@ -344,22 +344,22 @@
 
     <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
       <div>
-        <label class="block text-sm font-semibold mb-1">Typ identity</label>
+        <label class="block text-sm font-semibold mb-1">{{ t('identityTypeLabel') }}</label>
         <select v-model="identityType" class="border rounded px-3 py-2 w-full">
-          <option value="student">Študent</option>
-          <option value="session">Session ID</option>
+          <option value="student">{{ t('studentOption') }}</option>
+          <option value="session">{{ t('sessionIdOption') }}</option>
         </select>
       </div>
 
       <div class="md:col-span-2">
         <label class="block text-sm font-semibold mb-1">
-          {{ identityType === 'student' ? 'Filter študentov (meno alebo ID)' : 'Session ID' }}
+          {{ identityType === 'student' ? t('filterStudentsLabel') : t('sessionIdOption') }}
         </label>
         <input
           v-model="filterText"
           type="text"
           class="border rounded px-3 py-2 w-full"
-          :placeholder="identityType === 'student' ? 'napr. jan alebo 12' : 'napr. session_id z localStorage'"
+          :placeholder="identityType === 'student' ? t('filterStudentsPlaceholder') : t('sessionIdPlaceholder')"
           @keyup.enter="identityType === 'session' ? loadData() : null"
         />
       </div>
@@ -370,24 +370,24 @@
           class="bg-blue-600 text-white px-4 py-2 rounded w-full"
           :class="identityType === 'student' ? 'opacity-60 cursor-not-allowed' : ''"
         >
-          Načítať
+          {{ t('loadButtonLabel') }}
         </button>
       </div>
     </div>
 
     <div v-if="identityType === 'student'" class="border rounded-lg p-4 mb-6">
-      <h2 class="text-lg font-semibold mb-3">Všetci študenti</h2>
-      <div v-if="studentsLoading" class="text-gray-500">Načítavam študentov...</div>
-      <div v-else-if="allStudents.length === 0" class="text-gray-500">Žiadni študenti v databáze.</div>
+      <h2 class="text-lg font-semibold mb-3">{{ t('allStudentsTitle') }}</h2>
+      <div v-if="studentsLoading" class="text-gray-500">{{ t('loadingStudents') }}</div>
+      <div v-else-if="allStudents.length === 0" class="text-gray-500">{{ t('noStudentsInDb') }}</div>
       <div v-else class="max-h-64 overflow-auto border rounded">
         <table class="min-w-full border-collapse text-sm">
           <thead>
             <tr class="bg-gray-100">
-              <th class="p-2 border">Meno</th>
+              <th class="p-2 border">{{ t('colName') }}</th>
               <th class="p-2 border text-center">ID</th>
-              <th class="p-2 border text-center">Pokusy</th>
-              <th class="p-2 border text-center">Presnosť</th>
-              <th class="p-2 border text-center">Akcia</th>
+              <th class="p-2 border text-center">{{ t('colAttempts') }}</th>
+              <th class="p-2 border text-center">{{ t('accuracy') }}</th>
+              <th class="p-2 border text-center">{{ t('colAction') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -401,12 +401,12 @@
                   class="text-blue-600 underline"
                   @click="selectStudent(student)"
                 >
-                  Zobraziť dáta
+                  {{ t('viewDataLabel') }}
                 </button>
               </td>
             </tr>
             <tr v-if="filteredStudents.length === 0">
-              <td colspan="5" class="p-4 text-center text-gray-500">Žiadny študent podľa filtra.</td>
+              <td colspan="5" class="p-4 text-center text-gray-500">{{ t('noStudentMatchesFilter') }}</td>
             </tr>
           </tbody>
         </table>
@@ -414,18 +414,18 @@
     </div>
 
     <div v-if="identityType === 'session'" class="border rounded-lg p-4 mb-6">
-      <h2 class="text-lg font-semibold mb-3">Všetci anonymní používatelia</h2>
-      <div v-if="anonymousLoading" class="text-gray-500">Načítavam anonymné sessions...</div>
-      <div v-else-if="allAnonymousSessions.length === 0" class="text-gray-500">Žiadne anonymné sessions v databáze.</div>
+      <h2 class="text-lg font-semibold mb-3">{{ t('allAnonymousUsersTitle') }}</h2>
+      <div v-if="anonymousLoading" class="text-gray-500">{{ t('loadingAnonymousSessions') }}</div>
+      <div v-else-if="allAnonymousSessions.length === 0" class="text-gray-500">{{ t('noAnonymousSessionsInDb') }}</div>
       <div v-else class="max-h-64 overflow-auto border rounded">
         <table class="min-w-full border-collapse text-sm">
           <thead>
             <tr class="bg-gray-100">
-              <th class="p-2 border">Používateľ</th>
-              <th class="p-2 border text-center">Pokusy</th>
-              <th class="p-2 border text-center">Presnosť</th>
-              <th class="p-2 border text-center">Posledná aktivita</th>
-              <th class="p-2 border text-center">Akcia</th>
+              <th class="p-2 border">{{ t('colUser') }}</th>
+              <th class="p-2 border text-center">{{ t('colAttempts') }}</th>
+              <th class="p-2 border text-center">{{ t('accuracy') }}</th>
+              <th class="p-2 border text-center">{{ t('colLastActivity') }}</th>
+              <th class="p-2 border text-center">{{ t('colAction') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -439,51 +439,51 @@
                   class="text-blue-600 underline"
                   @click="selectAnonymousSession(session)"
                 >
-                  Zobraziť dáta
+                  {{ t('viewDataLabel') }}
                 </button>
               </td>
             </tr>
             <tr v-if="filteredAnonymousSessions.length === 0">
-              <td colspan="5" class="p-4 text-center text-gray-500">Žiadny anonym podľa filtra.</td>
+              <td colspan="5" class="p-4 text-center text-gray-500">{{ t('noAnonymousMatchesFilter') }}</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div v-if="loading" class="text-gray-500">Načítavam...</div>
+    <div v-if="loading" class="text-gray-500">{{ t('loadingGeneric') }}</div>
     <div v-else-if="error" class="text-red-600 mb-4">{{ error }}</div>
 
     <div v-if="data" class="space-y-6">
       <div class="border rounded-lg p-4 bg-gray-50">
-        <h2 class="text-lg font-semibold mb-3">Súhrn</h2>
+        <h2 class="text-lg font-semibold mb-3">{{ t('summaryTitle') }}</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <div><span class="font-semibold">Používateľ:</span> {{ displayUserLabel }}</div>
-          <div><span class="font-semibold">Typ:</span> {{ data.user_type }}</div>
-          <div><span class="font-semibold">Pokusy:</span> {{ data.summary?.total_attempts ?? 0 }}</div>
-          <div><span class="font-semibold">Vyhodnotené:</span> {{ data.summary?.evaluated_count ?? 0 }}</div>
-          <div><span class="font-semibold">Správne:</span> {{ data.summary?.correct_count ?? 0 }}</div>
-          <div><span class="font-semibold">Nesprávne:</span> {{ data.summary?.incorrect_count ?? 0 }}</div>
-          <div><span class="font-semibold">Presnosť:</span> {{ formatPercent(data.summary?.accuracy) }}</div>
-          <div><span class="font-semibold">Priem. čas:</span> {{ Math.round(data.summary?.avg_duration_ms ?? 0) }} ms</div>
+          <div><span class="font-semibold">{{ t('colUser') }}:</span> {{ displayUserLabel }}</div>
+          <div><span class="font-semibold">{{ t('colType') }}:</span> {{ data.user_type }}</div>
+          <div><span class="font-semibold">{{ t('colAttempts') }}:</span> {{ data.summary?.total_attempts ?? 0 }}</div>
+          <div><span class="font-semibold">{{ t('evaluatedLabel') }}:</span> {{ data.summary?.evaluated_count ?? 0 }}</div>
+          <div><span class="font-semibold">{{ t('correctLabel') }}:</span> {{ data.summary?.correct_count ?? 0 }}</div>
+          <div><span class="font-semibold">{{ t('incorrectLabel') }}:</span> {{ data.summary?.incorrect_count ?? 0 }}</div>
+          <div><span class="font-semibold">{{ t('accuracy') }}:</span> {{ formatPercent(data.summary?.accuracy) }}</div>
+          <div><span class="font-semibold">{{ t('avgTimeLabel') }}:</span> {{ Math.round(data.summary?.avg_duration_ms ?? 0) }} ms</div>
         </div>
       </div>
 
       <div class="border rounded-lg p-4">
-        <h2 class="text-lg font-semibold mb-3">Všetky pokusy</h2>
+        <h2 class="text-lg font-semibold mb-3">{{ t('allAttemptsTitle') }}</h2>
         <div class="overflow-x-auto">
           <table class="min-w-full border-collapse text-sm">
             <thead>
               <tr class="bg-gray-100">
-                <th class="p-2 border">Čas</th>
-                <th class="p-2 border">Príklad</th>
-                <th class="p-2 border">Transcript</th>
-                <th class="p-2 border">Tvoja odpoveď</th>
-                <th class="p-2 border">Správna odpoveď</th>
-                <th class="p-2 border">Správne</th>
-                <th class="p-2 border">Čas (ms)</th>
-                <th class="p-2 border">Kategórie</th>
-                <th class="p-2 border">Párovaný záznam (audio + JSON)</th>
+                <th class="p-2 border">{{ t('colTime') }}</th>
+                <th class="p-2 border">{{ t('colExample') }}</th>
+                <th class="p-2 border">{{ t('colTranscript') }}</th>
+                <th class="p-2 border">{{ t('colYourAnswer') }}</th>
+                <th class="p-2 border">{{ t('correctAnswer') }}</th>
+                <th class="p-2 border">{{ t('correctLabel') }}</th>
+                <th class="p-2 border">{{ t('colTimeMs') }}</th>
+                <th class="p-2 border">{{ t('colCategories') }}</th>
+                <th class="p-2 border">{{ t('colPairedRecord') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -494,8 +494,8 @@
                 <td class="p-2 border">{{ attempt.your_answer }}</td>
                 <td class="p-2 border">{{ attempt.correct_answer }}</td>
                 <td class="p-2 border text-center">
-                  <span v-if="attempt.is_correct === true" class="text-green-700 font-semibold">Áno</span>
-                  <span v-else-if="attempt.is_correct === false" class="text-red-700 font-semibold">Nie</span>
+                  <span v-if="attempt.is_correct === true" class="text-green-700 font-semibold">{{ t('yesLabel') }}</span>
+                  <span v-else-if="attempt.is_correct === false" class="text-red-700 font-semibold">{{ t('noLabel') }}</span>
                   <span v-else class="text-gray-500">-</span>
                 </td>
                 <td class="p-2 border text-center">{{ attempt.duration_ms }}</td>
@@ -511,9 +511,9 @@
                         rel="noopener noreferrer"
                         class="text-blue-600 underline"
                       >
-                        JSON sidecar
+                        {{ t('jsonSidecarLabel') }}
                       </a>
-                      <span v-else class="text-gray-500">JSON sidecar: -</span>
+                      <span v-else class="text-gray-500">{{ t('jsonSidecarLabel') }}: -</span>
                     </div>
                     <div class="text-xs text-gray-600 break-all">{{ attempt.audio_file || '' }}</div>
                   </div>
@@ -521,7 +521,7 @@
                 </td>
               </tr>
               <tr v-if="!data.all_attempts || data.all_attempts.length === 0">
-                <td colspan="9" class="p-4 text-center text-gray-500">Žiadne pokusy.</td>
+                <td colspan="9" class="p-4 text-center text-gray-500">{{ t('noAttemptsYet') }}</td>
               </tr>
             </tbody>
           </table>
@@ -529,7 +529,7 @@
       </div>
 
       <div class="border rounded-lg p-4 bg-gray-50">
-        <h2 class="text-lg font-semibold mb-3">Raw JSON</h2>
+        <h2 class="text-lg font-semibold mb-3">{{ t('rawJsonTitle') }}</h2>
         <pre class="text-xs overflow-auto whitespace-pre-wrap break-all">{{ prettyJson }}</pre>
       </div>
     </div>
@@ -539,6 +539,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { getAllAnonymousSessionsStats, getAllStudentsStats, getExampleReports, getAllExampleRequests, getMyData, getSurveyFeedbacks, getAllGeneratedBatches, approveGeneratedBatch, rejectGeneratedBatch } from '@/api/apiClient'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const identityType = ref('student')
 const identityValue = ref('')
@@ -614,21 +617,21 @@ function formatPercent(value) {
 
 function formatReportType(value) {
   const mapping = {
-    wrong_answer: 'Zlá odpoveď',
-    wrong_grade: 'Nepasuje k ročníku',
-    unclear: 'Nejasné zadanie',
-    other: 'Iný problém',
+    wrong_answer: t('reportWrongAnswer'),
+    wrong_grade: t('reportWrongGrade'),
+    unclear: t('reportUnclear'),
+    other: t('reportOther'),
   }
   return mapping[value] || value || '-'
 }
 
 function formatFeedbackType(value) {
   const mapping = {
-    'final-feedback-text': 'Záverečný feedback text',
-    'final-feedback-voice': 'Záverečný feedback hlas',
-    'survey-choice': 'Dotazník výber',
-    'survey-scale': 'Dotazník škála',
-    'survey-voice': 'Dotazník hlas',
+    'final-feedback-text': t('feedbackTypeFinalText'),
+    'final-feedback-voice': t('feedbackTypeFinalVoice'),
+    'survey-choice': t('feedbackTypeSurveyChoice'),
+    'survey-scale': t('feedbackTypeSurveyScale'),
+    'survey-voice': t('feedbackTypeSurveyVoice'),
   }
   return mapping[value] || value || '-'
 }
@@ -638,7 +641,7 @@ async function loadStudents() {
   try {
     allStudents.value = await getAllStudentsStats()
   } catch (e) {
-    error.value = typeof e === 'string' ? e : 'Chyba pri načítaní študentov.'
+    error.value = typeof e === 'string' ? e : t('errorLoadingStudents')
   } finally {
     studentsLoading.value = false
   }
@@ -649,7 +652,7 @@ async function loadAnonymousSessions() {
   try {
     allAnonymousSessions.value = await getAllAnonymousSessionsStats()
   } catch (e) {
-    error.value = typeof e === 'string' ? e : 'Chyba pri načítaní anonymných sessions.'
+    error.value = typeof e === 'string' ? e : t('errorLoadingAnonymousSessions')
   } finally {
     anonymousLoading.value = false
   }
@@ -661,7 +664,7 @@ async function loadReports() {
   try {
     exampleReports.value = await getExampleReports(1000)
   } catch (e) {
-    reportsError.value = typeof e === 'string' ? e : 'Chyba pri načítaní nahlásení.'
+    reportsError.value = typeof e === 'string' ? e : t('errorLoadingReports')
   } finally {
     reportsLoading.value = false
   }
@@ -673,7 +676,7 @@ async function loadSurveyFeedbacks() {
   try {
     surveyFeedbacks.value = await getSurveyFeedbacks(1000)
   } catch (e) {
-    feedbacksError.value = typeof e === 'string' ? e : 'Chyba pri načítaní feedbackov.'
+    feedbacksError.value = typeof e === 'string' ? e : t('errorLoadingFeedbacks')
   } finally {
     feedbacksLoading.value = false
   }
@@ -685,7 +688,7 @@ async function loadExampleRequests() {
   try {
     exampleRequests.value = await getAllExampleRequests(1000)
   } catch (e) {
-    requestsError.value = typeof e === 'string' ? e : 'Chyba pri načítaní requestov.'
+    requestsError.value = typeof e === 'string' ? e : t('errorLoadingRequests')
   } finally {
     requestsLoading.value = false
   }
@@ -699,7 +702,7 @@ async function loadGeneratedBatches() {
     if (generatedBatchStatusFilter.value) params.status = generatedBatchStatusFilter.value
     generatedBatches.value = await getAllGeneratedBatches(params)
   } catch (e) {
-    generatedBatchesError.value = typeof e === 'string' ? e : 'Chyba pri načítaní.'
+    generatedBatchesError.value = typeof e === 'string' ? e : t('errorLoadingGeneric')
   } finally {
     generatedBatchesLoading.value = false
   }
@@ -710,17 +713,17 @@ async function approveBatch(batchId) {
     await approveGeneratedBatch(batchId)
     await loadGeneratedBatches()
   } catch (e) {
-    alert(typeof e === 'string' ? e : 'Chyba pri schvaľovaní.')
+    alert(typeof e === 'string' ? e : t('errorApproving'))
   }
 }
 
 async function rejectBatch(batchId) {
-  const note = prompt('Dôvod zamietnutia (voliteľné):') ?? ''
+  const note = prompt(t('rejectionReasonPrompt')) ?? ''
   try {
     await rejectGeneratedBatch(batchId, note)
     await loadGeneratedBatches()
   } catch (e) {
-    alert(typeof e === 'string' ? e : 'Chyba pri zamietaní.')
+    alert(typeof e === 'string' ? e : t('errorRejecting'))
   }
 }
 
@@ -740,12 +743,12 @@ async function selectAnonymousSession(session) {
 
 async function loadData() {
   if (identityType.value === 'student' && !identityValue.value) {
-    error.value = 'Vyber študenta zo zoznamu.'
+    error.value = t('selectStudentFromListError')
     return
   }
 
   if (identityType.value === 'session' && !filterText.value) {
-    error.value = 'Zadaj student_id alebo session_id.'
+    error.value = t('enterStudentOrSessionIdError')
     return
   }
 
@@ -759,7 +762,7 @@ async function loadData() {
 
     data.value = await getMyData(payload)
   } catch (e) {
-    error.value = typeof e === 'string' ? e : 'Chyba pri načítaní dát.'
+    error.value = typeof e === 'string' ? e : t('errorLoadingData')
   } finally {
     loading.value = false
   }

@@ -14,6 +14,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import apiClient from '@/api/apiClient'
 import { generateExamples, getGenerationQuota } from '@/api/apiClient'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -27,6 +28,7 @@ const emit = defineEmits(['close'])
 
 const authStore = useAuthStore()
 const router = useRouter()
+const { t } = useI18n()
 
 // idle | generating | done
 const phase = ref('idle')
@@ -73,7 +75,7 @@ function stopVoice() { recognition?.stop() }
 // ── Plain request (existing flow) ────────────────────────────────────────────
 async function submitPlainRequest() {
   const trimmed = text.value.trim()
-  if (!trimmed) { error.value = 'Prosím napíš alebo nadiktuj svoju požiadavku.'; return }
+  if (!trimmed) { error.value = t('requestTextRequired'); return }
   error.value = ''
   submitting.value = true
   try {
@@ -90,7 +92,7 @@ async function submitPlainRequest() {
     text.value = ''
     setTimeout(() => { phase.value = 'idle'; emit('close') }, 1800)
   } catch {
-    error.value = 'Niečo sa pokazilo, skús znova.'
+    error.value = t('somethingWentWrong')
   } finally {
     submitting.value = false
   }
@@ -99,15 +101,15 @@ async function submitPlainRequest() {
 // ── AI Generation ────────────────────────────────────────────────────────────
 async function generate() {
   if (!authStore.id) {
-    error.value = 'Na generovanie príkladov sa musíš prihlásiť.'
+    error.value = t('loginRequiredForGeneration')
     return
   }
   if (quota.value.remaining <= 0) {
-    error.value = `Denný limit ${quota.value.limit} generovaní bol dosiahnutý. Skús zajtra.`
+    error.value = t('dailyGenerationLimitReached', { limit: quota.value.limit })
     return
   }
   const trimmed = text.value.trim()
-  if (!trimmed) { error.value = 'Prosím opíš, aké príklady chceš.'; return }
+  if (!trimmed) { error.value = t('describeExamplesRequired'); return }
   error.value = ''
   phase.value = 'generating'
 
@@ -121,7 +123,7 @@ async function generate() {
     emit('close')
     router.push({ name: 'examples', query: { task_id: result.task_id, batch_id: result.batch_id } })
   } catch (e) {
-    const msg = typeof e === 'string' ? e : 'Generovanie zlyhalo, skús znova.'
+    const msg = typeof e === 'string' ? e : t('generationFailed')
     error.value = msg
     phase.value = 'idle'
     // Refresh quota in case limit was hit
@@ -160,15 +162,15 @@ onUnmounted(() => { if (listening.value) recognition?.stop() })
       <!-- ── DONE ── -->
       <div v-if="phase === 'done'" class="text-center py-8">
         <div class="text-5xl mb-3">🙏</div>
-        <p class="font-black text-xl text-slate-800 dark:text-slate-100">Ďakujeme!</p>
-        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Tvoja požiadavka bola odoslaná.</p>
+        <p class="font-black text-xl text-slate-800 dark:text-slate-100">{{ t('thankYou') }}</p>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">{{ t('requestSent') }}</p>
       </div>
 
       <!-- ── GENERATING ── -->
       <div v-else-if="phase === 'generating'" class="text-center py-12">
         <div class="text-5xl mb-4 animate-bounce">🤖</div>
-        <p class="font-black text-xl text-slate-800 dark:text-slate-100 mb-2">Generujem príklady…</p>
-        <p class="text-slate-400 dark:text-slate-500 text-sm">AI pracuje, chvíľku počkaj</p>
+        <p class="font-black text-xl text-slate-800 dark:text-slate-100 mb-2">{{ t('generatingExamples') }}</p>
+        <p class="text-slate-400 dark:text-slate-500 text-sm">{{ t('aiWorkingWait') }}</p>
         <div class="mt-6 flex justify-center gap-1.5">
           <span v-for="i in 3" :key="i"
             class="w-2 h-2 rounded-full bg-violet-400 animate-bounce"
@@ -179,22 +181,22 @@ onUnmounted(() => { if (listening.value) recognition?.stop() })
 
       <!-- ── IDLE ── -->
       <template v-else>
-        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-1">Chceš viac príkladov?</h2>
+        <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-1">{{ t('wantMoreExamples') }}</h2>
         <p class="text-sm text-slate-400 dark:text-slate-500 mb-4">
-          Napíš (alebo nadiktuj), aké príklady by si chcel/a
-          <span v-if="grade" class="font-semibold text-violet-600 dark:text-violet-400">pre {{ grade }}. ročník</span>.
+          {{ t('describeExamplesPrompt') }}
+          <span v-if="grade" class="font-semibold text-violet-600 dark:text-violet-400">{{ t('forGradeInline', { grade }) }}</span>.
         </p>
 
         <!-- Login notice for generation -->
         <div v-if="!authStore.id" class="mb-3 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-xs text-amber-700 dark:text-amber-400">
-          💡 Na <strong>generovanie príkladov</strong> sa musíš prihlásiť. Môžeš však odoslať textovú požiadavku.
+          💡 {{ t('generationLoginNoticePre') }} <strong>{{ t('generationLoginNoticeStrong') }}</strong> {{ t('generationLoginNoticePost') }}
         </div>
 
         <!-- Text area -->
         <textarea
           v-model="text"
           rows="4"
-          placeholder="Napr. slovné úlohy na zlomky, obvod trojuholníka, násobilka 7..."
+          :placeholder="t('exampleRequestPlaceholder')"
           class="w-full border-[3px] border-slate-200 dark:border-slate-600 rounded-2xl p-3 text-sm
                  bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100
                  placeholder-slate-400 dark:placeholder-slate-500
@@ -217,7 +219,7 @@ onUnmounted(() => { if (listening.value) recognition?.stop() })
               ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 text-red-600 animate-pulse'
               : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300'"
           >
-            🎤 {{ listening ? 'Nahrávam…' : '' }}
+            🎤 {{ listening ? t('recordingEllipsis') : '' }}
           </button>
 
           <!-- Plain request -->
@@ -229,7 +231,7 @@ onUnmounted(() => { if (listening.value) recognition?.stop() })
                    hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all
                    disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 disabled:border-b-[6px]"
           >
-            {{ submitting ? 'Odosielam…' : 'Odoslať' }}
+            {{ submitting ? t('sendingEllipsis') : t('send') }}
           </button>
 
           <!-- AI Generate (only for logged-in) -->
@@ -242,7 +244,7 @@ onUnmounted(() => { if (listening.value) recognition?.stop() })
                    hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px] transition-all
                    disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 disabled:border-b-[6px]"
           >
-            ✨ Generovať
+            {{ t('generateButton') }}
           </button>
         </div>
 
@@ -256,8 +258,8 @@ onUnmounted(() => { if (listening.value) recognition?.stop() })
                 ? 'text-amber-500 dark:text-amber-400'
                 : 'text-slate-400 dark:text-slate-500'"
           >
-            <span v-if="quota.remaining === 0">Denný limit dosiahnutý ({{ quota.limit }}/{{ quota.limit }}). Skús zajtra.</span>
-            <span v-else>Ešte môžeš vygenerovať: <strong>{{ quota.remaining }}</strong> / {{ quota.limit }}</span>
+            <span v-if="quota.remaining === 0">{{ t('dailyLimitReachedShort', { limit: quota.limit }) }}</span>
+            <span v-else>{{ t('remainingGenerations', { remaining: quota.remaining, limit: quota.limit }) }}</span>
           </span>
         </div>
       </template>

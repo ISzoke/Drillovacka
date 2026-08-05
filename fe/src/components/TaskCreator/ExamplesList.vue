@@ -9,6 +9,7 @@
 
 <script setup>
 import { ref, defineProps, defineEmits, nextTick, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ExampleCreator from './ExampleCreator.vue';
 import WordProblemCreator from './WordProblemCreator.vue';
 import { postTask } from '@/api/apiClient';
@@ -55,6 +56,7 @@ const isImportOpen = ref(false);
 // Stores
 const toastStore = useToastStore();
 const taskStore = useTaskStore();
+const { t } = useI18n();
 
 const router = useRouter();
 
@@ -96,7 +98,7 @@ const submitExamples = async (action) => {
     // Validation
     if(props.selectedGradeLevelIds.length === 0){
       toastStore.addToast({
-        message: 'Nebyl vybrán žádný ročník',
+        message: t('noGradeSelected'),
         type: 'error',
         visible: true,
       });
@@ -104,7 +106,7 @@ const submitExamples = async (action) => {
 
     } else if(props.taskName === ''){
       toastStore.addToast({
-        message: 'Nebyl vyplněn název sady',
+        message: t('noTaskNameEntered'),
         type: 'error',
         visible: true,
       });
@@ -114,7 +116,7 @@ const submitExamples = async (action) => {
     // Create task
     await postTask(examples, props.selectedGradeLevelIds, props.taskName, taskId.value, props.examplesType, action);
     toastStore.addToast({
-        message: action == 'create' ? 'Sada byla vytvořena' : 'Změny byly uloženy',
+        message: action == 'create' ? t('setCreated') : t('changesSaved'),
         type: 'success',
         visible: true,
     });
@@ -127,7 +129,7 @@ const submitExamples = async (action) => {
 
   }catch(error){
     toastStore.addToast({
-        message: action == 'create' ? 'Sadu se nepodařilo vytvořit' : 'Změny se nepodařilo uložit',
+        message: action == 'create' ? t('setCreateFailed') : t('changesSaveFailed'),
         type: 'error',
         visible: true,
     });
@@ -290,10 +292,10 @@ onMounted(() => {
 <template>
   <div class="flex flex-col items-center w-full">
 
-    <!-- Import and export buttons -->  
+    <!-- Import and export buttons -->
     <div class="flex">
-      <div @click="exportJSON" class="p-2 border-2 border-primary bg-primary text-white font-bold absolute right-4 top-32 rounded-md cursor-pointer">EXPORT</div>
-      <div @click="toggleImportWindow" class="p-2  border-2 border-primary text-primary font-bold absolute right-28 top-32 rounded-md cursor-pointer">IMPORT</div>
+      <div @click="exportJSON" class="p-2 border-2 border-primary bg-primary text-white font-bold absolute right-4 top-32 rounded-md cursor-pointer">{{ t('exportLabel') }}</div>
+      <div @click="toggleImportWindow" class="p-2  border-2 border-primary text-primary font-bold absolute right-28 top-32 rounded-md cursor-pointer">{{ t('importLabel') }}</div>
     </div>
 
     <!-- Example creator with latex form -->
@@ -326,7 +328,7 @@ onMounted(() => {
       v-if="edit"
       @click="collectExamples('edit')"
       class="p-4 my-6 flex justify-center items-center rounded-lg bg-secondary text-white font-black text-2xl cursor-pointer">
-      Uložit změny
+      {{ t('saveChanges') }}
     </div>
 
     <!-- Task creating button -->
@@ -334,7 +336,7 @@ onMounted(() => {
       v-else
       @click="collectExamples('create')"
       class="p-4 my-6 flex justify-center items-center rounded-lg bg-secondary text-white font-black text-2xl cursor-pointer">
-      Vytvořit cvičení
+      {{ t('createExercise') }}
     </div>
     
   </div>
@@ -345,8 +347,8 @@ onMounted(() => {
         <div class=" flex justify-end items-center w-full">
 
           <!-- Copy and close buttons -->
-          <div @click="copyToClipboard" class="p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer mr-4">Copy</div>
-          <div @click="closeExportWindow" class="p-2 rounded-md bg-slate-300 font-semibold text-xl cursor-pointer">Close</div>
+          <div @click="copyToClipboard" class="p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer mr-4">{{ t('copy') }}</div>
+          <div @click="closeExportWindow" class="p-2 rounded-md bg-slate-300 font-semibold text-xl cursor-pointer">{{ t('close') }}</div>
 
         </div>
 
@@ -357,7 +359,7 @@ onMounted(() => {
 
         <!-- Download button -->
         <div class="w-full flex justify-center mt-4">
-          <div @click="downloadJSON" class="p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer">Download</div>
+          <div @click="downloadJSON" class="p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer">{{ t('download') }}</div>
         </div>
 
     </div>
@@ -370,7 +372,7 @@ onMounted(() => {
 
         <!-- Close button -->
         <p @click="toggleImportWindow" class="p-2 rounded-md bg-slate-300 font-semibold text-xl cursor-pointer">
-          Close
+          {{ t('close') }}
         </p>
 
       </div>
@@ -387,7 +389,7 @@ onMounted(() => {
 
       <!-- Import button -->
       <div v-if="validJSON" @click="importJSON" class="mt-4 p-2 rounded-md bg-secondary text-white font-semibold text-xl cursor-pointer">
-        Import examples
+        {{ t('importExamples') }}
       </div>
 
     </div>

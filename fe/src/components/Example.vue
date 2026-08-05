@@ -9,6 +9,7 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onUnmounted, defineEmits, defineExpose, computed, watch, nextTick } from 'vue';
 import InlineInput from '@/components/Input Fields/InlineInput.vue';
 import FractionInput from './Input Fields/FractionInput.vue';
@@ -22,7 +23,6 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useRecorderStore } from '@/stores/useRecorderStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useGamificationStore } from '@/stores/useGamificationStore';
-import { dictionary } from '@/utils/dictionary';
 import { getSessionId } from '@/utils/sessionManager';
 
 const props = defineProps({
@@ -66,6 +66,7 @@ const reportError = ref('');
 const authStore = useAuthStore();
 const recorderStore = useRecorderStore();
 const langStore = useLanguageStore();
+const { t } = useI18n();
 const gamStore = useGamificationStore();
 
 // Record that user practiced example data
@@ -80,10 +81,10 @@ const showAnswer = ref(false);
 const revealedAnswer = ref('');
 
 const reportOptions = computed(() => ([
-  { value: 'wrong_answer', label: dictionary[langStore.language].reportWrongAnswer },
-  { value: 'wrong_grade', label: dictionary[langStore.language].reportWrongGrade },
-  { value: 'unclear', label: dictionary[langStore.language].reportUnclear },
-  { value: 'other', label: dictionary[langStore.language].reportOther },
+  { value: 'wrong_answer', label: t('reportWrongAnswer') },
+  { value: 'wrong_grade', label: t('reportWrongGrade') },
+  { value: 'unclear', label: t('reportUnclear') },
+  { value: 'other', label: t('reportOther') },
 ]));
 
 const triggerShake = () => {
@@ -189,7 +190,7 @@ const submitReport = async () => {
     reportError.value = '';
     reportNote.value = '';
   } catch (error) {
-    reportError.value = error || dictionary[langStore.language].somethingWentWrong;
+    reportError.value = error || t('somethingWentWrong');
   } finally {
     reportSubmitting.value = false;
   }
@@ -309,7 +310,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
          p-2 md:p-3 rounded-2xl cursor-pointer transition-all
          hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px]"
           :class="showAnswer ? 'pointer-events-none' : ''">
-          {{ dictionary[langStore.language].quit.toUpperCase() }}
+          {{ t('quit').toUpperCase() }}
         </div>
 
       </div>
@@ -363,7 +364,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
 
           <!-- Example hint -->
           <div v-if="step" class="mt-8">
-            <p class="text-xl md:text-4xl text-center text-slate-500 dark:text-slate-400">{{ dictionary[langStore.language].hint }}: <span class="font-semibold text-slate-800 dark:text-slate-100">{{ step }}</span></p>
+            <p class="text-xl md:text-4xl text-center text-slate-500 dark:text-slate-400">{{ t('hint') }}: <span class="font-semibold text-slate-800 dark:text-slate-100">{{ step }}</span></p>
           </div>
 
         </div>
@@ -384,7 +385,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
              px-6 py-4 md:p-5 rounded-3xl cursor-pointer my-6 transition-all
              hover:-translate-y-1 active:translate-y-1 active:border-b-[3px]"
           :class="showAnswer ? 'pointer-events-none' : ''">
-          {{ dictionary[langStore.language].done.toUpperCase() }}
+          {{ t('done').toUpperCase() }}
         </div>
 
         <!-- Tips how to enter answers by voice -->
@@ -400,7 +401,7 @@ defineExpose({ getStep, displayAnswer, triggerShake });
            px-6 md:px-8 py-2 rounded-2xl cursor-pointer transition-all
            hover:-translate-y-0.5 active:translate-y-1 active:border-b-[3px]"
         :class="showAnswer ? 'pointer-events-none' : ''">
-        {{ dictionary[langStore.language].skip.toUpperCase() }}
+        {{ t('skip').toUpperCase() }}
       </div>
 
       <div class="mt-4 w-full max-w-md px-4 flex flex-col items-center">
@@ -409,13 +410,13 @@ defineExpose({ getStep, displayAnswer, triggerShake });
           class="w-full text-center text-lg font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 px-5 py-2 rounded-2xl transition hover:bg-amber-100 dark:hover:bg-amber-900/40"
           :class="showAnswer ? 'pointer-events-none opacity-60' : ''"
         >
-          {{ dictionary[langStore.language].reportExample }}
+          {{ t('reportExample') }}
         </button>
 
         <div v-if="showReportForm" class="mt-4 w-full bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-slate-700 rounded-2xl shadow-md p-4 text-left">
           <div class="mb-3">
             <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              {{ dictionary[langStore.language].reportReason }}
+              {{ t('reportReason') }}
             </label>
             <select
               v-model="reportType"
@@ -430,13 +431,13 @@ defineExpose({ getStep, displayAnswer, triggerShake });
 
           <div class="mb-3">
             <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              {{ dictionary[langStore.language].reportNote }}
+              {{ t('reportNote') }}
             </label>
             <textarea
               v-model="reportNote"
               rows="3"
               class="w-full border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
-              :placeholder="dictionary[langStore.language].reportPlaceholder"
+              :placeholder="t('reportPlaceholder')"
               :disabled="reportSubmitting || reportSubmitted"
             />
           </div>
@@ -447,11 +448,11 @@ defineExpose({ getStep, displayAnswer, triggerShake });
               class="text-white bg-amber-500 hover:bg-amber-600 border-2 border-amber-600 rounded-xl px-4 py-2 font-semibold transition disabled:bg-gray-400 disabled:border-gray-400"
               :disabled="reportSubmitting || reportSubmitted"
             >
-              {{ reportSubmitting ? dictionary[langStore.language].saving : dictionary[langStore.language].reportSubmit }}
+              {{ reportSubmitting ? t('saving') : t('reportSubmit') }}
             </button>
 
             <p v-if="reportSubmitted" class="text-sm font-semibold text-green-700">
-              {{ dictionary[langStore.language].reportSent }}
+              {{ t('reportSent') }}
             </p>
           </div>
 

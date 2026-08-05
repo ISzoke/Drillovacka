@@ -5,6 +5,9 @@ import { getMyTeacherTasks, getUnassignedExampleCount } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
 import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const authStore = useAuthStore();
 
@@ -50,18 +53,18 @@ const filteredTasks = computed(() => {
   <div class="pt-20 px-4 max-w-3xl mx-auto pb-16">
 
     <TeacherPageHeader
-      title="Moja knižnica"
-      subtitle="Vlastné sady, ktoré vieš voľne upravovať, mazať a preskladať.">
+      :title="t('myLibraryTitle')"
+      :subtitle="t('myLibrarySubtitle')">
       <template #action>
         <router-link :to="{ name: 'teacher-create-task-standalone' }"
                      class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-white text-xs font-semibold hover:bg-blue-600">
-          <TeacherIcon name="plus" :size="14" /> Vytvoriť novú sadu
+          <TeacherIcon name="plus" :size="14" /> {{ t('createNewSetLabel') }}
         </router-link>
       </template>
     </TeacherPageHeader>
 
     <div class="flex items-center gap-2 mb-4">
-      <input v-model="searchQuery" type="text" placeholder="Hľadať sadu..."
+      <input v-model="searchQuery" type="text" :placeholder="t('searchSetPlaceholder')"
              class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                     bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
                     focus:outline-none focus:ring-1 focus:ring-secondary" />
@@ -69,8 +72,8 @@ const filteredTasks = computed(() => {
               class="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600
                      bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs
                      focus:outline-none focus:ring-1 focus:ring-secondary">
-        <option :value="null">Všetky ročníky</option>
-        <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. ročník</option>
+        <option :value="null">{{ t('allGrades') }}</option>
+        <option v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g" :value="g">{{ g }}. {{ t('grade') }}</option>
       </select>
     </div>
 
@@ -80,8 +83,8 @@ const filteredTasks = computed(() => {
       <div class="w-11 h-11 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mx-auto mb-3">
         <TeacherIcon name="library" :size="22" />
       </div>
-      <p class="font-semibold text-sm text-slate-700 dark:text-slate-200">Zatiaľ nemáš žiadne vlastné sady</p>
-      <p class="text-xs text-gray-400 mt-1">Vytvor si novú, alebo si skopíruj existujúcu z prehľadu sád v triede.</p>
+      <p class="font-semibold text-sm text-slate-700 dark:text-slate-200">{{ t('noOwnSetsYet') }}</p>
+      <p class="text-xs text-gray-400 mt-1">{{ t('createOrCopySetHint') }}</p>
     </div>
 
     <div v-else class="grid sm:grid-cols-2 gap-3">
@@ -91,9 +94,9 @@ const filteredTasks = computed(() => {
                           hover:-translate-y-0.5 transition-all">
         <div class="flex items-center gap-2">
           <TeacherIcon name="library" :size="15" class="text-secondary" />
-          <span class="font-semibold text-slate-800 dark:text-slate-100 text-sm">Nezaradené</span>
+          <span class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ t('unassignedLabel') }}</span>
         </div>
-        <div class="text-xs text-gray-400 mt-2">{{ unassignedCount }} príkladov mimo sady</div>
+        <div class="text-xs text-gray-400 mt-2">{{ unassignedCount }} {{ t('examplesOutsideSets') }}</div>
       </router-link>
 
       <router-link v-for="t in filteredTasks" :key="t.id"
@@ -104,20 +107,20 @@ const filteredTasks = computed(() => {
         <span class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ t.name }}</span>
         <div class="flex items-center gap-1.5 mt-2">
           <span v-if="t.grade_levels.length" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-tertiary/50 text-primary dark:bg-tertiary/20 dark:text-tertiary">
-            {{ t.grade_levels.join(', ') }}. roč.
+            {{ t.grade_levels.join(', ') }}. {{ $t('gradeLevelsSuffix') }}
           </span>
-          <span class="text-xs text-gray-400">{{ t.example_count }} príkladov</span>
+          <span class="text-xs text-gray-400">{{ t.example_count }} {{ $t('taskSetsExamples') }}</span>
           <button @click.stop.prevent="$router.push({ name: 'teacher-print', query: { taskId: t.id } })"
-                  title="Tlačiť ako písomku (PDF)"
+                  :title="$t('printAsTestTooltip')"
                   class="ml-auto flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full
                          text-gray-400 hover:text-secondary hover:bg-secondary/10 font-medium">
-            <TeacherIcon name="print" :size="11" /> Tlačiť
+            <TeacherIcon name="print" :size="11" /> {{ $t('printLabel') }}
           </button>
         </div>
       </router-link>
 
       <div v-if="!filteredTasks.length" class="sm:col-span-2 text-sm text-gray-400 text-center py-6">
-        Žiadne sady nezodpovedajú filtru.
+        {{ t('noSetsMatchFilter') }}
       </div>
     </div>
 

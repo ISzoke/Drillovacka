@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { getTasksByGrade, assignTaskToClassroom, getClassroomDetail, getTaskExamples, copyTaskForTeacher } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
+import { useI18n } from 'vue-i18n';
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
 import TeacherPageHeader from '@/components/TeacherPageHeader.vue';
@@ -13,6 +14,7 @@ const props = defineProps({ classroomId: [String, Number] });
 const router = useRouter();
 const authStore = useAuthStore();
 const toastStore = useToastStore();
+const { t } = useI18n();
 const copyingId = ref(null);
 
 const isMine = (task) => Number(task.owner_teacher_id) === Number(authStore.id);
@@ -25,10 +27,10 @@ const copyAndEdit = async (task) => {
   copyingId.value = task.id;
   try {
     const result = await copyTaskForTeacher(authStore.id, task.id);
-    toastStore.addToast({ message: 'Sada skopírovaná do tvojej knižnice.', type: 'success', visible: true });
+    toastStore.addToast({ message: t('taskCopiedToLibrary'), type: 'success', visible: true });
     router.push({ name: 'teacher-edit-task', params: { classroomId: props.classroomId, taskId: result.task_id } });
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri kopírovaní sady.', type: 'error', visible: true });
+    toastStore.addToast({ message: t('taskCopyError'), type: 'error', visible: true });
   }
   copyingId.value = null;
 };
@@ -99,9 +101,9 @@ const confirmAssign = async () => {
       isHomework.value, dueDate.value || null,
     );
     assignedTaskIds.value = [...assignedTaskIds.value, pendingTask.value.id];
-    toastStore.addToast({ message: 'Úloha priradená', type: 'success', visible: true });
+    toastStore.addToast({ message: t('taskAssigned'), type: 'success', visible: true });
   } catch (e) {
-    toastStore.addToast({ message: 'Chyba pri priraďovaní', type: 'error', visible: true });
+    toastStore.addToast({ message: t('errorAssigning'), type: 'error', visible: true });
   }
   assigning.value = null;
   pendingTask.value = null;
@@ -114,15 +116,15 @@ onMounted(loadAssigned);
   <div class="pt-24 px-4 max-w-4xl mx-auto">
 
     <TeacherPageHeader
-      :crumbs="[{ label: classroom?.name || 'Trieda', to: { name: 'teacher-classroom', params: { classroomId } } }]"
-      current="Príkladové sady"
-      title="Príkladové sady"
+      :crumbs="[{ label: classroom?.name || t('classroom'), to: { name: 'teacher-classroom', params: { classroomId } } }]"
+      :current="t('taskSetsTitle')"
+      :title="t('taskSetsTitle')"
       :subtitle="classroom?.name">
       <template #action>
         <router-link :to="{ name: 'teacher-create-task', params: { classroomId } }"
                      class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white rounded-full
                             hover:bg-blue-600 font-semibold transition-colors text-sm">
-          <TeacherIcon name="plus" :size="13" /> Vytvoriť novú sadu
+          <TeacherIcon name="plus" :size="13" /> {{ t('createNewTaskSet') }}
         </router-link>
       </template>
     </TeacherPageHeader>
@@ -135,7 +137,7 @@ onMounted(loadAssigned);
         <button @click="toggleGrade(grade)"
                 class="w-full flex items-center justify-between px-5 py-4 text-left
                        hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-          <span class="font-bold text-slate-800 dark:text-slate-100">{{ grade }}. ročník</span>
+          <span class="font-bold text-slate-800 dark:text-slate-100">{{ grade }}. {{ t('grade') }}</span>
           <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
                :class="expanded[grade] ? 'rotate-180' : ''"
                viewBox="0 0 20 20" fill="currentColor">
@@ -152,7 +154,7 @@ onMounted(loadAssigned);
 
             <div v-else-if="!gradeTasks[grade]?.length"
                  class="py-5 text-center text-sm text-gray-400">
-              Žiadne úlohy pre {{ grade }}. ročník.
+              {{ t('noTasksForGradeX', { grade }) }}
             </div>
 
             <div v-else class="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -171,29 +173,29 @@ onMounted(loadAssigned);
                       {{ task.name }}
                     </div>
                     <div class="text-xs text-gray-400 mt-0.5">
-                      {{ task.example_count ?? 0 }} príkladov
+                      {{ task.example_count ?? 0 }} {{ t('examplesCount') }}
                     </div>
                   </div>
                   <div class="flex-shrink-0 flex items-center gap-1.5" @click.stop>
                     <button v-if="isMine(task)" @click="editTask(task)"
                             class="px-2.5 py-1.5 text-secondary hover:bg-secondary/10 text-xs rounded-lg font-medium">
-                      Upraviť
+                      {{ t('edit') }}
                     </button>
                     <button v-else @click="copyAndEdit(task)" :disabled="copyingId === task.id"
                             class="px-2.5 py-1.5 text-secondary hover:bg-secondary/10 text-xs rounded-lg font-medium disabled:opacity-50">
-                      {{ copyingId === task.id ? '...' : 'Kopírovať a upraviť' }}
+                      {{ copyingId === task.id ? '...' : t('copyAndEdit') }}
                     </button>
                     <span v-if="assignedTaskIds.includes(task.id)"
                           class="flex items-center gap-1 text-xs px-3 py-1 bg-green-50 dark:bg-green-900/30
                                  text-green-600 dark:text-green-400 rounded-full font-medium">
-                      <TeacherIcon name="check" :size="10" /> Priradené
+                      <TeacherIcon name="check" :size="10" /> {{ t('assigned') }}
                     </span>
                     <button v-else
                             @click="openModal(task)"
                             :disabled="assigning === task.id"
                             class="px-3 py-1.5 bg-secondary text-white text-xs rounded-lg
                                    hover:bg-blue-600 transition-colors disabled:opacity-50 font-medium">
-                      {{ assigning === task.id ? '...' : 'Priradiť' }}
+                      {{ assigning === task.id ? '...' : t('assign') }}
                     </button>
                   </div>
                 </div>
@@ -206,7 +208,7 @@ onMounted(loadAssigned);
                   </div>
                   <div v-else-if="!taskExamples[task.id]?.length"
                        class="text-xs text-gray-400 py-2 text-center">
-                    Žiadne príklady.
+                    {{ t('noExamples') }}
                   </div>
                   <div v-else class="flex flex-wrap gap-2">
                     <span v-for="ex in taskExamples[task.id]" :key="ex.id"
@@ -234,15 +236,15 @@ onMounted(loadAssigned);
         <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1">
           {{ pendingTask?.name }}
         </h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nastavte priradenie</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ t('configureAssignment') }}</p>
 
         <label class="flex items-center gap-3 mb-4 cursor-pointer">
           <input type="checkbox" v-model="isHomework" class="w-4 h-4 accent-secondary" />
-          <span class="text-sm text-slate-700 dark:text-slate-300">Označiť ako domácu úlohu</span>
+          <span class="text-sm text-slate-700 dark:text-slate-300">{{ t('markAsHomework') }}</span>
         </label>
 
         <div v-if="isHomework" class="mb-4">
-          <label class="block text-sm text-slate-700 dark:text-slate-300 mb-1">Termín odovzdania</label>
+          <label class="block text-sm text-slate-700 dark:text-slate-300 mb-1">{{ t('dueDate') }}</label>
           <input type="date" v-model="dueDate"
                  class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600
                         bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100
@@ -253,11 +255,11 @@ onMounted(loadAssigned);
           <button @click="showModal = false"
                   class="px-4 py-2 rounded-md text-gray-600 dark:text-gray-300
                          hover:bg-gray-100 dark:hover:bg-slate-700">
-            Zrušiť
+            {{ t('cancel') }}
           </button>
           <button @click="confirmAssign"
                   class="px-4 py-2 bg-secondary text-white rounded-md hover:bg-blue-600 font-semibold">
-            Priradiť
+            {{ t('assign') }}
           </button>
         </div>
       </div>

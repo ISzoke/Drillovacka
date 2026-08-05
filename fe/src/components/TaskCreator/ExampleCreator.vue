@@ -9,6 +9,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { deleteExample } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
 
@@ -19,6 +20,7 @@ const props = defineProps({
 });
 
 const toastStore = useToastStore();
+const { t } = useI18n();
 const exampleId = ref('');
 const focused = ref(false);
 const deleting = ref(false);
@@ -139,9 +141,9 @@ const handleDelete = async () => {
     await deleteExample(exampleId.value);
     exampleId.value = '';
     clearInput();
-    toastStore.addToast({ message: 'Príklad bol odstránený', type: 'success', visible: true });
+    toastStore.addToast({ message: t('exampleDeletedToast'), type: 'success', visible: true });
   } catch {
-    toastStore.addToast({ message: 'Príklad sa nepodarilo odstrániť', type: 'error', visible: true });
+    toastStore.addToast({ message: t('exampleDeleteError'), type: 'error', visible: true });
   } finally {
     deleting.value = false;
   }
@@ -172,7 +174,7 @@ onMounted(() => {
         @click="handleDelete"
         :disabled="deleting"
         class="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white text-xs font-bold px-2 py-1 rounded transition"
-        title="Odstrániť príklad"
+        :title="t('deleteExampleTooltip')"
       >
         <i class="fa-solid fa-trash"></i>
       </button>
@@ -182,12 +184,12 @@ onMounted(() => {
     <div class="flex justify-center p-2">
       <div class="flex flex-col mr-1">
 
-        <h2 class="text-secondary font-bold">Zadání příkladu:</h2>
+        <h2 class="text-secondary font-bold">{{ t('exampleAssignmentLabel') }}</h2>
 
         <!-- Example text input field -->
         <textarea
           v-model="exampleInput"
-          placeholder="Zde vložte zadání příkladu"
+          :placeholder="t('exampleAssignmentPlaceholder')"
           class="h-20 p-2 border border-gray-300 rounded mb-1"
         ></textarea>
 
@@ -195,7 +197,7 @@ onMounted(() => {
         <input
           type="text"
           v-model="answerInput"
-          placeholder="Zde vložte správnou odpověď"
+          :placeholder="t('exampleAnswerPlaceholder')"
           class="h-12 p-2 border border-gray-300 rounded mb-1"
         />
 
@@ -204,7 +206,7 @@ onMounted(() => {
           <div v-for="(step, index) in stepInputs" :key="index" class="flex items-center mb-1">
             <textarea
               v-model="step.value"
-              :placeholder="`Zde vložte ${ index+1 }. krok řešení`"
+              :placeholder="t('exampleStepPlaceholder', { n: index + 1 })"
               class="h-12 p-2 border border-gray-300 rounded"
             ></textarea>
           </div>
@@ -215,7 +217,7 @@ onMounted(() => {
       <!-- Example previews -->
       <div class="flex flex-col">
 
-        <h2 class="text-secondary font-bold">Náhled:</h2>
+        <h2 class="text-secondary font-bold">{{ t('exampleCreatorPreviewLabel') }}</h2>
 
         <!-- Rendered example -->
         <div
@@ -248,7 +250,7 @@ onMounted(() => {
       >
         +
       </div>
-      <p class="text-sm text-secondary font-medium">Přidat krok řešení</p>
+      <p class="text-sm text-secondary font-medium">{{ t('addSolutionStep') }}</p>
     </div>
   </div>
   

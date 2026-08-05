@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getAllTeachers, publishTeacherTask, getAdminTaskExamples, getAdminClassroomStudents } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
+
+const { t } = useI18n();
 
 const teachers = ref([]);
 const loading = ref(true);
@@ -90,9 +93,9 @@ const fmt = (iso) => {
 };
 
 const studentLabel = (n) => {
-  if (n === 1) return '1 študent';
-  if (n >= 2 && n <= 4) return `${n} študenti`;
-  return `${n} študentov`;
+  if (n === 1) return `1 ${t('studentCountOne')}`;
+  if (n >= 2 && n <= 4) return `${n} ${t('studentCountFew')}`;
+  return `${n} ${t('studentCountMany')}`;
 };
 </script>
 
@@ -100,12 +103,12 @@ const studentLabel = (n) => {
   <div class="pt-24 px-4 max-w-5xl mx-auto">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">
-        Učiteľské účty
+        {{ t('teacherAccounts') }}
         <span v-if="!loading" class="text-base font-normal text-slate-400 ml-2">({{ teachers.length }})</span>
       </h1>
       <button @click="load"
               class="px-4 py-1.5 bg-secondary text-white rounded-lg text-sm hover:bg-blue-600">
-        Obnoviť
+        {{ t('refresh') }}
       </button>
     </div>
 
@@ -133,11 +136,11 @@ const studentLabel = (n) => {
           <div class="flex items-center gap-6 text-sm flex-shrink-0">
             <div class="text-center">
               <div class="font-bold text-slate-700 dark:text-slate-200">{{ t.classroom_count }}</div>
-              <div class="text-xs text-slate-400">tried</div>
+              <div class="text-xs text-slate-400">{{ $t('classroomsGenitive') }}</div>
             </div>
             <div class="text-center">
               <div class="font-bold text-slate-700 dark:text-slate-200">{{ t.student_count }}</div>
-              <div class="text-xs text-slate-400">žiakov</div>
+              <div class="text-xs text-slate-400">{{ $t('studentsGenitive') }}</div>
             </div>
             <div class="text-xs text-slate-400">{{ fmt(t.created_at) }}</div>
           </div>
@@ -149,7 +152,7 @@ const studentLabel = (n) => {
 
           <div v-if="!t.classrooms?.length"
                class="px-5 py-3 text-sm text-slate-400">
-            Žiadne triedy.
+            {{ $t('noClassrooms') }}
           </div>
 
           <div v-for="c in (t.classrooms || [])" :key="c.id"
@@ -171,14 +174,14 @@ const studentLabel = (n) => {
                 {{ studentLabel(c.student_count) }}
                 <span class="ml-0.5">{{ expandedStudents[c.id] ? '▲' : '▼' }}</span>
               </button>
-              <span class="text-xs text-slate-400 ml-3">{{ c.tasks?.length ?? 0 }} sád</span>
+              <span class="text-xs text-slate-400 ml-3">{{ c.tasks?.length ?? 0 }} {{ $t('setsGenitive') }}</span>
             </div>
 
             <!-- Student list -->
             <div v-if="expandedStudents[c.id]"
                  class="px-10 py-2 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
-              <div v-if="classroomStudentsLoading[c.id]" class="text-xs text-slate-400 py-1">Načítavam...</div>
-              <div v-else-if="!classroomStudents[c.id]?.length" class="text-xs text-slate-400 py-1">Žiadni študenti.</div>
+              <div v-if="classroomStudentsLoading[c.id]" class="text-xs text-slate-400 py-1">{{ $t('loadingEllipsis') }}</div>
+              <div v-else-if="!classroomStudents[c.id]?.length" class="text-xs text-slate-400 py-1">{{ $t('noStudentsYet') }}</div>
               <div v-else class="flex flex-wrap gap-2 py-1">
                 <span v-for="s in classroomStudents[c.id]" :key="s.id"
                       class="text-xs bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600
@@ -191,7 +194,7 @@ const studentLabel = (n) => {
             <!-- Tasks -->
             <div v-if="expandedClassroom[c.id]" class="px-8 py-2 bg-white dark:bg-slate-800">
               <div v-if="!c.tasks?.length" class="text-sm text-slate-400 py-2">
-                Žiadne priradené sady.
+                {{ $t('noTasksAssigned') }}
               </div>
               <div v-else class="divide-y divide-slate-100 dark:divide-slate-700">
                 <div v-for="task in (c.tasks || [])" :key="task.id">
@@ -207,17 +210,17 @@ const studentLabel = (n) => {
                       <span class="text-sm text-slate-700 dark:text-slate-300 truncate">{{ task.name }}</span>
                       <span v-if="task.is_homework"
                             class="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300
-                                   px-1.5 py-0.5 rounded-full flex-shrink-0">DÚ</span>
+                                   px-1.5 py-0.5 rounded-full flex-shrink-0">{{ $t('homeworkAbbr') }}</span>
                       <span v-if="publishedTasks.has(task.id)"
                             class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300
-                                   px-1.5 py-0.5 rounded-full flex-shrink-0">✓ Zverejnená</span>
+                                   px-1.5 py-0.5 rounded-full flex-shrink-0">{{ $t('publishedBadge') }}</span>
                     </div>
                     <div class="flex items-center gap-3 flex-shrink-0 ml-3" @click.stop>
                       <span class="text-xs text-slate-400">{{ fmt(task.assigned_at) }}</span>
                       <button v-if="!publishedTasks.has(task.id)"
                               @click="openPublish(task)"
                               class="text-xs px-2 py-1 bg-secondary text-white rounded hover:bg-blue-600 whitespace-nowrap">
-                        + Do okruhov
+                        {{ $t('addToTopics') }}
                       </button>
                     </div>
                   </div>
@@ -231,7 +234,7 @@ const studentLabel = (n) => {
                          class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700
                                 rounded-lg p-3">
                       <p class="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">
-                        Prompt učiteľa (AI generovanie)
+                        {{ $t('teacherPromptLabel') }}
                       </p>
                       <p class="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{{ task.generation_prompt }}</p>
                       <div v-if="task.generation_params" class="mt-2 flex flex-wrap gap-2">
@@ -248,7 +251,7 @@ const studentLabel = (n) => {
                           <span class="text-xs bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300
                                        px-2 py-0.5 rounded-full">{{ task.generation_params.type }}</span>
                           <span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
-                                       px-2 py-0.5 rounded-full">{{ task.generation_params.count }} príkladov</span>
+                                       px-2 py-0.5 rounded-full">{{ task.generation_params.count }} {{ $t('examplesCount') }}</span>
                         </template>
                       </div>
                     </div>
@@ -256,10 +259,10 @@ const studentLabel = (n) => {
                     <!-- Examples list -->
                     <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3">
                       <div v-if="taskExamplesLoading[task.id]" class="text-xs text-slate-400 py-1">
-                        Načítavam...
+                        {{ $t('loadingEllipsis') }}
                       </div>
                       <div v-else-if="!taskExamples[task.id]?.length" class="text-xs text-slate-400 py-1">
-                        Žiadne príklady.
+                        {{ $t('noExamplesFound') }}
                       </div>
                       <div v-else class="space-y-1.5">
                         <div v-for="ex in taskExamples[task.id]" :key="ex.id"
@@ -283,7 +286,7 @@ const studentLabel = (n) => {
       </div>
 
       <p v-if="teachers.length === 0" class="text-center py-12 text-slate-400">
-        Žiadni učitelia.
+        {{ t('noTeachers') }}
       </p>
     </div>
 
@@ -292,12 +295,12 @@ const studentLabel = (n) => {
          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
          @click.self="publishModal = null">
       <div class="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-sm shadow-xl">
-        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1">Zverejniť sadu</h3>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1">{{ t('publishSet') }}</h3>
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
           {{ publishModal.name }}
         </p>
 
-        <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Vyber ročníky:</p>
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{{ t('selectGrades') }}:</p>
         <div class="grid grid-cols-5 gap-2 mb-5">
           <label v-for="g in [1,2,3,4,5,6,7,8,9]" :key="g"
                  class="flex flex-col items-center gap-1 cursor-pointer">
@@ -311,12 +314,12 @@ const studentLabel = (n) => {
           <button @click="publishModal = null"
                   class="px-4 py-2 rounded-md text-gray-600 dark:text-gray-300
                          hover:bg-gray-100 dark:hover:bg-slate-700">
-            Zrušiť
+            {{ t('cancel') }}
           </button>
           <button @click="confirmPublish" :disabled="publishing || publishGrades.length === 0"
                   class="px-4 py-2 bg-secondary text-white rounded-md hover:bg-blue-600
                          font-semibold disabled:opacity-50">
-            {{ publishing ? '...' : 'Zverejniť' }}
+            {{ publishing ? '...' : t('publish') }}
           </button>
         </div>
       </div>

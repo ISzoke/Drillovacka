@@ -10,10 +10,12 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { getMyGeneratedBatches, deleteGeneratedBatch } from '@/api/apiClient'
 
+const { t } = useI18n()
 const router = useRouter()
 const auth   = useAuthStore()
 
@@ -22,13 +24,13 @@ const loading = ref(true)
 const error   = ref('')
 const deleting = ref(null)
 
-const STATUS_LABEL = {
-  preview:        'Čaká na hodnotenie',
-  survey_done:    'Ohodnotené',
-  pending_review: 'Čaká na schválenie',
-  approved:       'Schválené ✅',
-  rejected:       'Zamietnuté',
-}
+const STATUS_LABEL = computed(() => ({
+  preview:        t('statusPendingEvaluation'),
+  survey_done:    t('statusEvaluated'),
+  pending_review: t('statusPendingApproval'),
+  approved:       t('statusApproved'),
+  rejected:       t('statusRejected'),
+}))
 const STATUS_COLOR = {
   preview:        'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
   survey_done:    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
@@ -42,7 +44,7 @@ onMounted(async () => {
   try {
     batches.value = await getMyGeneratedBatches({ student_id: auth.id })
   } catch {
-    error.value = 'Nepodarilo sa načítať príklady.'
+    error.value = t('loadExamplesFailedMessage')
   } finally {
     loading.value = false
   }
@@ -61,13 +63,13 @@ function isOverdue(batch) {
 }
 
 async function remove(batch) {
-  if (!confirm('Naozaj chceš odstrániť túto sadu príkladov?')) return
+  if (!confirm(t('confirmDeleteBatchMessage'))) return
   deleting.value = batch.id
   try {
     await deleteGeneratedBatch(batch.id, auth.id)
     batches.value = batches.value.filter(b => b.id !== batch.id)
   } catch {
-    alert('Nepodarilo sa odstrániť sadu.')
+    alert(t('deleteBatchFailedMessage'))
   } finally {
     deleting.value = null
   }
@@ -80,20 +82,20 @@ async function remove(batch) {
 
       <!-- Header -->
       <div class="mb-6">
-        <button @click="router.back()" class="text-slate-400 hover:text-slate-600 text-sm font-bold mb-3 block">← Späť</button>
-        <h1 class="text-3xl font-black text-slate-800 dark:text-slate-100">Moje vygenerované príklady</h1>
-        <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">Príklady vygenerované AI, dostupné len pre teba</p>
+        <button @click="router.back()" class="text-slate-400 hover:text-slate-600 text-sm font-bold mb-3 block">← {{ t('back') }}</button>
+        <h1 class="text-3xl font-black text-slate-800 dark:text-slate-100">{{ t('myGeneratedExamplesTitle') }}</h1>
+        <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">{{ t('myGeneratedExamplesSubtitle') }}</p>
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="text-slate-400 text-center py-12">Načítavam…</div>
+      <div v-if="loading" class="text-slate-400 text-center py-12">{{ t('loadingEllipsis') }}</div>
       <div v-else-if="error" class="text-red-500 text-center py-12">{{ error }}</div>
 
       <!-- Empty -->
       <div v-else-if="!batches.length" class="text-center py-16 text-slate-400 dark:text-slate-500">
         <div class="text-5xl mb-4">🤖</div>
-        <p class="font-bold text-lg">Zatiaľ žiadne vygenerované príklady</p>
-        <p class="text-sm mt-2">Klikni na „Málo príkladov?" a vygeneruj si vlastnú sadu</p>
+        <p class="font-bold text-lg">{{ t('noGeneratedExamplesYet') }}</p>
+        <p class="text-sm mt-2">{{ t('noBatchesHint') }}</p>
       </div>
 
       <!-- Batch list -->
@@ -106,16 +108,16 @@ async function remove(batch) {
         >
           <!-- Overdue warning -->
           <div v-if="isOverdue(b)" class="mb-3 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-xs text-amber-700 dark:text-amber-400 font-semibold">
-            ⚠️ Táto sada čaká na hodnotenie viac ako deň. Ohodnoť ju, inak môže byť vymazaná.
+            {{ t('overdueBatchWarning') }}
           </div>
 
           <!-- Top row -->
           <div class="flex items-start justify-between gap-3 mb-3">
             <div class="flex-1 min-w-0">
               <p class="font-black text-slate-800 dark:text-slate-100 text-lg leading-tight truncate">
-                {{ b.raw_json?.task_name || 'Vygenerovaná úloha' }}
+                {{ b.raw_json?.task_name || t('generatedTaskFallbackName') }}
               </p>
-              <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ formatDate(b.created_at) }} · {{ b.grade }}. ročník</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ formatDate(b.created_at) }} · {{ b.grade }}. {{ t('grade') }}</p>
             </div>
             <span
               class="flex-shrink-0 text-xs font-bold px-2.5 py-1 rounded-full"
@@ -130,7 +132,7 @@ async function remove(batch) {
 
           <!-- Examples count + type -->
           <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">
-            {{ b.raw_json?.examples?.length || 0 }} príkladov
+            {{ b.raw_json?.examples?.length || 0 }} {{ t('taskSetsExamples') }}
           </p>
 
           <!-- Actions -->
@@ -142,9 +144,9 @@ async function remove(batch) {
                      bg-emerald-500 border-[3px] border-emerald-600 border-b-[4px] border-b-emerald-700
                      hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-[3px] transition-all"
             >
-              🎮 {{ b.status === 'preview' ? 'Precvičiť a ohodnotiť' : 'Precvičiť' }}
+              🎮 {{ b.status === 'preview' ? t('practiceAndEvaluateButton') : t('practiceButton') }}
             </button>
-            <span v-else class="flex-1 py-2 text-center text-xs text-slate-400">Príklady nedostupné</span>
+            <span v-else class="flex-1 py-2 text-center text-xs text-slate-400">{{ t('examplesUnavailableLabel') }}</span>
             <button
               @click="remove(b)"
               :disabled="deleting === b.id"

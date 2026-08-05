@@ -8,12 +8,13 @@
 -->
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, defineProps, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Spinner from '@/components/Spinner.vue';
 import OperationButton from '@/components/TopicSelector/OperationButton.vue';
 import SubTopic from '@/components/TopicSelector/SubTopic.vue';
-import { dictionary, getSkillName } from '@/utils/dictionary';
+import { getSkillName } from '@/utils/contentNameMaps';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useSkillStore } from '@/stores/useSkillStore';
 
@@ -25,6 +26,7 @@ const operations = ref([]);
 const selectedSubtopics = ref([]);
 const loading = ref(true);
 const langStore = useLanguageStore();
+const { t } = useI18n();
 const skillStore = useSkillStore();
 const router = useRouter();
 
@@ -83,7 +85,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
                  hover:-translate-y-0.5 active:translate-y-1 active:border-b-[2px] flex-shrink-0"
         >
           <i class="fa-solid fa-arrow-left"></i>
-          {{ dictionary[langStore.language].back }}
+          {{ t('back') }}
         </button>
 
         <h1 v-if="topic" class="flex-1 text-2xl md:text-4xl font-black text-slate-800 dark:text-slate-100 text-center pr-16">
@@ -99,7 +101,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
           <div class="w-full bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
                       border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-6 mb-8 text-center shadow-sm">
             <p class="text-slate-400 dark:text-slate-500 font-bold text-lg">
-              {{ topic.example_count }} {{ dictionary[langStore.language].examples || 'príkladov' }}
+              {{ topic.example_count }} {{ t('examples') || 'príkladov' }}
             </p>
           </div>
         </template>
@@ -109,7 +111,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
           <!-- Operations section -->
           <div v-if="operations.length > 0" class="w-full mb-8">
             <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
-              {{ dictionary[langStore.language].chooseOperation }}
+              {{ t('chooseOperation') }}
             </p>
             <div class="flex flex-wrap justify-center gap-3">
               <OperationButton
@@ -125,7 +127,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
           <!-- Subtopics section -->
           <div v-if="subtopics.length > 0" class="w-full mb-8">
             <p class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 text-center">
-              {{ dictionary[langStore.language].chooseTopic }}
+              {{ t('chooseTopic') }}
             </p>
             <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
                         border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-5 shadow-sm">
@@ -147,7 +149,7 @@ const updateExampleCount = ({ relatedSkills, isSelected }) => {
                  hover:-translate-y-1 active:translate-y-1 active:border-b-[3px]
                  transition-all shadow-sm"
         >
-          {{ dictionary[langStore.language].startPractice }}
+          {{ t('startPractice') }}
         </button>
       </template>
     </div>

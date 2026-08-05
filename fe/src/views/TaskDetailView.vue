@@ -1,8 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useLanguageStore } from '@/stores/useLanguageStore';
-import { getTaskName } from '@/utils/dictionary';
+import { getTaskName } from '@/utils/contentNameMaps';
 import { getTask, getTaskStats, getTaskHistory } from '@/api/apiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 import Spinner from '@/components/Spinner.vue';
@@ -12,6 +13,7 @@ const route = useRoute();
 const router = useRouter();
 const langStore = useLanguageStore();
 const authStore = useAuthStore();
+const { t } = useI18n();
 
 const task = ref(null);
 const stats = ref(null);
@@ -81,7 +83,7 @@ const chartOptions = computed(() => ({
   },
   yaxis: [
     {
-      title: { text: 'Čas (s)', style: { color: '#7c3aed', fontSize: '11px', fontWeight: 700 } },
+      title: { text: t('timeSecondsAxisLabel'), style: { color: '#7c3aed', fontSize: '11px', fontWeight: 700 } },
       labels: {
         formatter: v => v == null ? '—' : `${v}s`,
         style: { colors: '#7c3aed', fontSize: '11px' },
@@ -90,7 +92,7 @@ const chartOptions = computed(() => ({
     },
     {
       opposite: true,
-      title: { text: 'Zvládnutie (%)', style: { color: '#10b981', fontSize: '11px', fontWeight: 700 } },
+      title: { text: t('masteryPercentAxisLabel'), style: { color: '#10b981', fontSize: '11px', fontWeight: 700 } },
       labels: {
         formatter: v => `${v}%`,
         style: { colors: '#10b981', fontSize: '11px' },
@@ -117,11 +119,11 @@ const chartOptions = computed(() => ({
 
 const chartSeries = computed(() => [
   {
-    name: 'Tvoj priem. čas (s)',
+    name: t('yourAvgTimeSeriesLabel'),
     data: history.value.map(h => h.avg_time != null ? Math.round(h.avg_time / 1000) : null),
   },
   {
-    name: 'Tvoje zvládnutie (%)',
+    name: t('yourMasterySeriesLabel'),
     data: history.value.map(h => h.mastery),
   },
 ]);
@@ -132,8 +134,8 @@ const chartSeries = computed(() => [
     <Spinner v-if="loading" class="pt-48" />
 
     <div v-else-if="!task" class="flex flex-col items-center justify-center min-h-screen text-slate-400 dark:text-slate-500">
-      <p class="text-lg font-semibold">Sada nenájdená.</p>
-      <button @click="goBack" class="mt-4 text-violet-600 underline font-bold">Späť</button>
+      <p class="text-lg font-semibold">{{ t('taskNotFound') }}</p>
+      <button @click="goBack" class="mt-4 text-violet-600 underline font-bold">{{ t('back') }}</button>
     </div>
 
     <div v-else class="max-w-2xl mx-auto px-4 pt-10 pb-24">
@@ -145,7 +147,7 @@ const chartSeries = computed(() => [
                border-2 border-slate-200 dark:border-slate-700 border-b-[4px] border-b-slate-300 dark:border-b-slate-600
                hover:-translate-y-0.5 active:translate-y-1 active:border-b-[2px] mb-8"
       >
-        ← Späť
+        ← {{ t('back') }}
       </button>
 
       <!-- Task header -->
@@ -155,7 +157,7 @@ const chartSeries = computed(() => [
              : 'border-slate-200 dark:border-slate-700 border-b-slate-300 dark:border-b-slate-600 bg-white dark:bg-slate-800'">
         <div v-if="task.is_private"
              class="text-xs font-black px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300 inline-block mb-3">
-          🤖 Tebou vygenerovaná sada
+          {{ t('aiGeneratedBadge') }}
         </div>
         <h1 class="text-2xl md:text-3xl font-black break-words mb-1"
             :class="task.is_private ? 'text-violet-800 dark:text-violet-200' : 'text-slate-800 dark:text-slate-100'">
@@ -163,7 +165,7 @@ const chartSeries = computed(() => [
         </h1>
         <p class="text-sm font-bold"
            :class="task.is_private ? 'text-violet-400 dark:text-violet-500' : 'text-slate-400 dark:text-slate-500'">
-          {{ task.example_count }} príkladov
+          {{ task.example_count }} {{ t('examplesCount') }}
         </p>
       </div>
 
@@ -173,7 +175,7 @@ const chartSeries = computed(() => [
                bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600
                border-b-[6px] border-violet-800 hover:-translate-y-0.5 active:translate-y-1 active:border-b-[2px]
                transition-all shadow-md">
-        Začať cvičenie →
+        {{ t('startExerciseButton') }} →
       </button>
 
       <div v-if="stats">
@@ -181,28 +183,28 @@ const chartSeries = computed(() => [
         <!-- My stats -->
         <div v-if="stats.my_stats && stats.my_stats.total_attempted > 0"
              class="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700 p-5 mb-4">
-          <h2 class="text-base font-black text-slate-700 dark:text-slate-200 mb-4">Tvoje výsledky</h2>
+          <h2 class="text-base font-black text-slate-700 dark:text-slate-200 mb-4">{{ t('yourResults') }}</h2>
           <div class="grid grid-cols-2 gap-3">
             <div class="bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 text-center">
               <div class="text-2xl font-black text-violet-600 dark:text-violet-400">{{ stats.my_stats.solved }}</div>
-              <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">vyriešených príkladov</div>
+              <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{{ t('solvedExamplesLabel') }}</div>
             </div>
             <div class="bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 text-center">
               <div class="text-2xl font-black"
                    :class="stats.my_stats.success_rate >= 70 ? 'text-green-600 dark:text-green-400' : stats.my_stats.success_rate >= 50 ? 'text-amber-500' : 'text-red-500'">
                 {{ stats.my_stats.success_rate }}%
               </div>
-              <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">úspešnosť</div>
+              <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{{ t('successRateLabel') }}</div>
             </div>
             <div class="bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 text-center">
               <div class="text-2xl font-black text-blue-600 dark:text-blue-400">{{ fmtTime(stats.my_stats.avg_time) }}</div>
-              <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">tvoj priem. čas / príklad</div>
+              <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{{ t('yourAvgTimePerExample') }}</div>
             </div>
             <div class="bg-slate-50 dark:bg-slate-900 rounded-2xl p-3 text-center">
               <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{{ stats.my_stats.mastery }}%</div>
               <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">
-                zvládnutie
-                <span class="text-slate-400">({{ stats.my_stats.total_examples }} príkl.)</span>
+                {{ t('mastery') }}
+                <span class="text-slate-400">({{ stats.my_stats.total_examples }} {{ t('examplesAbbrev') }})</span>
               </div>
             </div>
           </div>
@@ -210,21 +212,21 @@ const chartSeries = computed(() => [
           <!-- Global avg comparison -->
           <div v-if="stats.global_avg_time"
                class="mt-3 text-xs font-semibold text-slate-400 dark:text-slate-500 text-center">
-            Priemerný čas všetkých: {{ fmtTime(stats.global_avg_time) }}
+            {{ t('avgTimeAllLabel') }} {{ fmtTime(stats.global_avg_time) }}
           </div>
         </div>
 
         <!-- Global avg (when no personal stats yet) -->
         <div v-else-if="stats.global_avg_time"
              class="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700 p-4 mb-4 text-center">
-          <div class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-1">Priemerný čas / príklad (všetci)</div>
+          <div class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-1">{{ t('avgTimePerExampleAllLabel') }}</div>
           <div class="text-xl font-black text-blue-600 dark:text-blue-400">{{ fmtTime(stats.global_avg_time) }}</div>
         </div>
 
         <!-- Leaderboard -->
         <div v-if="stats.leaderboard && stats.leaderboard.length > 0"
              class="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700 p-5 mb-4">
-          <h2 class="text-base font-black text-slate-700 dark:text-slate-200 mb-4">Rebríček</h2>
+          <h2 class="text-base font-black text-slate-700 dark:text-slate-200 mb-4">{{ t('leaderboard') }}</h2>
           <div class="flex flex-col gap-2">
             <div v-for="(entry, i) in stats.leaderboard" :key="i"
                  class="flex items-center justify-between rounded-2xl px-4 py-3"
@@ -235,8 +237,8 @@ const chartSeries = computed(() => [
                 <span class="font-black text-slate-800 dark:text-slate-100">{{ entry.username }}</span>
               </div>
               <div class="text-right">
-                <div class="text-sm font-black text-violet-600 dark:text-violet-400">{{ entry.solved }} príkl.</div>
-                <div class="text-xs font-bold text-slate-400">{{ entry.success_rate }}% úspešnosť</div>
+                <div class="text-sm font-black text-violet-600 dark:text-violet-400">{{ entry.solved }} {{ t('examplesAbbrev') }}</div>
+                <div class="text-xs font-bold text-slate-400">{{ entry.success_rate }}% {{ t('successRateLabel') }}</div>
               </div>
             </div>
           </div>
@@ -245,7 +247,7 @@ const chartSeries = computed(() => [
         <!-- No stats at all -->
         <div v-if="!stats.global_avg_time && (!stats.leaderboard || stats.leaderboard.length === 0) && (!stats.my_stats || stats.my_stats.total_attempted === 0)"
              class="rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-6 text-center text-slate-400 dark:text-slate-600">
-          <p class="font-bold text-sm">Zatiaľ žiadne štatistiky. Buď prvý!</p>
+          <p class="font-bold text-sm">{{ t('noStatsYetBeFirst') }}</p>
         </div>
 
       </div>
@@ -254,8 +256,8 @@ const chartSeries = computed(() => [
       <div v-if="history.length >= 2"
            class="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-200 dark:border-slate-700 p-5 mt-4">
         <div class="flex items-baseline gap-2 mb-4">
-          <h2 class="text-base font-black text-slate-700 dark:text-slate-200">Tvoj pokrok</h2>
-          <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold">len tvoje dáta, po sedeniach</span>
+          <h2 class="text-base font-black text-slate-700 dark:text-slate-200">{{ t('yourProgressHeading') }}</h2>
+          <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold">{{ t('onlyYourDataBySession') }}</span>
         </div>
         <VueApexCharts
           type="line"
