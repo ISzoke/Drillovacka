@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -367,6 +367,46 @@ watch([items, settings], () => {
   previewDebounce = setTimeout(loadPreview, 500);
 }, { deep: true });
 
+// Scale the preview iframe so a full A4 page is always visible at once (never
+// cropped left/right or top/bottom) instead of rendering at literal print
+// size (~794px wide) inside a narrower box. The iframe's un-scaled width is
+// fixed at PREVIEW_DESIGN_WIDTH (matches the template's @media screen
+// `.page { max-width: 210mm }`); we scale it down/up to fit the wrapper, and
+// measure the rendered height via contentDocument (needs "allow-same-origin"
+// on the sandbox — scripts stay disabled, and the HTML is server-rendered
+// from escaped data, so this is safe) so the reserved box has no leftover
+// blank space or clipped bottom.
+const PREVIEW_DESIGN_WIDTH = 800;
+const previewWrapperEl = ref(null);
+const previewIframeEl = ref(null);
+const previewScale = ref(1);
+const previewNaturalHeight = ref(1122);
+let previewResizeObserver = null;
+
+const updatePreviewScale = () => {
+  const w = previewWrapperEl.value?.clientWidth;
+  if (w) previewScale.value = w / PREVIEW_DESIGN_WIDTH;
+};
+
+const onPreviewIframeLoad = () => {
+  try {
+    const doc = previewIframeEl.value?.contentDocument;
+    const h = doc?.documentElement?.scrollHeight;
+    if (h) previewNaturalHeight.value = h;
+  } catch (e) { /* ignore — keep previous height */ }
+  updatePreviewScale();
+};
+
+watch(previewWrapperEl, (el) => {
+  previewResizeObserver?.disconnect();
+  if (el) {
+    previewResizeObserver = new ResizeObserver(updatePreviewScale);
+    previewResizeObserver.observe(el);
+  }
+});
+
+onBeforeUnmount(() => previewResizeObserver?.disconnect());
+
 const generatePdf = async (openInTab) => {
   if (!items.value.length) {
     toastStore.addToast({ message: t('noExamplesInTest'), type: 'error', visible: true });
@@ -726,8 +766,18 @@ const generatePdf = async (openInTab) => {
             <Spinner v-if="previewLoading" class="w-4 h-4" />
           </div>
           <div class="flex justify-center bg-slate-200 dark:bg-slate-900 p-4">
-            <iframe :srcdoc="previewHtml" sandbox=""
-                    class="w-full max-w-2xl bg-white" style="border: none; height: 80vh;" />
+            <div ref="previewWrapperEl" class="w-full max-w-2xl overflow-y-auto" style="max-height: 80vh;">
+              <div class="relative mx-auto bg-white"
+                   :style="{ width: '100%', height: (previewNaturalHeight * previewScale) + 'px' }">
+                <iframe ref="previewIframeEl" :srcdoc="previewHtml" sandbox="allow-same-origin"
+                        @load="onPreviewIframeLoad"
+                        :style="{
+                          border: 'none', position: 'absolute', top: 0, left: 0,
+                          width: PREVIEW_DESIGN_WIDTH + 'px', height: previewNaturalHeight + 'px',
+                          transform: `scale(${previewScale})`, transformOrigin: 'top left',
+                        }" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -814,8 +864,18 @@ const generatePdf = async (openInTab) => {
                   {{ settings.spacing }} px
                 </span>
               </div>
-              <input v-model.number="settings.spacing" type="range" min="8" max="64" step="4"
-                     class="w-full accent-secondary cursor-pointer" />
+              <div class="flex items-center gap-2">
+                <button @click="settings.spacing = Math.max(8, settings.spacing - 4)"
+                        class="w-8 h-8 flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
+                               hover:bg-slate-200 dark:hover:bg-slate-600 font-bold text-sm flex items-center justify-center
+                               disabled:opacity-40" :disabled="settings.spacing <= 8">−</button>
+                <input v-model.number="settings.spacing" type="range" min="8" max="64" step="4"
+                       class="w-full accent-secondary cursor-pointer" />
+                <button @click="settings.spacing = Math.min(64, settings.spacing + 4)"
+                        class="w-8 h-8 flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300
+                               hover:bg-slate-200 dark:hover:bg-slate-600 font-bold text-sm flex items-center justify-center
+                               disabled:opacity-40" :disabled="settings.spacing >= 64">+</button>
+              </div>
               <button @click="settings.spacing = RECOMMENDED_SPACING"
                       class="flex items-center gap-1.5 text-xs transition-colors"
                       :class="settings.spacing === RECOMMENDED_SPACING
