@@ -13,6 +13,7 @@
 import html as html_lib
 import random
 import re
+from collections import deque
 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -194,6 +195,10 @@ _HALF_BUDGET_MM = 135
 _HALF_HEAD_RESERVE_MM = 26       # header + meta (+ note) reserved on chunk 0 of a half
 _HALF_CONT_HEAD_RESERVE_MM = 12  # lighter header reserved on a continuation half
 
+_FULL_BUDGET_MM = 250
+_FULL_HEAD_RESERVE_MM = 30       # header + meta (+ note) reserved on chunk 0 of a full page
+_FULL_CONT_HEAD_RESERVE_MM = 14  # lighter header reserved on a continuation full page
+
 
 def _resolve_wide(input_type, plain_len, answer_lines):
     """An item is 'wide' (its own full-width row with an answer-line block)
@@ -247,18 +252,64 @@ def _build_rows(built_items, columns, metrics, default_answer_lines):
     return rows
 
 
-def _chunk_rows(rows, budget_mm):
-    """Split a row list into height-bounded batches (one per half-page)."""
+def _row_structure(built_items, columns):
+    """The wide/compact bucket pattern of an ordered item list: a sequence of
+    {'wide': True} or {'wide': False, 'count': n} slots. Group A (the
+    teacher's own order) defines this once; B–D's shuffled variants are then
+    forced through the same pattern (see `_apply_structure`) so a reshuffle
+    can't land a wide item mid-bucket and silently make one group's sheet
+    taller than another's — which is what let one half of a shared A4
+    overflow onto an extra page while the other half didn't."""
+    structure = []
+    bucket = 0
+    for item in built_items:
+        if item['wide']:
+            if bucket:
+                structure.append({'wide': False, 'count': bucket})
+                bucket = 0
+            structure.append({'wide': True})
+        else:
+            bucket += 1
+            if bucket >= columns:
+                structure.append({'wide': False, 'count': bucket})
+                bucket = 0
+    if bucket:
+        structure.append({'wide': False, 'count': bucket})
+    return structure
+
+
+def _apply_structure(built_items, structure):
+    """Reorder built_items (in whatever order they were shuffled into) to
+    match `structure`'s wide/compact slot sequence — wide items fill wide
+    slots and compact items fill compact slots, each pool keeping its
+    shuffled relative order. Same items, same total row count and heights
+    as the sheet `structure` was derived from."""
+    wide_pool = deque(it for it in built_items if it['wide'])
+    compact_pool = deque(it for it in built_items if not it['wide'])
+    ordered = []
+    for slot in structure:
+        if slot['wide']:
+            ordered.append(wide_pool.popleft())
+        else:
+            for _ in range(slot['count']):
+                ordered.append(compact_pool.popleft())
+    return ordered
+
+
+def _chunk_rows(rows, budget_mm, head_reserve_mm=_HALF_HEAD_RESERVE_MM,
+                 cont_reserve_mm=_HALF_CONT_HEAD_RESERVE_MM):
+    """Split a row list into height-bounded batches (one per physical page,
+    or one per half-page when called for the 2-per-A4 layout)."""
     if not rows:
         return [[]]
     chunks = []
     current = []
-    used = _HALF_HEAD_RESERVE_MM
+    used = head_reserve_mm
     for row in rows:
         if current and used + row['height_mm'] > budget_mm:
             chunks.append(current)
             current = []
-            used = _HALF_CONT_HEAD_RESERVE_MM
+            used = cont_reserve_mm
         current.append(row)
         used += row['height_mm']
     chunks.append(current)
@@ -410,23 +461,38 @@ def teacher_print_test(request):
     compact = per_page == 2
     metrics = _row_metrics(compact, spacing_factor)
 
-    # Group A keeps the teacher's order; B–D are deterministic reshuffles.
+    # Group A keeps the teacher's order and defines the row/height structure
+    # (which slots are wide vs. compact-run); B–D are deterministic reshuffles
+    # forced through that same structure so every group's sheet has identical
+    # total height — otherwise a shuffle could land a wide item mid-bucket in
+    # one group but not another, making that group's sheet taller and
+    # overflowing onto an extra (mostly blank) shared page.
     shuffle_seed = [e['id'] if e['id'] is not None else e.get('example', '') for e in entries]
     sheets = []
+    base_structure = None
     for gi in range(groups):
-        ordered = list(entries)
-        if gi > 0:
-            random.Random(f'{sorted(map(str, shuffle_seed))}-{gi}').shuffle(ordered)
-        built_items = [build_item(e, n) for n, e in enumerate(ordered, start=1)]
+        if gi == 0:
+            built_items = [build_item(e, n) for n, e in enumerate(entries, start=1)]
+            base_structure = _row_structure(built_items, columns)
+        else:
+            shuffled = list(entries)
+            random.Random(f'{sorted(map(str, shuffle_seed))}-{gi}').shuffle(shuffled)
+            raw_items = [build_item(e, 0) for e in shuffled]
+            built_items = _apply_structure(raw_items, base_structure)
+            for n, it in enumerate(built_items, start=1):
+                it['number'] = n
         sheets.append({
             'group': _GROUP_LETTERS[gi] if groups > 1 else '',
             'items': built_items,
             'rows': _build_rows(built_items, columns, metrics, default_answer_lines),
         })
 
-    # per_page == 1: WeasyPrint's natural page flow already spills a sheet's
-    # rows across as many physical pages as needed (no fixed-height container
-    # involved), so no Python-side chunking is required there.
+    # Explicitly split each sheet's rows into page-budgeted chunks — for
+    # per_page == 2 this keeps a shared A4's two halves in sync page-by-page;
+    # for per_page == 1 it makes multi-page tests render as genuinely
+    # separate <div class="page"> blocks instead of one overflowing div that
+    # only WeasyPrint's own pagination would split (invisible in the live
+    # HTML preview, which has no print-pagination of its own).
     pages_full = []
     pages_half = []
     if per_page == 2:
@@ -445,7 +511,16 @@ def teacher_print_test(request):
                     ],
                 })
     else:
-        pages_full = [{'group': s['group'], 'rows': s['rows']} for s in sheets]
+        for sheet in sheets:
+            chunks = _chunk_rows(sheet['rows'], _FULL_BUDGET_MM, _FULL_HEAD_RESERVE_MM, _FULL_CONT_HEAD_RESERVE_MM)
+            for ci, rows in enumerate(chunks):
+                pages_full.append({
+                    'group': sheet['group'],
+                    'rows': rows,
+                    'is_continuation': ci > 0,
+                    'chunk_number': ci + 1,
+                    'chunk_count': len(chunks),
+                })
 
     key_sheets = []
     if answer_key:

@@ -209,7 +209,7 @@
 {% for sheet in pages_full %}
 <div class="page">
   <div class="full">
-    {% if show_header %}
+    {% if show_header and not sheet.is_continuation %}
     <div class="head">
       <div>
         <h1>{{ title }}</h1>
@@ -226,10 +226,13 @@
       </div>
       {% if sheet.group %}<div class="group-badge">{{ sheet.group }}</div>{% endif %}
     </div>
-    {% elif sheet.group %}
-    <div class="head"><div></div><div class="group-badge">{{ sheet.group }}</div></div>
+    {% elif sheet.group or sheet.is_continuation %}
+    <div class="head">
+      <div>{% if sheet.is_continuation %}<div class="continuation-tag">pokračovanie {{ sheet.chunk_number }}/{{ sheet.chunk_count }}</div>{% endif %}</div>
+      {% if sheet.group %}<div class="group-badge">{{ sheet.group }}</div>{% endif %}
+    </div>
     {% endif %}
-    {% if note and not cover_page %}<p class="note">{{ note }}</p>{% endif %}
+    {% if note and not cover_page and not sheet.is_continuation %}<p class="note">{{ note }}</p>{% endif %}
     {% include 'pdf/_rows.html' with rows=sheet.rows %}
   </div>
 </div>
