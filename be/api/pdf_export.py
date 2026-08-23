@@ -553,6 +553,11 @@ def teacher_print_test(request):
     }
     html = render_to_string('pdf/test_sheet.html', context)
 
+    # Dev-only escape hatch: returns the raw rendered HTML instead of a PDF, so
+    # the template/row-building logic can be sanity-checked (curl/browser)
+    # without a working WeasyPrint install. No longer used by the frontend —
+    # the live preview now renders the real PDF via teacherPrintTest (see
+    # apiClient.js) so it matches the download byte-for-byte.
     if request.GET.get('debug') == 'html':
         return HttpResponse(html, content_type='text/html; charset=utf-8')
 

@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useToastStore } from '@/stores/useToastStore';
 import {
   getMyTeacherTasks, teacherListExamples, getTeacherTaskExamples, teacherPrintTest,
-  teacherPrintPreviewHtml, teacherGenerateTaskPreview,
+  teacherGenerateTaskPreview,
 } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import TeacherIcon from '@/components/TeacherIcon.vue';
@@ -343,69 +343,53 @@ const buildPayload = () => ({
   }),
 });
 
-// ── Live inline preview (renders the exact same template as the PDF, as HTML) ──
-const previewHtml = ref('');
+// ── Live inline preview — the actual WeasyPrint-rendered PDF, shown via the
+// browser's native PDF viewer. This is byte-for-byte the same artifact the
+// teacher downloads (same renderer, fonts, and pagination), so there is no
+// approximation to keep in sync — unlike a browser-rendered HTML preview.
+const previewUrl = ref('');
 const previewLoading = ref(false);
+let previewObjectUrl = null;   // currently-live blob: URL, kept for revocation
+let previewRequestSeq = 0;     // guards against out-of-order responses
 let previewDebounce = null;
+
+const revokePreviewUrl = () => {
+  if (previewObjectUrl) {
+    URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = null;
+  }
+};
 
 const loadPreview = async () => {
   if (!items.value.length) {
-    previewHtml.value = '';
+    revokePreviewUrl();
+    previewUrl.value = '';
     return;
   }
+  const requestId = ++previewRequestSeq;
   previewLoading.value = true;
   try {
-    previewHtml.value = await teacherPrintPreviewHtml(authStore.id, buildPayload());
+    const blob = await teacherPrintTest(authStore.id, buildPayload());
+    if (requestId !== previewRequestSeq) return; // superseded by a newer edit
+    const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+    revokePreviewUrl();
+    previewObjectUrl = url;
+    previewUrl.value = url;
   } catch (e) {
-    previewHtml.value = '';
+    // keep the last successful preview visible on failure — don't blank it
   }
-  previewLoading.value = false;
+  if (requestId === previewRequestSeq) previewLoading.value = false;
 };
 
 watch([items, settings], () => {
   clearTimeout(previewDebounce);
-  previewDebounce = setTimeout(loadPreview, 500);
+  previewDebounce = setTimeout(loadPreview, 700);
 }, { deep: true });
 
-// Scale the preview iframe so a full A4 page is always visible at once (never
-// cropped left/right or top/bottom) instead of rendering at literal print
-// size (~794px wide) inside a narrower box. The iframe's un-scaled width is
-// fixed at PREVIEW_DESIGN_WIDTH (matches the template's @media screen
-// `.page { max-width: 210mm }`); we scale it down/up to fit the wrapper, and
-// measure the rendered height via contentDocument (needs "allow-same-origin"
-// on the sandbox — scripts stay disabled, and the HTML is server-rendered
-// from escaped data, so this is safe) so the reserved box has no leftover
-// blank space or clipped bottom.
-const PREVIEW_DESIGN_WIDTH = 800;
-const previewWrapperEl = ref(null);
-const previewIframeEl = ref(null);
-const previewScale = ref(1);
-const previewNaturalHeight = ref(1122);
-let previewResizeObserver = null;
-
-const updatePreviewScale = () => {
-  const w = previewWrapperEl.value?.clientWidth;
-  if (w) previewScale.value = w / PREVIEW_DESIGN_WIDTH;
-};
-
-const onPreviewIframeLoad = () => {
-  try {
-    const doc = previewIframeEl.value?.contentDocument;
-    const h = doc?.documentElement?.scrollHeight;
-    if (h) previewNaturalHeight.value = h;
-  } catch (e) { /* ignore — keep previous height */ }
-  updatePreviewScale();
-};
-
-watch(previewWrapperEl, (el) => {
-  previewResizeObserver?.disconnect();
-  if (el) {
-    previewResizeObserver = new ResizeObserver(updatePreviewScale);
-    previewResizeObserver.observe(el);
-  }
+onBeforeUnmount(() => {
+  clearTimeout(previewDebounce);
+  revokePreviewUrl();
 });
-
-onBeforeUnmount(() => previewResizeObserver?.disconnect());
 
 const generatePdf = async (openInTab) => {
   if (!items.value.length) {
@@ -765,18 +749,12 @@ const generatePdf = async (openInTab) => {
             <p class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ t('previewExactAsPdf') }}</p>
             <Spinner v-if="previewLoading" class="w-4 h-4" />
           </div>
-          <div class="flex justify-center bg-slate-200 dark:bg-slate-900 p-4">
-            <div ref="previewWrapperEl" class="w-full max-w-2xl overflow-y-auto" style="max-height: 80vh;">
-              <div class="relative mx-auto bg-white"
-                   :style="{ width: '100%', height: (previewNaturalHeight * previewScale) + 'px' }">
-                <iframe ref="previewIframeEl" :srcdoc="previewHtml" sandbox="allow-same-origin"
-                        @load="onPreviewIframeLoad"
-                        :style="{
-                          border: 'none', position: 'absolute', top: 0, left: 0,
-                          width: PREVIEW_DESIGN_WIDTH + 'px', height: previewNaturalHeight + 'px',
-                          transform: `scale(${previewScale})`, transformOrigin: 'top left',
-                        }" />
-              </div>
+          <div class="bg-slate-200 dark:bg-slate-900 p-4">
+            <iframe v-if="previewUrl" :src="previewUrl"
+                    class="w-full rounded border-0 bg-white"
+                    style="height: 80vh;" />
+            <div v-else class="flex items-center justify-center text-sm text-gray-400" style="height: 40vh;">
+              <Spinner v-if="previewLoading" class="w-5 h-5" />
             </div>
           </div>
         </div>
