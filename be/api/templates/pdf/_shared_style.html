@@ -1,6 +1,6 @@
-{# Shared CSS between test_sheet.html (per_page==1, cover/key pages) and
+/* Shared CSS between test_sheet.html (per_page==1, cover/key pages) and
    sheet_half.html (per_page==2, one standalone auto-paginating half-A4 sheet).
-   Kept as one include so the two documents can't visually drift apart. #}
+   Kept as one include so the two documents can't visually drift apart. */
 * { box-sizing: border-box; }
 body {
   font-family: 'DejaVu Sans', sans-serif;
@@ -65,8 +65,11 @@ body {
   page-break-inside: avoid;
   margin-bottom: {{ row_gap_mm }}mm;
 }
-.compact-row { display: flex; }
-.compact-row .cell { padding: 0 4mm 0 0; }
+/* float layout, not flex/table-cell: WeasyPrint 63.1 doesn't lay those out
+   side by side reliably here (silently stacks each item on its own line
+   instead) — float is the most robust way to get N items side by side. */
+.compact-row { overflow: hidden; }
+.compact-row .cell { float: left; padding: 0 4mm 0 0; }
 .wide-row .q { margin-bottom: 1mm; }
 .row .num { font-weight: bold; margin-right: 1.5mm; }
 .row .pts { color: #555; font-size: 8.5pt; white-space: nowrap; }
