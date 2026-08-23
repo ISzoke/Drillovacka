@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<style>
+  /* One worksheet (one group), rendered as its own standalone document sized
+     to exactly half an A4. Rows flow naturally and WeasyPrint paginates for
+     real if the content needs more than one half-page — no Python height
+     guessing, so it structurally cannot overflow past its own page box. Two
+     of these documents' pages get imposed onto shared A4 sheets afterwards
+     (see _impose_pair in pdf_export.py); the page-number footer below is
+     this sheet's own count, which naturally becomes its "N/M" label. */
+  @page {
+    size: 210mm 148.5mm;
+    margin: 10mm 12mm 6mm 12mm;
+    @bottom-right {
+      content: "pokračovanie " counter(page) "/" counter(pages);
+      font-size: 8pt;
+      font-style: italic;
+      color: #777;
+    }
+  }
+  @page :first {
+    @bottom-right {
+      content: counter(page) "/" counter(pages);
+    }
+  }
+
+  {% include 'pdf/_shared_style.html' %}
+
+  @media screen {
+    html, body { background: #cbd5e1; }
+    body { padding: 8mm 0; }
+    .sheet {
+      background: #fff;
+      max-width: 210mm;
+      margin: 0 auto 8mm auto;
+      padding: 10mm 12mm 6mm 12mm;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+  }
+</style>
+</head>
+<body>
+<div class="sheet compact">
+  {% if show_header %}
+  <div class="head">
+    <div>
+      <h1>{{ title }}</h1>
+      <div class="meta">
+        {% if header_text %}
+        <span>{{ header_text }}</span>
+        {% else %}
+        <span>Meno: <span class="blank"></span></span>
+        <span>Trieda: {% if class_name %}<strong>{{ class_name }}</strong>{% else %}<span class="blank short"></span>{% endif %}</span>
+        <span>Dátum: <span class="blank short"></span></span>
+        {% if show_points %}<span>Body: <span class="blank short"></span> / {{ total_points }}</span>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% if group %}<div class="group-badge">{{ group }}</div>{% endif %}
+  </div>
+  {% elif group %}
+  <div class="head">
+    <div></div>
+    <div class="group-badge">{{ group }}</div>
+  </div>
+  {% endif %}
+  {% if note %}<p class="note">{{ note }}</p>{% endif %}
+  {% include 'pdf/_rows.html' %}
+</div>
+</body>
+</html>

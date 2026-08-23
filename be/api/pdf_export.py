@@ -11,9 +11,12 @@
 """
 
 import html as html_lib
+import io
 import random
 import re
 from collections import deque
+
+from pypdf import PdfReader, PdfWriter, Transformation
 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -183,21 +186,132 @@ def _plain_len(latex_text):
 #
 # Items are packed into display "rows" (up to `columns` compact items side
 # by side, or one wide item with its answer-line block per row), each with
-# an estimated height in mm. For the "2 per A4" layout each sheet's rows are
-# then split into height-bounded chunks so a half never silently overflows a
-# fixed box (the old bug) — instead a sheet that doesn't fit continues onto
-# the next physical page in the same half-position (top stays top, bottom
-# stays bottom), so cutting a duplex-printed stack in half yields a coherent
-# multi-page booklet per skupina.
+# an estimated height in mm — used both for per-row min-height/answer-blank
+# sizing (both per_page modes) and, for per_page == 1, to split a sheet's
+# rows into height-bounded page chunks (_chunk_rows below). per_page == 2
+# no longer chunks by estimated height at all — see the imposition section
+# further down, which lets WeasyPrint's real pagination decide instead.
 # ---------------------------------------------------------------------------
-
-_HALF_BUDGET_MM = 135
-_HALF_HEAD_RESERVE_MM = 26       # header + meta (+ note) reserved on chunk 0 of a half
-_HALF_CONT_HEAD_RESERVE_MM = 12  # lighter header reserved on a continuation half
 
 _FULL_BUDGET_MM = 250
 _FULL_HEAD_RESERVE_MM = 30       # header + meta (+ note) reserved on chunk 0 of a full page
 _FULL_CONT_HEAD_RESERVE_MM = 14  # lighter header reserved on a continuation full page
+
+# ---------------------------------------------------------------------------
+# 2-per-A4 imposition (per_page == 2)
+#
+# Each group's worksheet is rendered as its own standalone half-A4 document
+# (pdf/sheet_half.html) and left to WeasyPrint's real CSS pagination — no
+# Python height guessing, so a half can never overflow its own page. Pairs of
+# sheets' resulting pages are then imposed (top/bottom) onto shared A4 pages
+# with pypdf, mirroring real print-shop "2-up" imposition instead of trying
+# to precompute whether content fits.
+# ---------------------------------------------------------------------------
+
+_MM_TO_PT = 72 / 25.4
+_A4_WIDTH_MM = 210
+_A4_HEIGHT_MM = 297
+_HALF_HEIGHT_MM = 148.5
+_A4_WIDTH_PT = _A4_WIDTH_MM * _MM_TO_PT
+_A4_HEIGHT_PT = _A4_HEIGHT_MM * _MM_TO_PT
+_HALF_HEIGHT_PT = _HALF_HEIGHT_MM * _MM_TO_PT
+
+# Cut line + scissors mark, drawn once as a standalone full-A4 overlay and
+# merged onto every imposed page — same SVG mark as the old .half+.half CSS,
+# just positioned at the fixed physical midline instead of a DOM sibling.
+_CUTLINE_HTML = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+  @page { size: 210mm 297mm; margin: 0; }
+  body { margin: 0; }
+  .cutline {
+    position: absolute;
+    top: 148.5mm;
+    left: 12mm;
+    width: 186mm;
+    border-top: 0.4mm dashed #999;
+  }
+  .scissors {
+    position: absolute;
+    top: 148.5mm;
+    left: 50%;
+    width: 7mm;
+    height: 7mm;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 5mm 5mm;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6' cy='6' r='3'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Cline x1='20' y1='4' x2='8.12' y2='15.88'/%3E%3Cline x1='14.47' y1='14.48' x2='20' y2='20'/%3E%3Cline x1='8.12' y1='8.12' x2='12' y2='12'/%3E%3C/svg%3E");
+  }
+</style></head><body>
+<div class="cutline"></div>
+<div class="scissors"></div>
+</body></html>"""
+
+
+def _render_pdf(html_string, HTML):
+    return HTML(string=html_string).write_pdf()
+
+
+def _render_sheet_reader(sheet, base_context, HTML):
+    ctx = {**base_context, 'group': sheet['group'], 'rows': sheet['rows']}
+    html_string = render_to_string('pdf/sheet_half.html', ctx)
+    return PdfReader(io.BytesIO(_render_pdf(html_string, HTML)))
+
+
+def _cutline_overlay_reader(HTML):
+    return PdfReader(io.BytesIO(_render_pdf(_CUTLINE_HTML, HTML)))
+
+
+def _impose_pair(writer, top_reader, bottom_reader, cutline_page):
+    top_pages = top_reader.pages if top_reader else []
+    bottom_pages = bottom_reader.pages if bottom_reader else []
+    for i in range(max(len(top_pages), len(bottom_pages))):
+        page = writer.add_blank_page(width=_A4_WIDTH_PT, height=_A4_HEIGHT_PT)
+        if i < len(top_pages):
+            page.merge_transformed_page(top_pages[i], Transformation().translate(ty=_HALF_HEIGHT_PT))
+        if i < len(bottom_pages):
+            page.merge_page(bottom_pages[i])
+        page.merge_page(cutline_page)
+
+
+def _render_two_up_pdf(base_context, sheets, cover_page, key_sheets, HTML):
+    """Build the full per_page==2 output: optional cover, each pair of sheets
+    imposed 2-up onto shared A4 pages, optional answer key — concatenated
+    with pypdf into one PdfWriter and returned as bytes."""
+    writer = PdfWriter()
+
+    if cover_page:
+        cover_ctx = {
+            **base_context, 'per_page': 1, 'pages_full': [], 'pages_half': [],
+            'key_sheets': [], 'cover_page': True,
+        }
+        cover_html = render_to_string('pdf/test_sheet.html', cover_ctx)
+        for page in PdfReader(io.BytesIO(_render_pdf(cover_html, HTML))).pages:
+            writer.add_page(page)
+
+    cutline_page = _cutline_overlay_reader(HTML).pages[0]
+    for i in range(0, len(sheets), 2):
+        pair = sheets[i:i + 2]
+        if len(pair) == 1:
+            pair = [pair[0], pair[0]]
+        top_sheet, bottom_sheet = pair
+        top_reader = _render_sheet_reader(top_sheet, base_context, HTML)
+        bottom_reader = _render_sheet_reader(bottom_sheet, base_context, HTML)
+        _impose_pair(writer, top_reader, bottom_reader, cutline_page)
+
+    if key_sheets:
+        key_ctx = {
+            **base_context, 'per_page': 1, 'pages_full': [], 'pages_half': [],
+            'key_sheets': key_sheets, 'cover_page': False,
+        }
+        key_html = render_to_string('pdf/test_sheet.html', key_ctx)
+        for page in PdfReader(io.BytesIO(_render_pdf(key_html, HTML))).pages:
+            writer.add_page(page)
+
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
 
 
 def _resolve_wide(input_type, plain_len, answer_lines):
@@ -296,10 +410,10 @@ def _apply_structure(built_items, structure):
     return ordered
 
 
-def _chunk_rows(rows, budget_mm, head_reserve_mm=_HALF_HEAD_RESERVE_MM,
-                 cont_reserve_mm=_HALF_CONT_HEAD_RESERVE_MM):
-    """Split a row list into height-bounded batches (one per physical page,
-    or one per half-page when called for the 2-per-A4 layout)."""
+def _chunk_rows(rows, budget_mm, head_reserve_mm, cont_reserve_mm):
+    """Split a sheet's rows into height-bounded batches, one per physical
+    page (per_page == 1 only — per_page == 2 lets WeasyPrint paginate for
+    real instead, see _render_two_up_pdf)."""
     if not rows:
         return [[]]
     chunks = []
@@ -314,18 +428,6 @@ def _chunk_rows(rows, budget_mm, head_reserve_mm=_HALF_HEAD_RESERVE_MM,
         used += row['height_mm']
     chunks.append(current)
     return chunks
-
-
-def _sheet_half_ctx(sheet, chunks, idx):
-    if idx >= len(chunks):
-        return None
-    return {
-        'group': sheet['group'],
-        'rows': chunks[idx],
-        'is_continuation': idx > 0,
-        'chunk_number': idx + 1,
-        'chunk_count': len(chunks),
-    }
 
 
 # ---------------------------------------------------------------------------
@@ -487,41 +589,6 @@ def teacher_print_test(request):
             'rows': _build_rows(built_items, columns, metrics, default_answer_lines),
         })
 
-    # Explicitly split each sheet's rows into page-budgeted chunks — for
-    # per_page == 2 this keeps a shared A4's two halves in sync page-by-page;
-    # for per_page == 1 it makes multi-page tests render as genuinely
-    # separate <div class="page"> blocks instead of one overflowing div that
-    # only WeasyPrint's own pagination would split (invisible in the live
-    # HTML preview, which has no print-pagination of its own).
-    pages_full = []
-    pages_half = []
-    if per_page == 2:
-        for i in range(0, len(sheets), 2):
-            pair = sheets[i:i + 2]
-            if len(pair) == 1:
-                pair = [pair[0], pair[0]]
-            top_sheet, bottom_sheet = pair
-            top_chunks = _chunk_rows(top_sheet['rows'], _HALF_BUDGET_MM)
-            bottom_chunks = _chunk_rows(bottom_sheet['rows'], _HALF_BUDGET_MM)
-            for pi in range(max(len(top_chunks), len(bottom_chunks))):
-                pages_half.append({
-                    'halves': [
-                        _sheet_half_ctx(top_sheet, top_chunks, pi),
-                        _sheet_half_ctx(bottom_sheet, bottom_chunks, pi),
-                    ],
-                })
-    else:
-        for sheet in sheets:
-            chunks = _chunk_rows(sheet['rows'], _FULL_BUDGET_MM, _FULL_HEAD_RESERVE_MM, _FULL_CONT_HEAD_RESERVE_MM)
-            for ci, rows in enumerate(chunks):
-                pages_full.append({
-                    'group': sheet['group'],
-                    'rows': rows,
-                    'is_continuation': ci > 0,
-                    'chunk_number': ci + 1,
-                    'chunk_count': len(chunks),
-                })
-
     key_sheets = []
     if answer_key:
         for sheet in sheets:
@@ -533,33 +600,58 @@ def teacher_print_test(request):
                 ],
             })
 
-    context = {
+    base_context = {
         'title': title,
         'class_name': class_name,
         'note': note,
         'show_points': show_points,
         'total_points': total_points,
-        'per_page': per_page,
-        'pages_full': pages_full,
-        'pages_half': pages_half,
-        'key_sheets': key_sheets,
         'has_groups': groups > 1,
-        'cover_page': cover_page,
         'show_header': show_header,
         'header_text': header_text,
         'columns': columns,
         'col_width_pct': round(100.0 / columns, 2),
         'row_gap_mm': metrics['gap'],
     }
-    html = render_to_string('pdf/test_sheet.html', context)
 
-    # Dev-only escape hatch: returns the raw rendered HTML instead of a PDF, so
-    # the template/row-building logic can be sanity-checked (curl/browser)
+    # Dev-only escape hatch: returns rendered HTML instead of a PDF, so the
+    # template/row-building logic can be sanity-checked (curl/browser)
     # without a working WeasyPrint install. No longer used by the frontend —
     # the live preview now renders the real PDF via teacherPrintTest (see
     # apiClient.js) so it matches the download byte-for-byte.
-    if request.GET.get('debug') == 'html':
-        return HttpResponse(html, content_type='text/html; charset=utf-8')
+    if per_page == 2:
+        if request.GET.get('debug') == 'html':
+            debug_ctx = {**base_context, 'group': sheets[0]['group'], 'rows': sheets[0]['rows']}
+            return HttpResponse(
+                render_to_string('pdf/sheet_half.html', debug_ctx),
+                content_type='text/html; charset=utf-8',
+            )
+    else:
+        # per_page == 1: each sheet's rows are still explicitly chunked into
+        # page-budgeted batches (unchanged) — a single combined document
+        # renders every sheet plus cover/key in one WeasyPrint call.
+        pages_full = []
+        for sheet in sheets:
+            chunks = _chunk_rows(sheet['rows'], _FULL_BUDGET_MM, _FULL_HEAD_RESERVE_MM, _FULL_CONT_HEAD_RESERVE_MM)
+            for ci, rows in enumerate(chunks):
+                pages_full.append({
+                    'group': sheet['group'],
+                    'rows': rows,
+                    'is_continuation': ci > 0,
+                    'chunk_number': ci + 1,
+                    'chunk_count': len(chunks),
+                })
+        context = {
+            **base_context,
+            'per_page': per_page,
+            'pages_full': pages_full,
+            'pages_half': [],
+            'key_sheets': key_sheets,
+            'cover_page': cover_page,
+        }
+        html = render_to_string('pdf/test_sheet.html', context)
+        if request.GET.get('debug') == 'html':
+            return HttpResponse(html, content_type='text/html; charset=utf-8')
 
     try:
         from weasyprint import HTML
@@ -569,7 +661,14 @@ def teacher_print_test(request):
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
-    pdf_bytes = HTML(string=html).write_pdf()
+    if per_page == 2:
+        # Each sheet is rendered as its own standalone half-A4 document and
+        # imposed 2-up onto shared A4 pages — see _render_two_up_pdf. Real
+        # WeasyPrint pagination per half means overflow past the cut line is
+        # structurally impossible, not just unlikely.
+        pdf_bytes = _render_two_up_pdf(base_context, sheets, cover_page, key_sheets, HTML)
+    else:
+        pdf_bytes = HTML(string=html).write_pdf()
 
     safe_title = re.sub(r'[^\w\- ]', '', title).strip().replace(' ', '_') or 'test'
     response = HttpResponse(pdf_bytes, content_type='application/pdf')

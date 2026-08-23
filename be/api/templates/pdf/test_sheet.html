@@ -7,131 +7,11 @@
     size: A4;
     margin: 10mm 12mm;
   }
-  * { box-sizing: border-box; }
-  body {
-    font-family: 'DejaVu Sans', sans-serif;
-    font-size: 11pt;
-    color: #111;
-    margin: 0;
-  }
 
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
 
-  /* two sheets per A4 — height grows with content, dashed cut line between them,
-     with a scissors mark (SVG, not a font glyph — DejaVu Sans has no Dingbats
-     coverage) straddling the line so it's unmistakably a "cut here" line. */
-  .half { padding-bottom: 2mm; }
-  .half + .half {
-    position: relative;
-    border-top: 0.4mm dashed #999;
-    padding-top: 3mm;
-  }
-  .half + .half::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 7mm;
-    height: 7mm;
-    transform: translate(-50%, -50%);
-    background-color: #fff;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 5mm 5mm;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6' cy='6' r='3'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Cline x1='20' y1='4' x2='8.12' y2='15.88'/%3E%3Cline x1='14.47' y1='14.48' x2='20' y2='20'/%3E%3Cline x1='8.12' y1='8.12' x2='12' y2='12'/%3E%3C/svg%3E");
-  }
-  .compact { font-size: 9.5pt; }
-  .compact .head h1 { font-size: 12pt; }
-
-  .head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 0.5mm solid #111;
-    padding-bottom: 2mm;
-    margin-bottom: 3mm;
-  }
-  .head h1 {
-    font-size: 14pt;
-    margin: 0 0 1.5mm 0;
-  }
-  .head-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 1mm;
-  }
-  .meta {
-    font-size: 9.5pt;
-    color: #333;
-  }
-  .meta span { margin-right: 6mm; white-space: nowrap; }
-  .blank {
-    display: inline-block;
-    border-bottom: 0.3mm solid #555;
-    min-width: 30mm;
-  }
-  .blank.short { min-width: 18mm; }
-  .group-badge {
-    border: 0.6mm solid #111;
-    border-radius: 2mm;
-    font-size: 16pt;
-    font-weight: bold;
-    padding: 1mm 3.5mm;
-  }
-  .continuation-tag {
-    font-size: 8pt;
-    color: #777;
-    font-style: italic;
-    white-space: nowrap;
-  }
-  .note {
-    font-size: 9.5pt;
-    font-style: italic;
-    color: #444;
-    margin: 0 0 2.5mm 0;
-  }
-
-  /* rows: either N compact items side by side, or one wide item + answer lines */
-  .row {
-    page-break-inside: avoid;
-    margin-bottom: {{ row_gap_mm }}mm;
-  }
-  .compact-row { display: flex; }
-  .compact-row .cell { padding: 0 4mm 0 0; }
-  .wide-row .q { margin-bottom: 1mm; }
-  .row .num { font-weight: bold; margin-right: 1.5mm; }
-  .row .pts { color: #555; font-size: 8.5pt; white-space: nowrap; }
-  .row .eq-blank {
-    display: inline-block;
-    border-bottom: 0.3mm solid #888;
-    min-width: 22mm;
-    margin-left: 2mm;
-  }
-  .answer-blank {
-    /* just blank writing space — no ruled lines */
-  }
-
-  /* math bits produced by latex_to_html */
-  .frac {
-    display: inline-block;
-    vertical-align: -0.6em;
-    text-align: center;
-    margin: 0 0.6mm;
-  }
-  .frac .num {
-    display: block;
-    border-bottom: 0.25mm solid #111;
-    padding: 0 1mm;
-    font-weight: normal;
-  }
-  .frac .den { display: block; padding: 0 1mm; }
-  .sqrtarg {
-    border-top: 0.25mm solid #111;
-    padding: 0 0.6mm;
-  }
-  .rootidx { font-size: 7pt; }
+  {% include 'pdf/_shared_style.html' %}
 
   /* cover page */
   .cover {
@@ -235,47 +115,6 @@
     {% if note and not cover_page and not sheet.is_continuation %}<p class="note">{{ note }}</p>{% endif %}
     {% include 'pdf/_rows.html' with rows=sheet.rows %}
   </div>
-</div>
-{% endfor %}
-{% endif %}
-
-{% if per_page == 2 %}
-{% for page in pages_half %}
-<div class="page">
-  {% for half in page.halves %}
-  <div class="half compact">
-    {% if half %}
-      {% if show_header %}
-      <div class="head">
-        <div>
-          <h1>{{ title }}</h1>
-          <div class="meta">
-            {% if header_text %}
-            <span>{{ header_text }}</span>
-            {% else %}
-            <span>Meno: <span class="blank"></span></span>
-            <span>Trieda: {% if class_name %}<strong>{{ class_name }}</strong>{% else %}<span class="blank short"></span>{% endif %}</span>
-            <span>Dátum: <span class="blank short"></span></span>
-            {% if show_points %}<span>Body: <span class="blank short"></span> / {{ total_points }}</span>{% endif %}
-            {% endif %}
-          </div>
-        </div>
-        <div class="head-right">
-          {% if half.is_continuation %}<div class="continuation-tag">pokračovanie {{ half.chunk_number }}/{{ half.chunk_count }}</div>{% endif %}
-          {% if half.group %}<div class="group-badge">{{ half.group }}</div>{% endif %}
-        </div>
-      </div>
-      {% elif half.group or half.is_continuation %}
-      <div class="head">
-        <div>{% if half.is_continuation %}<div class="continuation-tag">pokračovanie {{ half.chunk_number }}/{{ half.chunk_count }}</div>{% endif %}</div>
-        {% if half.group %}<div class="group-badge">{{ half.group }}</div>{% endif %}
-      </div>
-      {% endif %}
-      {% if note and not cover_page and not half.is_continuation %}<p class="note">{{ note }}</p>{% endif %}
-      {% include 'pdf/_rows.html' with rows=half.rows %}
-    {% endif %}
-  </div>
-  {% endfor %}
 </div>
 {% endfor %}
 {% endif %}
