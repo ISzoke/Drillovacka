@@ -4507,6 +4507,9 @@ def teacher_generate_task_preview(request):
     description = (request.data.get('description') or '').strip()
     if not description:
         return Response({'error': 'description is required'}, status=status.HTTP_400_BAD_REQUEST)
+    language = request.data.get('language', 'sk')
+    if language not in ('sk', 'cs', 'en'):
+        language = 'sk'
 
     if task_type == 'mix':
         segments = request.data.get('segments', [])
@@ -4514,7 +4517,7 @@ def teacher_generate_task_preview(request):
             return Response({'error': 'segments are required for mix type'}, status=status.HTTP_400_BAD_REQUEST)
         from .generators.teacher_generator import generate_teacher_task_mix
         try:
-            data = generate_teacher_task_mix(segments, description)
+            data = generate_teacher_task_mix(segments, description, language)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except RuntimeError as e:
@@ -4522,7 +4525,7 @@ def teacher_generate_task_preview(request):
     else:
         from .generators.teacher_generator import generate_teacher_task
         try:
-            data = generate_teacher_task(task_type, count, description)
+            data = generate_teacher_task(task_type, count, description, language)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except RuntimeError as e:
@@ -4866,6 +4869,9 @@ def teacher_generate_more_examples_preview(request, task_id):
         count = min(max(int(request.data.get('count', 10)), 1), 30)
     except (TypeError, ValueError):
         count = 10
+    language = request.data.get('language', 'sk')
+    if language not in ('sk', 'cs', 'en'):
+        language = 'sk'
 
     # Example has no timestamp column; -id is a reliable insertion-order proxy. Reverse to chronological for the prompt.
     recent = list(task.example_set.prefetch_related('answers').order_by('-id')[:10])[::-1]
@@ -4877,7 +4883,7 @@ def teacher_generate_more_examples_preview(request, task_id):
 
     from .generators.teacher_generator import generate_teacher_task_more
     try:
-        data = generate_teacher_task_more(reference_examples, count, description, fallback_type)
+        data = generate_teacher_task_more(reference_examples, count, description, fallback_type, language)
     except ValueError as e:
         return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
     except RuntimeError as e:

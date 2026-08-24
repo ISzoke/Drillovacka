@@ -8,8 +8,12 @@
  */
 
 import axios from 'axios';
-import qs from 'qs'; 
+import qs from 'qs';
 import { getSessionId } from '@/utils/sessionManager';
+import { i18n } from '@/i18n';
+import { translateTaskNamesDeep } from '@/utils/contentNameMaps';
+
+const currentLanguage = () => i18n.global.locale.value;
 
 // Axios instance for all API requests
 const apiClient = axios.create({
@@ -680,7 +684,7 @@ export const getTasksByGrade = async (gradeId, studentId = null) => {
   try {
     const params = studentId ? { student_id: studentId } : {};
     const response = await apiClient.get(`tasks/by-grade/${gradeId}/`, { params });
-    return response.data;
+    return translateTaskNamesDeep(response.data, currentLanguage());
   } catch (error) {
     console.error('Error fetching tasks by grade:', error);
     return [];
@@ -1015,7 +1019,7 @@ export const getClassroomDetail = async (classroomId, { teacherId, studentId } =
   if (teacherId) params.teacher_id = teacherId;
   if (studentId) params.student_id = studentId;
   const response = await apiClient.get(`classrooms/${classroomId}/`, { params });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const updateClassroom = async (classroomId, teacherId, data) => {
@@ -1067,7 +1071,7 @@ export const getClassroomTasks = async (classroomId, { teacherId, studentId } = 
   if (teacherId) params.teacher_id = teacherId;
   if (studentId) params.student_id = studentId;
   const response = await apiClient.get(`classrooms/${classroomId}/tasks/`, { params });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const assignTaskToClassroom = async (classroomId, teacherId, taskId, isHomework = false, dueDate = null) => {
@@ -1107,26 +1111,26 @@ export const getClassroomAnalytics = async (classroomId, teacherId) => {
   const response = await apiClient.get(`classrooms/${classroomId}/analytics/`, {
     params: { teacher_id: teacherId },
   });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const getClassroomStudentDetail = async (classroomId, studentId, teacherId) => {
   const response = await apiClient.get(`classrooms/${classroomId}/students/${studentId}/`, {
     params: { teacher_id: teacherId },
   });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const getClassroomTaskHomeworkStats = async (classroomId, taskId, teacherId) => {
   const response = await apiClient.get(`classrooms/${classroomId}/tasks/${taskId}/homework-stats/`, {
     params: { teacher_id: teacherId },
   });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const teacherGenerateTaskPreview = async (teacherId, type, count, description, segments = null) => {
   const response = await apiClient.post('teacher/generate-task/', {
-    teacher_id: teacherId, type, count, description,
+    teacher_id: teacherId, type, count, description, language: currentLanguage(),
     ...(segments && { segments }),
   });
   return response.data;
@@ -1209,7 +1213,7 @@ export const teacherPrintTest = async (teacherId, payload) => {
 
 export const getMyTeacherTasks = async (teacherId) => {
   const response = await apiClient.get('teacher/tasks/mine/', { params: { teacher_id: teacherId } });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const teacherDeleteExample = async (exampleId, teacherId) => {
@@ -1220,12 +1224,12 @@ export const getTeacherTaskExamples = async (taskId, teacherId) => {
   const response = await apiClient.get(`teacher/tasks/${taskId}/examples/`, {
     params: { teacher_id: teacherId },
   });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const teacherGenerateMoreExamplesPreview = async (teacherId, taskId, description, count) => {
   const response = await apiClient.post(`teacher/tasks/${taskId}/generate-more/`, {
-    teacher_id: teacherId, description, count,
+    teacher_id: teacherId, description, count, language: currentLanguage(),
   });
   return response.data;
 };
@@ -1275,7 +1279,7 @@ export const browseTasks = async (grade = null, search = '') => {
   if (grade) params.grade = grade;
   if (search) params.search = search;
   const response = await apiClient.get('tasks/browse/', { params });
-  return response.data;
+  return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
 export const getRecentActivity = async (limit = 100) => {

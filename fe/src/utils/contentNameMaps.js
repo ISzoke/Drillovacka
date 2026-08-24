@@ -210,3 +210,34 @@ export const getTaskName = (dbName, lang) => {
     if (!entry) return dbName;
     return entry[lang] || entry['sk'] || dbName;
 };
+
+/**
+ * Walks an API response (object/array, any depth) and translates every
+ * "name" / "task_name" string value found via getTaskName. Keys that don't
+ * match a known DB task name are returned unchanged, so this is safe to run
+ * over responses that also carry unrelated "name" fields (classrooms,
+ * students, teacher-authored set names, ...).
+ *
+ * @param {*} data - response payload, mutated in place and returned
+ * @param {string} lang - 'sk' | 'cs' | 'en'
+ * @returns {*} the same `data`, with matching name fields translated
+ */
+const _TRANSLATABLE_NAME_KEYS = new Set(['name', 'task_name']);
+
+export const translateTaskNamesDeep = (data, lang) => {
+    if (Array.isArray(data)) {
+        data.forEach((item) => translateTaskNamesDeep(item, lang));
+        return data;
+    }
+    if (data && typeof data === 'object') {
+        for (const key of Object.keys(data)) {
+            const value = data[key];
+            if (_TRANSLATABLE_NAME_KEYS.has(key) && typeof value === 'string') {
+                data[key] = getTaskName(value, lang);
+            } else if (value && typeof value === 'object') {
+                translateTaskNamesDeep(value, lang);
+            }
+        }
+    }
+    return data;
+};
