@@ -1307,4 +1307,34 @@ export const publishTeacherTask = async (taskId, gradeIds) => {
   return response.data;
 };
 
+// ── Duel (preťahovanie lanom) ───────────────────────────────────────────────
+
+export const createDuel = async (studentId, { mode, visibility, taskId, timeLimitSeconds }) => {
+  const userIdentifier = getUserIdentifier(studentId);
+  const response = await apiClient.post('duel/create/', {
+    ...userIdentifier,
+    mode,
+    visibility,
+    task_id: taskId,
+    time_limit_seconds: timeLimitSeconds,
+  });
+  return response.data;
+};
+
+export const joinDuel = async (studentId, code) => {
+  const userIdentifier = getUserIdentifier(studentId);
+  const response = await apiClient.post('duel/join/', { ...userIdentifier, code });
+  return response.data;
+};
+
+export const listPublicDuels = async () => {
+  const response = await apiClient.get('duel/public/');
+  return response.data;
+};
+
+export const getDuelState = async (code) => {
+  const response = await apiClient.get(`duel/state/${code}/`);
+  return response.data;
+};
+
 export default apiClient;

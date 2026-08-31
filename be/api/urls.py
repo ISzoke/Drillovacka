@@ -146,6 +146,11 @@ urlpatterns = [
     path('admin/classrooms/<int:classroom_id>/students/', views.admin_classroom_students, name='admin-classroom-students'),
     path('admin/tasks/<int:task_id>/examples/', views.admin_task_examples, name='admin-task-examples'),
     path('admin/tasks/<int:task_id>/publish/', views.admin_publish_teacher_task, name='admin-publish-task'),
+
+    path('duel/create/', views.create_duel_game, name='duel-create'),
+    path('duel/join/', views.join_duel_game, name='duel-join'),
+    path('duel/public/', views.list_public_duel_games, name='duel-public-list'),
+    path('duel/state/<str:code>/', views.get_duel_game_state, name='duel-state'),
 ]
 
 websocket_urlpatterns = [

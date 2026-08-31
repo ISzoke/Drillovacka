@@ -39,6 +39,10 @@ import TeacherLibraryView from '@/views/TeacherLibraryView.vue'
 import TeacherUnassignedExamplesView from '@/views/TeacherUnassignedExamplesView.vue'
 import TeacherPrintView from '@/views/TeacherPrintView.vue'
 
+// Duel (tug-of-war) views
+import DuelHomeView from '@/views/DuelHomeView.vue'
+import DuelRoomView from '@/views/DuelRoomView.vue'
+
 // Student classroom views
 import JoinClassroomView from '@/views/JoinClassroomView.vue'
 import StudentClassroomsView from '@/views/StudentClassroomsView.vue'
@@ -303,6 +307,19 @@ const router = createRouter({
       name: 'student-classroom-detail',
       component: StudentClassroomDetailView,
       meta: { requiresAuth: true },
+      props: true,
+    },
+
+    // Duel (tug-of-war) — open to anonymous and registered users alike
+    {
+      path: '/duel',
+      name: 'duel-home',
+      component: DuelHomeView,
+    },
+    {
+      path: '/duel/:code',
+      name: 'duel-room',
+      component: DuelRoomView,
       props: true,
     },
   ]

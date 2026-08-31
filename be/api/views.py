@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -5037,3 +5037,167 @@ def teacher_delete_task(request, task_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         return Response({'error': f"Error deleting task: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─── Duel (preťahovanie lanom) ───────────────────────────────────────────────
+
+_DUEL_ADJECTIVES = ['Rýchly', 'Šikovný', 'Odvážny', 'Bystrý', 'Hbitý', 'Silný', 'Múdry', 'Veselý', 'Smelý', 'Divoký']
+_DUEL_NOUNS = ['Tiger', 'Vlk', 'Orol', 'Lev', 'Medveď', 'Sokol', 'Rys', 'Jazvec', 'Drak', 'Líška']
+
+
+def _generate_duel_display_name():
+    return f"{random.choice(_DUEL_ADJECTIVES)} {random.choice(_DUEL_NOUNS)} {random.randint(1, 99)}"
+
+
+def generate_duel_code(length=8):
+    chars = _string.ascii_uppercase + _string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=length))
+        if not DuelGame.objects.filter(code=code).exists():
+            return code
+
+
+def _duel_slot_order(mode):
+    if mode == '1v1':
+        return [('A', 1), ('B', 1)]
+    return [('A', 1), ('B', 1), ('A', 2), ('B', 2)]
+
+
+def _next_open_duel_slot(game):
+    taken = set(game.participants.values_list('team', 'slot'))
+    for team, slot in _duel_slot_order(game.mode):
+        if (team, slot) not in taken:
+            return team, slot
+    return None
+
+
+def _serialize_duel_game(game):
+    required_count = 2 if game.mode == '1v1' else 4
+    participants = [{
+        'team': p.team,
+        'slot': p.slot,
+        'display_name': p.display_name,
+        'is_founder': p.is_founder,
+        'connected': p.connected,
+        'correct_count': p.correct_count,
+        'is_student': p.student_id is not None,
+    } for p in game.participants.all()]
+    return {
+        'code': game.code,
+        'mode': game.mode,
+        'visibility': game.visibility,
+        'status': game.status,
+        'task_id': game.task_id,
+        'task_name': game.task.name,
+        'time_limit_seconds': game.time_limit_seconds,
+        'target_steps': game.target_steps,
+        'rope_position': game.rope_position,
+        'winner_team': game.winner_team,
+        'started_at': game.started_at,
+        'required_count': required_count,
+        'participants': participants,
+    }
+
+
+@api_view(['POST'])
+def create_duel_game(request):
+    student, session = get_user_identity(request)
+    if not student and not session:
+        return Response({'error': 'student_id or session_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    mode = request.data.get('mode')
+    visibility = request.data.get('visibility')
+    task_id = request.data.get('task_id')
+    time_limit_seconds = request.data.get('time_limit_seconds')
+
+    if mode not in ('1v1', '2v2') or visibility not in ('public', 'private') or not task_id or not time_limit_seconds:
+        return Response({'error': 'mode, visibility, task_id and time_limit_seconds are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        time_limit_seconds = int(time_limit_seconds)
+    except (TypeError, ValueError):
+        return Response({'error': 'Invalid time_limit_seconds'}, status=status.HTTP_400_BAD_REQUEST)
+
+    task = get_object_or_404(Task, id=task_id)
+    if not task.example_set.exists():
+        return Response({'error': 'Sada neobsahuje žiadne príklady'}, status=status.HTTP_400_BAD_REQUEST)
+
+    game = DuelGame.objects.create(
+        code=generate_duel_code(),
+        mode=mode,
+        visibility=visibility,
+        task=task,
+        time_limit_seconds=time_limit_seconds,
+    )
+
+    display_name = student.username if student else _generate_duel_display_name()
+    participant = DuelParticipant.objects.create(
+        game=game, student=student, anonymous_session=session,
+        team='A', slot=1, display_name=display_name, is_founder=True,
+    )
+
+    return Response({**_serialize_duel_game(game), 'you': {'team': participant.team, 'slot': participant.slot}},
+                     status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def join_duel_game(request):
+    student, session = get_user_identity(request)
+    if not student and not session:
+        return Response({'error': 'student_id or session_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    code = (request.data.get('code') or '').strip().upper()
+    if not code:
+        return Response({'error': 'code is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        game = DuelGame.objects.get(code=code)
+    except DuelGame.DoesNotExist:
+        return Response({'error': 'Hra s týmto kódom neexistuje'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Rejoin case (e.g. reconnect after a page refresh) — same identity already has a slot.
+    existing = game.participants.filter(student=student, anonymous_session=session).first()
+    if existing:
+        return Response({**_serialize_duel_game(game), 'you': {'team': existing.team, 'slot': existing.slot}},
+                         status=status.HTTP_200_OK)
+
+    if game.status != 'waiting':
+        return Response({'error': 'Hra už začala alebo skončila'}, status=status.HTTP_409_CONFLICT)
+
+    slot = _next_open_duel_slot(game)
+    if slot is None:
+        return Response({'error': 'Hra je plná'}, status=status.HTTP_409_CONFLICT)
+
+    team, slot_num = slot
+    display_name = student.username if student else _generate_duel_display_name()
+    participant = DuelParticipant.objects.create(
+        game=game, student=student, anonymous_session=session,
+        team=team, slot=slot_num, display_name=display_name,
+    )
+
+    return Response({**_serialize_duel_game(game), 'you': {'team': participant.team, 'slot': participant.slot}},
+                     status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def list_public_duel_games(request):
+    games = DuelGame.objects.filter(visibility='public', status='waiting').select_related('task').order_by('-created_at')[:50]
+    data = []
+    for g in games:
+        required_count = 2 if g.mode == '1v1' else 4
+        data.append({
+            'code': g.code,
+            'mode': g.mode,
+            'task_id': g.task_id,
+            'task_name': g.task.name,
+            'time_limit_seconds': g.time_limit_seconds,
+            'participant_count': g.participants.count(),
+            'required_count': required_count,
+        })
+    return Response(data)
+
+
+@api_view(['GET'])
+def get_duel_game_state(request, code):
+    game = get_object_or_404(DuelGame, code=code.upper())
+    return Response(_serialize_duel_game(game))

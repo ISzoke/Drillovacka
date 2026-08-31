@@ -577,3 +577,61 @@ class ClassroomTask(models.Model):
     def __str__(self):
         hw = " [HW]" if self.is_homework else ""
         return f"{self.task.name} -> {self.classroom.name}{hw}"
+
+
+class DuelGame(models.Model):
+    MODE_CHOICES = [('1v1', '1v1'), ('2v2', '2v2')]
+    VISIBILITY_CHOICES = [('public', 'Public'), ('private', 'Private')]
+    STATUS_CHOICES = [('waiting', 'Waiting'), ('active', 'Active'), ('finished', 'Finished')]
+
+    code = models.CharField(max_length=8, unique=True, db_index=True)
+    mode = models.CharField(max_length=3, choices=MODE_CHOICES)
+    visibility = models.CharField(max_length=7, choices=VISIBILITY_CHOICES)
+    status = models.CharField(max_length=8, choices=STATUS_CHOICES, default='waiting')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='duel_games')
+    time_limit_seconds = models.IntegerField()
+    target_steps = models.IntegerField(default=8)
+    # Signed tug-of-war position: positive leans toward team A, negative toward team B.
+    rope_position = models.IntegerField(default=0)
+    # {"1": [example_id, ...], "2": [...]} - per-lane randomized question order, generated at start.
+    question_orders = models.JSONField(default=dict, blank=True)
+    winner_team = models.CharField(max_length=1, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Duel {self.code} ({self.mode}, {self.status})"
+
+
+class DuelParticipant(models.Model):
+    TEAM_CHOICES = [('A', 'A'), ('B', 'B')]
+
+    game = models.ForeignKey(DuelGame, on_delete=models.CASCADE, related_name='participants')
+    student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL, related_name='duel_participations')
+    anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.SET_NULL, related_name='duel_participations')
+    team = models.CharField(max_length=1, choices=TEAM_CHOICES)
+    slot = models.IntegerField(default=1)
+    display_name = models.CharField(max_length=64)
+    is_founder = models.BooleanField(default=False)
+    current_index = models.IntegerField(default=0)
+    correct_count = models.IntegerField(default=0)
+    connected = models.BooleanField(default=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    disconnected_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['team', 'slot']
+        unique_together = ('game', 'team', 'slot')
+        constraints = [
+            models.CheckConstraint(
+                check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
+                name='duel_participant_student_or_session_required'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.display_name} ({self.team}{self.slot}) in {self.game.code}"

@@ -118,6 +118,9 @@ const handleLogoClick = () => {
             <RouterLink to="/teacher" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               🏫 {{ t('teacherLogin') || 'Pre učiteľov' }}
             </RouterLink>
+            <RouterLink to="/duel" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              🪢 {{ t('duelTitle') }}
+            </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ t('login') }}
             </RouterLink>
@@ -185,6 +188,9 @@ const handleLogoClick = () => {
             <RouterLink to="/leaderboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               🏆 {{ t('leaderboard') }}
             </RouterLink>
+            <RouterLink to="/duel" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
+              🪢 {{ t('duelTitle') }}
+            </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               👤 {{ t('profile') }}
             </RouterLink>
@@ -216,6 +222,9 @@ const handleLogoClick = () => {
             </RouterLink>
             <RouterLink to="/teacher" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               🏫 {{ t('teacherLogin') || 'Pre učiteľov' }}
+            </RouterLink>
+            <RouterLink to="/duel" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              🪢 {{ t('duelTitle') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ t('login') }}
@@ -280,6 +289,9 @@ const handleLogoClick = () => {
             </RouterLink>
             <RouterLink to="/leaderboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               🏆 {{ t('leaderboard') }}
+            </RouterLink>
+            <RouterLink to="/duel" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
+              🪢 {{ t('duelTitle') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               👤 {{ t('profile') }}
