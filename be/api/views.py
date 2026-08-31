@@ -5093,7 +5093,7 @@ def _serialize_duel_game(game):
         'target_steps': game.target_steps,
         'rope_position': game.rope_position,
         'winner_team': game.winner_team,
-        'started_at': game.started_at,
+        'started_at': game.started_at.isoformat() if game.started_at else None,
         'required_count': required_count,
         'participants': participants,
     }
