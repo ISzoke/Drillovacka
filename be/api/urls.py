@@ -151,6 +151,10 @@ urlpatterns = [
     path('duel/join/', views.join_duel_game, name='duel-join'),
     path('duel/public/', views.list_public_duel_games, name='duel-public-list'),
     path('duel/state/<str:code>/', views.get_duel_game_state, name='duel-state'),
+
+    path('quiz/create/', views.create_quiz_game, name='quiz-create'),
+    path('quiz/join/', views.join_quiz_game, name='quiz-join'),
+    path('quiz/state/<str:code>/', views.get_quiz_game_state, name='quiz-state'),
 ]
 
 websocket_urlpatterns = [

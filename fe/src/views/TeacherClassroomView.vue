@@ -13,6 +13,7 @@ import {
   getClassroomAnalytics,
   getClassroomStudentDetail,
   getClassroomTaskHomeworkStats,
+  createQuiz,
 } from '@/api/apiClient';
 import { useLanguageStore } from '@/stores/useLanguageStore';
 import { useToastStore } from '@/stores/useToastStore';
@@ -99,6 +100,19 @@ const handleRemoveStudent = async () => {
   } catch (e) {
     console.error('Error removing student:', e);
   }
+};
+
+const launchingQuizTaskId = ref(null);
+
+const launchQuiz = async (assignment) => {
+  launchingQuizTaskId.value = assignment.task_id;
+  try {
+    const data = await createQuiz(authStore.id, assignment.task_id);
+    router.push({ name: 'teacher-quiz-host', params: { code: data.code } });
+  } catch (e) {
+    toastStore.addToast({ message: e?.response?.data?.error || t('quizCreateError'), type: 'error', visible: true });
+  }
+  launchingQuizTaskId.value = null;
 };
 
 const handleRemoveTask = async (taskId) => {
@@ -410,6 +424,12 @@ onMounted(fetchData);
                 </div>
               </div>
               <div class="flex items-center gap-2 flex-shrink-0" @click.stop>
+                <button @click="launchQuiz(a)"
+                        :disabled="launchingQuizTaskId === a.task_id"
+                        class="text-xs px-3 py-1 rounded border border-secondary text-secondary
+                               hover:bg-secondary/10 transition-colors disabled:opacity-50">
+                  🎯 {{ t('quizLaunchButton') }}
+                </button>
                 <button @click="toggleHomework(a)"
                         :class="[
                           'text-xs px-3 py-1 rounded border transition-colors',

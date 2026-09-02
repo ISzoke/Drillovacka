@@ -4,18 +4,24 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDuelStore } from '@/stores/useDuelStore';
 import { useToastStore } from '@/stores/useToastStore';
+import { useGamificationStore } from '@/stores/useGamificationStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { getSessionId, getDisplayName, setDisplayName } from '@/utils/sessionManager';
+import { initSession } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
+import FractionInput from '@/components/Input Fields/FractionInput.vue';
 
 const props = defineProps({ code: String });
 const { t } = useI18n();
 const router = useRouter();
 const duelStore = useDuelStore();
 const toastStore = useToastStore();
+const gamStore = useGamificationStore();
+const authStore = useAuthStore();
 
 const loading = ref(true);
 const answerText = ref('');
-const fracNum = ref('');
-const fracDen = ref('');
+const fractionInputRef = ref(null);
 
 const status = computed(() => duelStore.roomState?.status);
 const participants = computed(() => duelStore.roomState?.participants || []);
@@ -34,6 +40,20 @@ const inputType = computed(() => (duelStore.currentQuestion?.input_type || '').t
 const shareLink = computed(() => `${window.location.origin}/duel/${props.code}`);
 const lastFlash = computed(() => duelStore.lastResult);
 
+// Same MathJax wrapping convention as components/Example.vue's renderedExample.
+const renderedQuestion = computed(() => {
+  const text = duelStore.currentQuestion?.example;
+  return text ? `\\(${text.replace(/\*/g, '\\cdot')}\\)` : '';
+});
+function renderMathJax() {
+  if (window.MathJax) window.MathJax.typesetPromise();
+}
+watch(() => duelStore.currentQuestion, () => renderMathJax(), { flush: 'post' });
+
+const botDifficulty = ref('medium');
+const canOfferBot = computed(() => duelStore.roomState?.mode === '1v1' && !duelStore.roomState?.vs_bot);
+const playVsBot = () => duelStore.fillWithBot(botDifficulty.value);
+
 const copyLink = async () => {
   try {
     await navigator.clipboard.writeText(shareLink.value);
@@ -43,14 +63,19 @@ const copyLink = async () => {
   }
 };
 
+const handleFractionAnswer = (numerator, denominator) => {
+  duelStore.submitAnswer([numerator, denominator]);
+  fractionInputRef.value?.clearInput();
+};
+
 const submitAnswer = () => {
   if (!duelStore.currentQuestion) return;
-  let payload;
   if (inputType.value === 'FRAC') {
-    payload = [fracNum.value, fracDen.value];
-    fracNum.value = '';
-    fracDen.value = '';
-  } else if (inputType.value === 'VAR') {
+    fractionInputRef.value?.getAnswer(); // emits answerSent -> handleFractionAnswer
+    return;
+  }
+  let payload;
+  if (inputType.value === 'VAR') {
     payload = answerText.value.split(',').map(v => v.trim());
     answerText.value = '';
   } else {
@@ -67,11 +92,25 @@ watch(() => duelStore.errorMessage, (msg) => {
   }
 });
 
-onMounted(async () => {
+const isAnonymous = () => !(authStore.isAuthenticated || localStorage.getItem('role') !== null);
+const needsNamePrompt = ref(false);
+const promptName = ref('');
+
+const proceedJoin = async () => {
+  loading.value = true;
+  needsNamePrompt.value = false;
   try {
+    // A shared duel link is often the very first page this browser loads —
+    // App.vue's own initSession() call races this component's mount and can
+    // lose, leaving an anonymous session_id the backend doesn't know about yet.
+    if (isAnonymous()) {
+      await initSession(getSessionId());
+      const chosenName = promptName.value.trim();
+      if (chosenName) setDisplayName(chosenName);
+    }
     // Idempotent: resumes the existing participant if we already have a slot
     // (founder, or returning from a reload), otherwise claims the next open one.
-    await duelStore.joinGame(props.code);
+    await duelStore.joinGame(props.code, getDisplayName());
   } catch (e) {
     toastStore.addToast({ message: e?.response?.data?.error || t('duelJoinError'), type: 'error', visible: true });
     router.push({ name: 'duel-home' });
@@ -79,6 +118,25 @@ onMounted(async () => {
   }
   duelStore.connect(props.code);
   loading.value = false;
+
+  // Baseline so the finish-screen level bar is accurate even if the student
+  // hasn't visited a gamified page yet this session; live answer_result XP
+  // updates during play (see useDuelStore) take it from here.
+  if (authStore.isAuthenticated && authStore.role === 'student' && authStore.id) {
+    gamStore.fetchStats(authStore.id);
+  }
+};
+
+onMounted(() => {
+  // First time an anonymous player lands here (e.g. via a shared link or QR
+  // code, before ever visiting the duel home page) — let them pick a name.
+  // Returning anonymous players (name already saved) skip straight to join.
+  if (isAnonymous() && !getDisplayName()) {
+    loading.value = false;
+    needsNamePrompt.value = true;
+    return;
+  }
+  proceedJoin();
 });
 
 onUnmounted(() => {
@@ -90,6 +148,28 @@ onUnmounted(() => {
   <div class="pt-20 px-4 max-w-2xl mx-auto pb-12">
 
     <Spinner v-if="loading" />
+
+    <!-- First-time anonymous entry (shared link/QR) — pick a name before joining -->
+    <div v-else-if="needsNamePrompt" class="text-center">
+      <h1 class="text-2xl font-bold text-primary dark:text-white mb-4">{{ t('yourNameLabel') }}</h1>
+      <div class="rounded-3xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 max-w-sm mx-auto">
+        <input
+          v-model="promptName"
+          type="text"
+          maxlength="64"
+          :placeholder="t('yourNamePlaceholder')"
+          class="w-full px-4 py-3 mb-3 text-center rounded-2xl border-2 border-slate-200 dark:border-slate-600
+                 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-secondary"
+          @keyup.enter="proceedJoin"
+        />
+        <button @click="proceedJoin"
+                class="w-full py-3 font-bold text-lg rounded-2xl transition-all
+                       border-b-[6px] active:border-b-[2px] active:translate-y-1
+                       bg-secondary text-white border-blue-700 hover:-translate-y-0.5">
+          {{ t('duelJoin') }}
+        </button>
+      </div>
+    </div>
 
     <template v-else>
 
@@ -119,10 +199,28 @@ onUnmounted(() => {
             <div class="font-bold text-primary dark:text-white mb-2">{{ t('duelTeam') }} {{ label }}</div>
             <div v-for="p in team" :key="`${p.team}${p.slot}`" class="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-1">
               <span :class="p.connected ? 'text-green-500' : 'text-gray-300'">●</span>
+              <span v-if="p.is_bot">🤖</span>
               {{ p.display_name }}
             </div>
             <div v-if="!team.length" class="text-sm text-gray-300 italic">{{ t('duelEmptySlot') }}</div>
           </div>
+        </div>
+
+        <div v-if="canOfferBot" class="mt-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+          <div class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">{{ t('duelVsBotSubtitle') }}</div>
+          <div class="flex gap-2 mb-3">
+            <button v-for="d in ['easy', 'medium', 'hard']" :key="d" @click="botDifficulty = d"
+                    class="flex-1 py-2 rounded-xl font-semibold border-2 transition-colors text-sm"
+                    :class="botDifficulty === d ? 'bg-accent text-white border-accent' : 'border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300'">
+              {{ t(`duelBotDifficulty_${d}`) }}
+            </button>
+          </div>
+          <button @click="playVsBot"
+                  class="w-full py-3 font-bold text-lg rounded-2xl transition-all
+                         border-b-[6px] active:border-b-[2px] active:translate-y-1
+                         bg-accent text-white border-red-700 hover:-translate-y-0.5">
+            🤖 {{ t('duelPlayVsBot') }}
+          </button>
         </div>
       </div>
 
@@ -150,14 +248,12 @@ onUnmounted(() => {
         <!-- Current question -->
         <div class="rounded-3xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 text-center">
           <div v-if="duelStore.currentQuestion" class="text-2xl font-semibold text-primary dark:text-white mb-5">
-            {{ duelStore.currentQuestion.example }}
+            {{ renderedQuestion }}
           </div>
           <div v-else class="text-gray-400 mb-5">{{ t('duelWaitingForOpponent') }}</div>
 
-          <div v-if="inputType === 'FRAC'" class="flex items-center justify-center gap-2 mb-4">
-            <input v-model="fracNum" type="text" inputmode="numeric" class="w-20 px-3 py-2 text-center text-xl rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" @keyup.enter="submitAnswer" />
-            <span class="text-2xl text-slate-400">/</span>
-            <input v-model="fracDen" type="text" inputmode="numeric" class="w-20 px-3 py-2 text-center text-xl rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100" @keyup.enter="submitAnswer" />
+          <div v-if="inputType === 'FRAC'" class="mb-4" @keyup.enter="submitAnswer">
+            <FractionInput ref="fractionInputRef" @answer-sent="handleFractionAnswer" />
           </div>
           <input v-else v-model="answerText" type="text" autofocus
                  class="w-full px-4 py-3 mb-4 text-center text-xl rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-secondary"
@@ -184,6 +280,23 @@ onUnmounted(() => {
         <p class="text-gray-500 dark:text-gray-400 mb-6">
           {{ t('duelTeam') }} {{ winnerTeam }} {{ t('duelWonTheGame') }}
         </p>
+
+        <div v-if="authStore.isAuthenticated && authStore.role === 'student'"
+             class="max-w-sm mx-auto mb-6 bg-gradient-to-br from-violet-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg text-left">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-lg">⭐ {{ t('level') }} {{ gamStore.level }}</span>
+            <span class="text-sm text-violet-200">{{ gamStore.xp }} XP</span>
+          </div>
+          <div class="w-full bg-violet-800/40 rounded-full h-3 overflow-hidden">
+            <div class="h-3 rounded-full bg-yellow-400 transition-all duration-700"
+                 :style="{ width: gamStore.levelPercent() + '%' }">
+            </div>
+          </div>
+          <div class="text-xs text-violet-200 mt-1">
+            {{ gamStore.xp - gamStore.levelXpStart }} / {{ gamStore.levelXpEnd - gamStore.levelXpStart }} {{ t('xpToNextLevel') }}
+          </div>
+        </div>
+
         <button @click="router.push({ name: 'duel-home' })"
                 class="px-6 py-3 bg-secondary text-white rounded-2xl font-semibold
                        border-b-4 border-blue-700 hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 transition-all">

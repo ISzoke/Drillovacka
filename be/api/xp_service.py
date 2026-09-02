@@ -51,12 +51,14 @@ def _grade_multiplier(student_grade, example_grade):
     return 1.0, 'same'
 
 
-def award_xp(student_id, attempt):
+def award_xp(student_id, attempt, xp_multiplier=1.0):
     """
     Award XP after a correct answer.
     Updates student.total_xp, level, streak.
     Returns a dict with gamification fields to merge into the response.
     attempt may be None (text answers without a saved attempt object).
+    xp_multiplier scales the final award on top of the grade multiplier — used
+    by duel bot games (easy/medium/hard difficulty), 1.0 everywhere else.
     """
     from .models import Student, Badge
     from .badge_checker import check_badges
@@ -76,7 +78,7 @@ def award_xp(student_id, attempt):
     voice_bonus = VOICE_BONUS if is_voice else 0
 
     # --- Final XP ---
-    xp_gained = round(BASE_XP * multiplier) + voice_bonus
+    xp_gained = round(BASE_XP * multiplier * xp_multiplier) + voice_bonus
 
     # --- Update streak ---
     today = date.today()
@@ -120,6 +122,7 @@ def award_xp(student_id, attempt):
             attempt.meta['xp_breakdown'] = {
                 'base': BASE_XP,
                 'multiplier': multiplier,
+                'xp_multiplier': xp_multiplier,
                 'voice_bonus': voice_bonus,
                 'grade_comparison': grade_comparison,
                 'example_grade': example_grade,

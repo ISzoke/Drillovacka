@@ -1309,7 +1309,7 @@ export const publishTeacherTask = async (taskId, gradeIds) => {
 
 // ── Duel (preťahovanie lanom) ───────────────────────────────────────────────
 
-export const createDuel = async (studentId, { mode, visibility, taskId, timeLimitSeconds }) => {
+export const createDuel = async (studentId, { mode, visibility, taskId, timeLimitSeconds, vsBot, botDifficulty, displayName }) => {
   const userIdentifier = getUserIdentifier(studentId);
   const response = await apiClient.post('duel/create/', {
     ...userIdentifier,
@@ -1317,13 +1317,16 @@ export const createDuel = async (studentId, { mode, visibility, taskId, timeLimi
     visibility,
     task_id: taskId,
     time_limit_seconds: timeLimitSeconds,
+    vs_bot: vsBot || false,
+    bot_difficulty: botDifficulty,
+    display_name: displayName,
   });
   return response.data;
 };
 
-export const joinDuel = async (studentId, code) => {
+export const joinDuel = async (studentId, code, displayName) => {
   const userIdentifier = getUserIdentifier(studentId);
-  const response = await apiClient.post('duel/join/', { ...userIdentifier, code });
+  const response = await apiClient.post('duel/join/', { ...userIdentifier, code, display_name: displayName });
   return response.data;
 };
 
@@ -1334,6 +1337,24 @@ export const listPublicDuels = async () => {
 
 export const getDuelState = async (code) => {
   const response = await apiClient.get(`duel/state/${code}/`);
+  return response.data;
+};
+
+// ── Live kvíz (Kahoot-style) ────────────────────────────────────────────────
+
+export const createQuiz = async (teacherId, taskId) => {
+  const response = await apiClient.post('quiz/create/', { teacher_id: teacherId, task_id: taskId });
+  return response.data;
+};
+
+export const joinQuiz = async (studentId, code, displayName) => {
+  const userIdentifier = getUserIdentifier(studentId);
+  const response = await apiClient.post('quiz/join/', { ...userIdentifier, code, display_name: displayName });
+  return response.data;
+};
+
+export const getQuizState = async (code) => {
+  const response = await apiClient.get(`quiz/state/${code}/`);
   return response.data;
 };
 

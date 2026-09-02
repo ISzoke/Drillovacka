@@ -42,6 +42,8 @@ import TeacherPrintView from '@/views/TeacherPrintView.vue'
 // Duel (tug-of-war) views
 import DuelHomeView from '@/views/DuelHomeView.vue'
 import DuelRoomView from '@/views/DuelRoomView.vue'
+import QuizHostView from '@/views/QuizHostView.vue'
+import QuizPlayView from '@/views/QuizPlayView.vue'
 
 // Student classroom views
 import JoinClassroomView from '@/views/JoinClassroomView.vue'
@@ -252,6 +254,13 @@ const router = createRouter({
       props: true,
     },
     {
+      path: '/teacher/quiz/:code',
+      name: 'teacher-quiz-host',
+      component: QuizHostView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
       path: '/teacher/library',
       name: 'teacher-library',
       component: TeacherLibraryView,
@@ -320,6 +329,19 @@ const router = createRouter({
       path: '/duel/:code',
       name: 'duel-room',
       component: DuelRoomView,
+      props: true,
+    },
+
+    // Live quiz — teacher hosts (see teacher-quiz-host above), open join for anonymous/registered
+    {
+      path: '/quiz',
+      name: 'quiz-join-manual',
+      component: QuizPlayView,
+    },
+    {
+      path: '/quiz/:code',
+      name: 'quiz-play',
+      component: QuizPlayView,
       props: true,
     },
   ]

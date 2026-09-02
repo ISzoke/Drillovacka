@@ -583,6 +583,7 @@ class DuelGame(models.Model):
     MODE_CHOICES = [('1v1', '1v1'), ('2v2', '2v2')]
     VISIBILITY_CHOICES = [('public', 'Public'), ('private', 'Private')]
     STATUS_CHOICES = [('waiting', 'Waiting'), ('active', 'Active'), ('finished', 'Finished')]
+    BOT_DIFFICULTY_CHOICES = [('easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')]
 
     code = models.CharField(max_length=8, unique=True, db_index=True)
     mode = models.CharField(max_length=3, choices=MODE_CHOICES)
@@ -596,6 +597,8 @@ class DuelGame(models.Model):
     # {"1": [example_id, ...], "2": [...]} - per-lane randomized question order, generated at start.
     question_orders = models.JSONField(default=dict, blank=True)
     winner_team = models.CharField(max_length=1, null=True, blank=True)
+    vs_bot = models.BooleanField(default=False)
+    bot_difficulty = models.CharField(max_length=6, choices=BOT_DIFFICULTY_CHOICES, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
@@ -617,6 +620,7 @@ class DuelParticipant(models.Model):
     slot = models.IntegerField(default=1)
     display_name = models.CharField(max_length=64)
     is_founder = models.BooleanField(default=False)
+    is_bot = models.BooleanField(default=False)
     current_index = models.IntegerField(default=0)
     correct_count = models.IntegerField(default=0)
     connected = models.BooleanField(default=True)
@@ -628,10 +632,76 @@ class DuelParticipant(models.Model):
         unique_together = ('game', 'team', 'slot')
         constraints = [
             models.CheckConstraint(
-                check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
+                check=Q(student__isnull=False) | Q(anonymous_session__isnull=False) | Q(is_bot=True),
                 name='duel_participant_student_or_session_required'
             )
         ]
 
     def __str__(self):
         return f"{self.display_name} ({self.team}{self.slot}) in {self.game.code}"
+
+
+class QuizGame(models.Model):
+    STATUS_CHOICES = [
+        ('waiting', 'Waiting'), ('question', 'Question'),
+        ('review', 'Review'), ('finished', 'Finished'),
+    ]
+
+    code = models.CharField(max_length=8, unique=True, db_index=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='quiz_games')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='quiz_games')
+    status = models.CharField(max_length=8, choices=STATUS_CHOICES, default='waiting')
+    # Flat, shared question order — everyone sees the same question at the same time
+    # (unlike duel's per-slot dict, where each lane races independently).
+    question_order = models.JSONField(default=list, blank=True)
+    current_question_index = models.IntegerField(default=0)
+    # Set each time a question is shown — time_taken_ms for scoring is measured from this.
+    question_started_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Quiz {self.code} ({self.status})"
+
+
+class QuizParticipant(models.Model):
+    game = models.ForeignKey(QuizGame, on_delete=models.CASCADE, related_name='participants')
+    student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL, related_name='quiz_participations')
+    anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.SET_NULL, related_name='quiz_participations')
+    display_name = models.CharField(max_length=64)
+    score = models.IntegerField(default=0)
+    connected = models.BooleanField(default=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    disconnected_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-score', 'joined_at']
+        constraints = [
+            models.CheckConstraint(
+                check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
+                name='quiz_participant_student_or_session_required'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.display_name} in {self.game.code}"
+
+
+class QuizAnswer(models.Model):
+    participant = models.ForeignKey(QuizParticipant, on_delete=models.CASCADE, related_name='answers')
+    question_index = models.IntegerField()
+    example = models.ForeignKey(Example, on_delete=models.CASCADE)
+    is_correct = models.BooleanField()
+    time_taken_ms = models.IntegerField()
+    points_awarded = models.IntegerField(default=0)
+    answered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('participant', 'question_index')
+
+    def __str__(self):
+        return f"Q{self.question_index} by {self.participant_id}: {'ok' if self.is_correct else 'x'}"

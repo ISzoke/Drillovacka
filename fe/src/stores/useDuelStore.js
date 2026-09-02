@@ -13,6 +13,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useAuthStore } from './useAuthStore';
+import { useGamificationStore } from './useGamificationStore';
 import { getSessionId } from '@/utils/sessionManager';
 import { createDuel, joinDuel, getDuelState } from '@/api/apiClient';
 
@@ -28,6 +29,8 @@ function myIdentity() {
 }
 
 export const useDuelStore = defineStore('duel', () => {
+  const gamStore = useGamificationStore();
+
   let ws = null;
   let reconnectTimer = null;
   let reconnectAttempts = 0;
@@ -42,20 +45,20 @@ export const useDuelStore = defineStore('duel', () => {
   const connectionStatus = ref('idle'); // idle | connecting | open | reconnecting | closed
   const errorMessage = ref(null);
 
-  const isMyLane = (slot) => slot === mySlot.value;
+  const isMyLane = (team, slot) => team === myTeam.value && slot === mySlot.value;
 
   const myTeamGamePosition = computed(() => roomState.value?.rope_position ?? 0);
 
-  async function createGame({ taskId, mode, visibility, timeLimitSeconds }) {
+  async function createGame({ taskId, mode, visibility, timeLimitSeconds, vsBot, botDifficulty, displayName }) {
     const identity = myIdentity();
-    const data = await createDuel(identity.student_id, { mode, visibility, taskId, timeLimitSeconds });
+    const data = await createDuel(identity.student_id, { mode, visibility, taskId, timeLimitSeconds, vsBot, botDifficulty, displayName });
     _applyRoomResponse(data);
     return data;
   }
 
-  async function joinGame(joinCode) {
+  async function joinGame(joinCode, displayName) {
     const identity = myIdentity();
-    const data = await joinDuel(identity.student_id, joinCode);
+    const data = await joinDuel(identity.student_id, joinCode, displayName);
     _applyRoomResponse(data);
     return data;
   }
@@ -145,9 +148,10 @@ export const useDuelStore = defineStore('duel', () => {
         break;
 
       case 'answer_result':
-        if (isMyLane(data.slot)) {
+        if (isMyLane(data.team, data.slot)) {
           lastResult.value = { isCorrect: data.is_correct, at: Date.now() };
           currentQuestion.value = data.finished ? null : data.next_example;
+          if (data.xp) gamStore.handleXPUpdate(data.xp);
         }
         if (roomState.value) {
           roomState.value = {
@@ -178,6 +182,12 @@ export const useDuelStore = defineStore('duel', () => {
     }
   }
 
+  function fillWithBot(difficulty) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ action: 'fill_with_bot', difficulty }));
+    }
+  }
+
   function disconnectSocket() {
     clearTimeout(reconnectTimer);
     reconnectAttempts = MAX_RECONNECT_ATTEMPTS; // suppress auto-reconnect on an intentional leave
@@ -191,6 +201,6 @@ export const useDuelStore = defineStore('duel', () => {
     code, myTeam, mySlot,
     roomState, currentQuestion, lastResult, connectionStatus, errorMessage,
     myTeamGamePosition,
-    createGame, joinGame, refreshState, connect, submitAnswer, disconnectSocket,
+    createGame, joinGame, refreshState, connect, submitAnswer, fillWithBot, disconnectSocket,
   };
 });

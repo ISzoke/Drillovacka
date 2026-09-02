@@ -43,3 +43,21 @@ export function clearSessionId() {
 export function hasSessionId() {
   return !!localStorage.getItem(SESSION_STORAGE_KEY);
 }
+
+const DISPLAY_NAME_STORAGE_KEY = 'anonymousDisplayName';
+
+/**
+ * Get the display name an anonymous user previously chose for duel/quiz
+ * (e.g. in a live game's leaderboard), or '' if they haven't set one yet.
+ */
+export function getDisplayName() {
+  return localStorage.getItem(DISPLAY_NAME_STORAGE_KEY) || '';
+}
+
+/**
+ * Persist the display name an anonymous user chose, so they aren't asked
+ * again on their next duel/quiz.
+ */
+export function setDisplayName(name) {
+  if (name) localStorage.setItem(DISPLAY_NAME_STORAGE_KEY, name);
+}

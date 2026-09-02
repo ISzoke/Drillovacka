@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -5049,6 +5049,27 @@ def _generate_duel_display_name():
     return f"{random.choice(_DUEL_ADJECTIVES)} {random.choice(_DUEL_NOUNS)} {random.randint(1, 99)}"
 
 
+def _resolve_display_name(student, requested_name):
+    """Registered students always show their username; anonymous players may
+    pick their own name (checked at duel/quiz join), falling back to a random
+    generated one if they didn't set one or typed only unusable characters."""
+    if student:
+        return student.username
+    # display_name isn't a utf8mb4 column — strip 4-byte chars (emoji etc.),
+    # the same issue that broke the bot's display name earlier this session.
+    name = ''.join(c for c in (requested_name or '').strip() if ord(c) <= 0xFFFF)[:64]
+    return name if name else _generate_duel_display_name()
+
+
+_BOT_DISPLAY_NAMES = {
+    # No emoji here — the display_name column isn't utf8mb4, so 4-byte chars
+    # (like 🤖) break the INSERT. Frontend prepends its own icon via is_bot.
+    'easy': 'Robot (ľahký)',
+    'medium': 'Robot (stredný)',
+    'hard': 'Robot (ťažký)',
+}
+
+
 def generate_duel_code(length=8):
     chars = _string.ascii_uppercase + _string.digits
     while True:
@@ -5078,6 +5099,7 @@ def _serialize_duel_game(game):
         'slot': p.slot,
         'display_name': p.display_name,
         'is_founder': p.is_founder,
+        'is_bot': p.is_bot,
         'connected': p.connected,
         'correct_count': p.correct_count,
         'is_student': p.student_id is not None,
@@ -5095,6 +5117,8 @@ def _serialize_duel_game(game):
         'winner_team': game.winner_team,
         'started_at': game.started_at.isoformat() if game.started_at else None,
         'required_count': required_count,
+        'vs_bot': game.vs_bot,
+        'bot_difficulty': game.bot_difficulty,
         'participants': participants,
     }
 
@@ -5105,8 +5129,14 @@ def create_duel_game(request):
     if not student and not session:
         return Response({'error': 'student_id or session_id required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    mode = request.data.get('mode')
-    visibility = request.data.get('visibility')
+    vs_bot = bool(request.data.get('vs_bot'))
+    bot_difficulty = request.data.get('bot_difficulty') or 'medium'
+    if vs_bot and bot_difficulty not in ('easy', 'medium', 'hard'):
+        return Response({'error': 'Invalid bot_difficulty'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # A bot game is always a private 1v1 — there's no one else to match it against.
+    mode = '1v1' if vs_bot else request.data.get('mode')
+    visibility = 'private' if vs_bot else request.data.get('visibility')
     task_id = request.data.get('task_id')
     time_limit_seconds = request.data.get('time_limit_seconds')
 
@@ -5128,13 +5158,22 @@ def create_duel_game(request):
         visibility=visibility,
         task=task,
         time_limit_seconds=time_limit_seconds,
+        vs_bot=vs_bot,
+        bot_difficulty=bot_difficulty if vs_bot else None,
     )
 
-    display_name = student.username if student else _generate_duel_display_name()
+    display_name = _resolve_display_name(student, request.data.get('display_name'))
     participant = DuelParticipant.objects.create(
         game=game, student=student, anonymous_session=session,
         team='A', slot=1, display_name=display_name, is_founder=True,
     )
+
+    if vs_bot:
+        # connected=True from the start — the bot has no socket of its own to open.
+        DuelParticipant.objects.create(
+            game=game, team='B', slot=1, is_bot=True, connected=True,
+            display_name=_BOT_DISPLAY_NAMES.get(bot_difficulty, 'Robot 🤖'),
+        )
 
     return Response({**_serialize_duel_game(game), 'you': {'team': participant.team, 'slot': participant.slot}},
                      status=status.HTTP_201_CREATED)
@@ -5169,7 +5208,7 @@ def join_duel_game(request):
         return Response({'error': 'Hra je plná'}, status=status.HTTP_409_CONFLICT)
 
     team, slot_num = slot
-    display_name = student.username if student else _generate_duel_display_name()
+    display_name = _resolve_display_name(student, request.data.get('display_name'))
     participant = DuelParticipant.objects.create(
         game=game, student=student, anonymous_session=session,
         team=team, slot=slot_num, display_name=display_name,
@@ -5201,3 +5240,94 @@ def list_public_duel_games(request):
 def get_duel_game_state(request, code):
     game = get_object_or_404(DuelGame, code=code.upper())
     return Response(_serialize_duel_game(game))
+
+
+# ─── Live Quiz (Kahoot-style, host-paced) ────────────────────────────────────
+
+def generate_quiz_code(length=8):
+    chars = _string.ascii_uppercase + _string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=length))
+        if not QuizGame.objects.filter(code=code).exists():
+            return code
+
+
+def _serialize_quiz_game(game):
+    participants = list(game.participants.all())
+    leaderboard = sorted(
+        [{'id': p.id, 'display_name': p.display_name, 'score': p.score, 'connected': p.connected} for p in participants],
+        key=lambda p: -p['score']
+    )
+    return {
+        'code': game.code,
+        'status': game.status,
+        'task_id': game.task_id,
+        'task_name': game.task.name,
+        'current_question_index': game.current_question_index,
+        'total_questions': len(game.question_order),
+        'participant_count': len(participants),
+        'leaderboard': leaderboard,
+    }
+
+
+@api_view(['POST'])
+def create_quiz_game(request):
+    teacher_id = request.data.get('teacher_id')
+    task_id = request.data.get('task_id')
+    if not teacher_id or not task_id:
+        return Response({'error': 'teacher_id and task_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    task = get_object_or_404(Task, id=task_id)
+    example_ids = list(task.example_set.values_list('id', flat=True))
+    if not example_ids:
+        return Response({'error': 'Sada neobsahuje žiadne príklady'}, status=status.HTTP_400_BAD_REQUEST)
+
+    random.shuffle(example_ids)
+    game = QuizGame.objects.create(
+        code=generate_quiz_code(),
+        teacher=teacher,
+        task=task,
+        question_order=example_ids,
+    )
+
+    return Response(_serialize_quiz_game(game), status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def join_quiz_game(request):
+    student, session = get_user_identity(request)
+    if not student and not session:
+        return Response({'error': 'student_id or session_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    code = (request.data.get('code') or '').strip().upper()
+    if not code:
+        return Response({'error': 'code is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        game = QuizGame.objects.get(code=code)
+    except QuizGame.DoesNotExist:
+        return Response({'error': 'Kvíz s týmto kódom neexistuje'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Rejoin case (e.g. reconnect after a page refresh) — same identity already has a slot.
+    existing = game.participants.filter(student=student, anonymous_session=session).first()
+    if existing:
+        return Response({**_serialize_quiz_game(game), 'you': {'participant_id': existing.id}}, status=status.HTTP_200_OK)
+
+    if game.status != 'waiting':
+        return Response({'error': 'Kvíz už začal alebo skončil'}, status=status.HTTP_409_CONFLICT)
+
+    display_name = _resolve_display_name(student, request.data.get('display_name'))
+    participant = QuizParticipant.objects.create(game=game, student=student, anonymous_session=session, display_name=display_name)
+
+    return Response({**_serialize_quiz_game(game), 'you': {'participant_id': participant.id}}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def get_quiz_game_state(request, code):
+    game = get_object_or_404(QuizGame, code=code.upper())
+    return Response(_serialize_quiz_game(game))
