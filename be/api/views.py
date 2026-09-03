@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer, StudentInsight
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -4325,17 +4325,35 @@ def get_classroom_student_detail(request, classroom_id, student_id):
             'completion': round(correct / total_examples * 100, 1) if total_examples > 0 else 0,
         })
 
-    # Recent attempts
+    # Problem examples for THIS student: grouped by example, worst success first
+    grouped = {}
+    for r in StudentExample.objects.filter(student=student).select_related('example'):
+        g = grouped.setdefault(r.example_id, {'example': r.example, 'n': 0, 'solved': 0})
+        g['n'] += 1
+        g['solved'] += 1 if r.solved else 0
+    weak_examples = []
+    for ex_id, g in grouped.items():
+        if g['n'] - g['solved'] <= 0:
+            continue
+        ans = g['example'].answers.first()
+        weak_examples.append({
+            'example_id': ex_id,
+            'question': g['example'].example,
+            'correct_answer': ans.answer if ans else '',
+            'attempts': g['n'],
+            'solved': g['solved'],
+            'wrong': g['n'] - g['solved'],
+            'accuracy': round(g['solved'] / g['n'] * 100, 1),
+        })
+    weak_examples.sort(key=lambda x: (x['accuracy'], -x['attempts']))
+    weak_examples = weak_examples[:15]
+
+    # Recent attempts (full log is paginated via student_attempt_log)
+    total_attempts = ExampleAttempt.objects.filter(student=student).count()
     recent = ExampleAttempt.objects.filter(
         student=student
     ).select_related('example').order_by('-created_at')[:20]
-    recent_attempts = [{
-        'id': a.id,
-        'example_text': a.example_text or a.example.example,
-        'transcription': a.transcription,
-        'is_correct': a.is_correct,
-        'created_at': a.created_at,
-    } for a in recent]
+    recent_attempts = [_serialize_attempt(a) for a in recent]
 
     # Badges
     badges = student.earned_badges.select_related('badge').all()
@@ -4358,8 +4376,63 @@ def get_classroom_student_detail(request, classroom_id, student_id):
         },
         'skill_mastery': skill_mastery,
         'task_progress': task_progress,
+        'weak_examples': weak_examples,
         'recent_attempts': recent_attempts,
+        'total_attempts': total_attempts,
         'badges': badge_data,
+    })
+
+
+def _serialize_attempt(a):
+    return {
+        'id': a.id,
+        'example_text': a.example_text or (a.example.example if a.example_id else ''),
+        'typed': a.parsed_answer or a.transcription,
+        'transcription': a.transcription,
+        'correct_answer': a.correct_answer,
+        'is_correct': a.is_correct,
+        'attempt_number': a.attempt_number,
+        'action': a.action,
+        'created_at': a.created_at,
+    }
+
+
+@api_view(['GET'])
+def student_attempt_log(request, classroom_id, student_id):
+    """Full, paginated attempt history for one student — every example they
+    answered, with what they typed and the correct answer."""
+    teacher_id = request.GET.get('teacher_id')
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    if not ClassroomStudent.objects.filter(classroom=classroom, student_id=student_id).exists():
+        return Response({'error': 'Student is not in this classroom'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        limit = max(1, min(200, int(request.GET.get('limit', 100))))
+    except (TypeError, ValueError):
+        limit = 100
+    try:
+        offset = max(0, int(request.GET.get('offset', 0)))
+    except (TypeError, ValueError):
+        offset = 0
+    only = request.GET.get('only', 'all')
+
+    qs = ExampleAttempt.objects.filter(student_id=student_id).select_related('example')
+    if only == 'wrong':
+        qs = qs.filter(is_correct=False)
+    elif only == 'correct':
+        qs = qs.filter(is_correct=True)
+    total = qs.count()
+    rows = qs.order_by('-created_at')[offset:offset + limit]
+    return Response({
+        'count': total,
+        'offset': offset,
+        'limit': limit,
+        'results': [_serialize_attempt(a) for a in rows],
     })
 
 
@@ -4426,6 +4499,171 @@ def get_classroom_task_details(request, classroom_id, task_id):
         'task_name': task.name,
         'examples': data,
     })
+
+
+# ─── Classroom hardest / easiest examples ────────────────────────────────────
+
+def _classroom_example_rows(classroom, student_ids):
+    """
+    Per-example class stats across every task assigned to the classroom.
+    Returns rows: {example_id, question, task_id, task_name, attempts, solved, accuracy}.
+    """
+    rows = []
+    tasks = Task.objects.filter(classroom_assignments__classroom=classroom).distinct()
+    for task in tasks:
+        for ex in task.example_set.all().only('id', 'example'):
+            records = StudentExample.objects.filter(student_id__in=student_ids, example=ex)
+            total = records.count()
+            if total == 0:
+                continue
+            solved = records.filter(solved=True).count()
+            rows.append({
+                'example_id': ex.id,
+                'question': ex.example,
+                'task_id': task.id,
+                'task_name': task.name,
+                'attempts': total,
+                'solved': solved,
+                'accuracy': round(solved / total * 100, 1),
+            })
+    return rows
+
+
+@api_view(['GET'])
+def get_classroom_hardest_examples(request, classroom_id):
+    teacher_id = request.GET.get('teacher_id')
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        min_attempts = max(1, int(request.GET.get('min_attempts', 3)))
+    except (TypeError, ValueError):
+        min_attempts = 3
+    try:
+        limit = max(1, min(50, int(request.GET.get('limit', 10))))
+    except (TypeError, ValueError):
+        limit = 10
+
+    student_ids = list(ClassroomStudent.objects.filter(
+        classroom=classroom
+    ).values_list('student_id', flat=True))
+
+    rows = [r for r in _classroom_example_rows(classroom, student_ids)
+            if r['attempts'] >= min_attempts]
+
+    hardest = sorted(rows, key=lambda r: (r['accuracy'], -r['attempts']))[:limit]
+    easiest = sorted(rows, key=lambda r: (-r['accuracy'], -r['attempts']))[:limit]
+
+    return Response({
+        'min_attempts': min_attempts,
+        'evaluated_examples': len(rows),
+        'hardest': hardest,
+        'easiest': easiest,
+    })
+
+
+# ─── Student AI insight (on-demand, cached) ──────────────────────────────────
+
+def _student_mastery_rows(student):
+    """Returns (skill_mastery list, avg_mastery_pct) for a student."""
+    from .mastery import compute_final_mastery
+    masteries = SkillMastery.objects.filter(student=student).select_related('skill')
+    rows, values = [], []
+    for m in masteries:
+        fm = compute_final_mastery(m)
+        values.append(fm['final_mastery'])
+        rows.append({
+            'skill_id': m.skill_id,
+            'skill_name': m.skill.name,
+            'mastery': round(fm['final_mastery'] * 100, 1),
+            'examples_count': fm['example_count'],
+        })
+    avg = round(sum(values) / len(values) * 100, 1) if values else 0
+    return rows, avg
+
+
+@api_view(['GET', 'POST'])
+def student_ai_insight(request, classroom_id, student_id):
+    teacher_id = request.GET.get('teacher_id') if request.method == 'GET' else request.data.get('teacher_id')
+
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response({'error': 'Classroom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not teacher_id or classroom.teacher_id != int(teacher_id):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    if not ClassroomStudent.objects.filter(classroom=classroom, student_id=student_id).exists():
+        return Response({'error': 'Student is not in this classroom'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    existing = StudentInsight.objects.filter(student=student, classroom=classroom).first()
+
+    def _serialize(row):
+        return {
+            'payload': row.payload,
+            'source_attempts': row.source_attempts,
+            'model_used': row.model_used,
+            'generated_at': row.generated_at,
+        }
+
+    if request.method == 'GET':
+        return Response({'insight': _serialize(existing) if existing else None})
+
+    # POST — regenerate (debounce rapid double-clicks)
+    if existing and (timezone.now() - existing.generated_at).total_seconds() < 30:
+        return Response({'insight': _serialize(existing), 'cached': True})
+
+    attempts_qs = ExampleAttempt.objects.filter(
+        student=student
+    ).select_related('example').order_by('-created_at')[:60]
+    attempts = [{
+        'example': a.example_text or (a.example.example if a.example_id else ''),
+        'typed': a.parsed_answer or a.transcription,
+        'correct': a.correct_answer,
+        'is_correct': a.is_correct,
+        'skills': a.practiced_skill_names or [],
+    } for a in attempts_qs]
+
+    skill_mastery, avg_mastery = _student_mastery_rows(student)
+    all_records = StudentExample.objects.filter(student=student)
+    total = all_records.count()
+    solved = all_records.filter(solved=True).count()
+    overall_accuracy = round(solved / total * 100, 1) if total else 0
+
+    from .generators.student_insight_generator import generate_student_insight
+    try:
+        payload = generate_student_insight({
+            'grade': student.grade,
+            'overall_accuracy': overall_accuracy,
+            'skill_mastery': skill_mastery,
+            'attempts': attempts,
+        })
+    except ValueError as e:
+        return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    except RuntimeError as e:
+        return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    row, _ = StudentInsight.objects.update_or_create(
+        student=student, classroom=classroom,
+        defaults={
+            'payload': payload,
+            'source_attempts': len(attempts),
+            'model_used': payload.get('meta', {}).get('model', ''),
+        },
+    )
+    return Response({'insight': _serialize(row)})
 
 
 # ─── Classroom Task Homework Stats ───────────────────────────────────────────

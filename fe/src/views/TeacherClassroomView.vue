@@ -13,6 +13,8 @@ import {
   getClassroomAnalytics,
   getClassroomStudentDetail,
   getClassroomTaskHomeworkStats,
+  getClassroomHardestExamples,
+  getClassroomTaskDetails,
   createQuiz,
 } from '@/api/apiClient';
 import { useLanguageStore } from '@/stores/useLanguageStore';
@@ -29,6 +31,7 @@ const { t } = useI18n();
 
 const classroom = ref(null);
 const analytics = ref(null);
+const hardestExamples = ref(null);
 const loading = ref(true);
 const activeTab = ref('students');
 const showDeleteConfirm = ref(false);
@@ -44,6 +47,9 @@ const studentDetailsLoading = reactive({});
 const expandedTaskStats = reactive({});
 const taskHomeworkStats = reactive({});
 const taskHomeworkLoading = reactive({});
+
+// Per-example breakdown (Tasks tab, lazy per task)
+const taskExampleDetails = reactive({});
 
 const joinUrl = computed(() => {
   if (!classroom.value) return '';
@@ -66,7 +72,18 @@ const fetchAnalytics = async () => {
   } catch (e) {
     console.error('Error fetching analytics:', e);
   }
+  try {
+    hardestExamples.value = await getClassroomHardestExamples(props.classroomId, authStore.id);
+  } catch (e) {
+    console.error('Error fetching hardest examples:', e);
+  }
 };
+
+const accuracyColor = (acc) =>
+  acc == null ? 'text-gray-400'
+  : acc >= 80 ? 'text-green-600 dark:text-green-400'
+  : acc >= 50 ? 'text-amber-500'
+  : 'text-red-500 dark:text-red-400';
 
 const copyLink = () => {
   navigator.clipboard.writeText(joinUrl.value);
@@ -178,7 +195,8 @@ const toggleStudentExpand = async (student) => {
 
 const toggleTaskStats = async (assignment) => {
   expandedTaskStats[assignment.task_id] = !expandedTaskStats[assignment.task_id];
-  if (expandedTaskStats[assignment.task_id] && !taskHomeworkStats[assignment.task_id]) {
+  if (!expandedTaskStats[assignment.task_id]) return;
+  if (!taskHomeworkStats[assignment.task_id]) {
     taskHomeworkLoading[assignment.task_id] = true;
     try {
       taskHomeworkStats[assignment.task_id] = await getClassroomTaskHomeworkStats(
@@ -188,6 +206,17 @@ const toggleTaskStats = async (assignment) => {
       taskHomeworkStats[assignment.task_id] = null;
     }
     taskHomeworkLoading[assignment.task_id] = false;
+  }
+  if (!taskExampleDetails[assignment.task_id]) {
+    try {
+      const d = await getClassroomTaskDetails(props.classroomId, assignment.task_id, authStore.id);
+      d.examples = (d.examples || [])
+        .filter(e => e.attempts > 0)
+        .sort((a, b) => (a.accuracy ?? 999) - (b.accuracy ?? 999));
+      taskExampleDetails[assignment.task_id] = d;
+    } catch (e) {
+      taskExampleDetails[assignment.task_id] = null;
+    }
   }
 };
 
@@ -479,6 +508,21 @@ onMounted(fetchData);
                   </span>
                 </div>
               </template>
+
+              <!-- By example -->
+              <div v-if="taskExampleDetails[a.task_id]?.examples?.length"
+                   class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                <div class="text-xs font-medium text-gray-400 mb-1">{{ t('byExampleHeading') }}</div>
+                <div v-for="ex in taskExampleDetails[a.task_id].examples" :key="ex.id"
+                     class="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs py-1 px-1 items-center
+                            border-t border-slate-100 dark:border-slate-700/30">
+                  <span class="font-mono text-slate-700 dark:text-slate-300">{{ ex.question }}</span>
+                  <span class="text-right text-slate-400">{{ ex.solved }}/{{ ex.attempts }}</span>
+                  <span class="text-right font-medium w-12" :class="accuracyColor(ex.accuracy)">
+                    {{ ex.accuracy == null ? '—' : ex.accuracy + '%' }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -539,6 +583,34 @@ onMounted(fetchData);
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Hardest / easiest examples -->
+          <div v-if="hardestExamples?.hardest?.length || hardestExamples?.easiest?.length"
+               class="grid gap-4 md:grid-cols-2 mt-8">
+            <div v-for="bucket in [
+                   { key: 'hardest', title: t('hardestExamples'), rows: hardestExamples.hardest },
+                   { key: 'easiest', title: t('easiestExamples'), rows: hardestExamples.easiest },
+                 ]" :key="bucket.key"
+                 class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-baseline justify-between">
+                <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ bucket.title }}</h4>
+                <span class="text-[11px] text-gray-400">{{ t('examplesLowN', { n: hardestExamples.min_attempts }) }}</span>
+              </div>
+              <table class="w-full text-xs">
+                <tbody>
+                  <tr v-for="r in bucket.rows" :key="bucket.key + '-' + r.example_id"
+                      class="border-b border-slate-100 dark:border-slate-700/40 last:border-0">
+                    <td class="py-2 px-4 font-mono text-slate-700 dark:text-slate-200 whitespace-nowrap">{{ r.question }}</td>
+                    <td class="py-2 px-2 text-gray-400 truncate max-w-[10rem]">{{ r.task_name }}</td>
+                    <td class="py-2 px-2 text-right text-gray-400 whitespace-nowrap">{{ r.solved }}/{{ r.attempts }}</td>
+                    <td class="py-2 px-4 text-right font-semibold whitespace-nowrap" :class="accuracyColor(r.accuracy)">
+                      {{ r.accuracy }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </template>
       </div>

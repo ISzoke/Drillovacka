@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'DejaVu Sans', sans-serif; color: #111; }
+
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+
+  .masthead {
+    height: {{ masthead_mm }}mm;
+    text-align: center;
+    border-bottom: 0.5mm solid #111;
+    margin-bottom: 4mm;
+    overflow: hidden;
+  }
+  .masthead h1 { font-size: 15pt; margin: 0 0 2mm 0; }
+  .masthead .sub { font-size: 9.5pt; color: #555; }
+
+  .cols { display: flex; gap: 10mm; height: {{ rows_area_mm }}mm; }
+  .col { flex: 1 1 0; min-width: 0; }
+
+  .prow {
+    height: {{ row_h_mm }}mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3mm;
+    border-bottom: 0.25mm dotted #bbb;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .prow .q { font-size: 13pt; overflow: hidden; text-overflow: ellipsis; }
+  .prow .q .n { font-weight: bold; color: #888; margin-right: 2.5mm; }
+  .prow .blank {
+    flex: 0 0 auto;
+    width: 26mm;
+    border-bottom: 0.3mm solid #444;
+    align-self: flex-end;
+    margin-bottom: 2.2mm;
+  }
+
+  /* answer page */
+  .prow .a { font-size: 13pt; font-weight: bold; }
+  .apage .prow { justify-content: flex-start; }
+  /* mirror: answer pinned left + horizontally flipped, so once the parent
+     flips the sheet to read it through page 1 it sits at the right end of the
+     row (or column), over the blank next to its problem. */
+  .apage.mirror .prow .a { display: inline-block; transform: scaleX(-1); }
+
+  .hint {
+    margin-top: 4mm;
+    font-size: 8.5pt;
+    color: #777;
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* math bits produced by latex_to_html */
+  .frac {
+    display: inline-block;
+    vertical-align: -0.6em;
+    text-align: center;
+    margin: 0 0.6mm;
+  }
+  .frac .num {
+    display: block;
+    border-bottom: 0.25mm solid #111;
+    padding: 0 1mm;
+    font-weight: normal;
+  }
+  .frac .den { display: block; padding: 0 1mm; }
+  .sqrtarg { border-top: 0.25mm solid #111; padding: 0 0.6mm; }
+  .rootidx { font-size: 7pt; }
+</style>
+</head>
+<body>
+
+<!-- Page 1: problems -->
+<div class="page">
+  <div class="masthead">
+    <h1>{{ title }}</h1>
+    <div class="sub">{% if student_name %}{{ student_name }} &middot; {% endif %}{{ today }}</div>
+  </div>
+  <div class="cols">
+    {% for col in front_cols %}
+    <div class="col">
+      {% for it in col %}
+      <div class="prow">
+        <span class="q"><span class="n">{{ it.number }}.</span>{{ it.html|safe }}</span>
+        <span class="blank">&nbsp;</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% if show_answer_page and mirror %}
+  <div class="hint">
+    Riešenie je zrkadlovo na druhej strane — priložte list k svetlu a správne odpovede uvidíte cez papier na konci každého riadku.
+  </div>
+  {% endif %}
+</div>
+
+{% if show_answer_page %}
+<!-- Page 2: answers -->
+<div class="page apage {% if mirror %}mirror{% endif %}">
+  <div class="masthead">
+    <h1>{% if mirror %}Riešenie (zrkadlovo){% else %}Riešenie{% endif %}</h1>
+    <div class="sub">{{ title }}</div>
+  </div>
+  <div class="cols">
+    {% for col in back_cols %}
+    <div class="col">
+      {% for it in col %}
+      <div class="prow">
+        <span class="a">{% if not mirror %}<span class="n">{{ it.number }}.</span>{% endif %}{{ it.answer_html|safe }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+</body>
+</html>

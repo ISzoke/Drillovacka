@@ -1128,6 +1128,41 @@ export const getClassroomTaskHomeworkStats = async (classroomId, taskId, teacher
   return translateTaskNamesDeep(response.data, currentLanguage());
 };
 
+export const getClassroomHardestExamples = async (classroomId, teacherId, { minAttempts = 3, limit = 8 } = {}) => {
+  const response = await apiClient.get(`classrooms/${classroomId}/hardest-examples/`, {
+    params: { teacher_id: teacherId, min_attempts: minAttempts, limit },
+  });
+  return translateTaskNamesDeep(response.data, currentLanguage());
+};
+
+export const getClassroomTaskDetails = async (classroomId, taskId, teacherId) => {
+  const response = await apiClient.get(`classrooms/${classroomId}/tasks/${taskId}/details/`, {
+    params: { teacher_id: teacherId },
+  });
+  return translateTaskNamesDeep(response.data, currentLanguage());
+};
+
+export const getStudentAttempts = async (classroomId, studentId, teacherId, { only = 'all', limit = 100, offset = 0 } = {}) => {
+  const response = await apiClient.get(`classrooms/${classroomId}/students/${studentId}/attempts/`, {
+    params: { teacher_id: teacherId, only, limit, offset },
+  });
+  return response.data;
+};
+
+export const getStudentAiInsight = async (classroomId, studentId, teacherId) => {
+  const response = await apiClient.get(`classrooms/${classroomId}/students/${studentId}/ai-insight/`, {
+    params: { teacher_id: teacherId },
+  });
+  return response.data;
+};
+
+export const generateStudentAiInsight = async (classroomId, studentId, teacherId) => {
+  const response = await apiClient.post(`classrooms/${classroomId}/students/${studentId}/ai-insight/`, {
+    teacher_id: teacherId,
+  });
+  return response.data;
+};
+
 export const teacherGenerateTaskPreview = async (teacherId, type, count, description, segments = null) => {
   const response = await apiClient.post('teacher/generate-task/', {
     teacher_id: teacherId, type, count, description, language: currentLanguage(),
@@ -1208,6 +1243,11 @@ export const teacherPrintTest = async (teacherId, payload) => {
   const response = await apiClient.post('teacher/print/test/', {
     teacher_id: teacherId, ...payload,
   }, { responseType: 'blob' });
+  return response.data;
+};
+
+export const parentPrintTest = async (payload) => {
+  const response = await apiClient.post('print/parent/', payload, { responseType: 'blob' });
   return response.data;
 };
 

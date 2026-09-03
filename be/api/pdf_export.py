@@ -20,6 +20,7 @@ from pypdf import PdfReader, PdfWriter, Transformation
 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -671,6 +672,133 @@ def teacher_print_test(request):
         pdf_bytes = HTML(string=html).write_pdf()
 
     safe_title = re.sub(r'[^\w\- ]', '', title).strip().replace(' ', '_') or 'test'
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{safe_title}.pdf"'
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Parent / student practice sheet (Fáza 2.2)
+# ---------------------------------------------------------------------------
+
+@api_view(['POST'])
+def parent_print_test(request):
+    """
+    Printable practice sheet for a parent to give their child.
+
+    Optional `mirror` mode renders a second page where every answer is
+    horizontally mirrored (transform: scaleX(-1)) and vertically aligned to its
+    problem on page 1. Printed double-sided (or just held behind page 1 against
+    a light), the parent reads the correct answer *through* the paper, the right
+    way round, sitting next to the matching problem.
+
+    No login required — only public/admin examples (owner_teacher is null) or
+    ad-hoc {example, answer} items are accepted.
+    """
+    data = request.data
+
+    items = data.get('items') or []
+    if not isinstance(items, list) or not items:
+        return Response({'error': 'items required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    entries = []
+    try:
+        for it in items[:40]:
+            if it.get('example_id') is not None:
+                entries.append({'id': int(it['example_id'])})
+            else:
+                entries.append({
+                    'id': None,
+                    'example': str(it['example']),
+                    'answer': str(it.get('answer') or ''),
+                })
+    except (KeyError, TypeError, ValueError):
+        return Response(
+            {'error': 'items must be [{example_id}] or [{example, answer}]'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not entries:
+        return Response({'error': 'items required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    ordered_ids = [e['id'] for e in entries if e['id'] is not None]
+    by_id = {}
+    if ordered_ids:
+        examples = Example.objects.filter(id__in=ordered_ids).prefetch_related('answers')
+        by_id = {ex.id: ex for ex in examples}
+        missing = [eid for eid in ordered_ids if eid not in by_id]
+        if missing:
+            return Response({'error': f'Examples not found: {missing}'}, status=status.HTTP_404_NOT_FOUND)
+        for ex in by_id.values():
+            if ex.owner_teacher_id is not None:
+                return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    title = (data.get('title') or '').strip() or 'Precvičovacia písomka'
+    student_name = (data.get('student_name') or '').strip()
+    mirror = bool(data.get('mirror', True))
+    show_answer_page = bool(data.get('show_answer_page', True))
+    columns = 2 if str(data.get('columns', 1)) == '2' else 1
+
+    built = []
+    for n, e in enumerate(entries, start=1):
+        if e['id'] is not None:
+            ex = by_id[e['id']]
+            text = ex.example or ''
+            ans = ex.answers.first()
+            answer_text = ans.answer if ans else ''
+        else:
+            text = e['example']
+            answer_text = e['answer']
+        text = re.sub(r'=\s*\?\s*$', '', text).rstrip()
+        built.append({
+            'number': n,
+            'html': latex_to_html(text),
+            'answer_html': latex_to_html(answer_text) or '—',
+        })
+
+    # Fixed geometry so page 1 (problems) and page 2 (answers) are each exactly
+    # one A4 page with identical row positions — that alignment is what makes the
+    # "hold to the light" trick work. rows_area is a fixed band; every row is
+    # rows_area / rows_per_col tall, so the problems never spill onto a 2nd page.
+    masthead_mm = 22
+    rows_area_mm = 208
+    n = max(1, len(built))
+    per_col = -(-n // columns)                       # ceil(n / columns)
+    row_h = min(24.0, rows_area_mm / max(1, per_col))
+
+    front_cols = [built[i * per_col:(i + 1) * per_col] for i in range(columns)]
+    # On the mirrored answer page the whole sheet gets flipped left↔right, so
+    # the columns are rendered in reverse order and each answer is pinned to the
+    # left of its cell — after the flip it lands at the right end of the row /
+    # column, over the answer blank next to its problem.
+    back_cols = list(reversed(front_cols)) if mirror else front_cols
+
+    context = {
+        'title': title,
+        'student_name': student_name,
+        'today': timezone.localdate().strftime('%d.%m.%Y'),
+        'front_cols': front_cols,
+        'back_cols': back_cols,
+        'columns': columns,
+        'mirror': mirror,
+        'show_answer_page': show_answer_page,
+        'row_h_mm': round(row_h, 3),
+        'masthead_mm': masthead_mm,
+        'rows_area_mm': rows_area_mm,
+    }
+    html = render_to_string('pdf/parent_sheet.html', context)
+    if request.GET.get('debug') == 'html':
+        return HttpResponse(html, content_type='text/html; charset=utf-8')
+
+    try:
+        from weasyprint import HTML
+    except Exception as exc:
+        return Response(
+            {'error': f'PDF engine unavailable: {exc}'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    pdf_bytes = HTML(string=html).write_pdf()
+    safe_title = re.sub(r'[^\w\- ]', '', title).strip().replace(' ', '_') or 'pisomka'
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{safe_title}.pdf"'
     return response

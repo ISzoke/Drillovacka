@@ -49,6 +49,7 @@ import QuizPlayView from '@/views/QuizPlayView.vue'
 import JoinClassroomView from '@/views/JoinClassroomView.vue'
 import StudentClassroomsView from '@/views/StudentClassroomsView.vue'
 import StudentClassroomDetailView from '@/views/StudentClassroomDetailView.vue'
+import ParentPrintView from '@/views/ParentPrintView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -317,6 +318,11 @@ const router = createRouter({
       component: StudentClassroomDetailView,
       meta: { requiresAuth: true },
       props: true,
+    },
+    {
+      path: '/skusobna-pisomka',
+      name: 'parent-print',
+      component: ParentPrintView,
     },
 
     // Duel (tug-of-war) — open to anonymous and registered users alike

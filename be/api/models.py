@@ -705,3 +705,23 @@ class QuizAnswer(models.Model):
 
     def __str__(self):
         return f"Q{self.question_index} by {self.participant_id}: {'ok' if self.is_correct else 'x'}"
+
+
+class StudentInsight(models.Model):
+    """
+    Cached AI-generated performance summary for one student (optionally scoped to
+    a classroom). Regenerated on demand by the teacher; only the latest is kept.
+    """
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='insights')
+    classroom = models.ForeignKey(Classroom, null=True, blank=True,
+                                  on_delete=models.CASCADE, related_name='student_insights')
+    payload = models.JSONField(default=dict)          # {strengths, mistake_patterns, recommendations}
+    source_attempts = models.IntegerField(default=0)  # how many attempts fed the prompt
+    model_used = models.CharField(max_length=64, blank=True, default='')
+    generated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('student', 'classroom')
+
+    def __str__(self):
+        return f"Insight for {self.student.username} ({self.generated_at:%Y-%m-%d %H:%M})"
