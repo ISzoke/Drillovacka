@@ -3078,23 +3078,26 @@ def get_engagement_stats(request):
             for i in range(14)
         ]
 
-    duel_qs = DuelGame.objects.all()
+    duel_qs = DuelGame.objects.prefetch_related('participants')
     duel_stats = counts(duel_qs)
     duel_stats['by_status'] = dict(duel_qs.order_by().values_list('status').annotate(n=Count('id')))
     duel_stats['daily'] = daily_series(duel_qs)
     duel_stats['recent'] = [{
         'code': g.code, 'mode': g.mode, 'visibility': g.visibility, 'status': g.status,
-        'vs_bot': g.vs_bot, 'participant_count': g.participants.count(), 'created_at': g.created_at,
-    } for g in duel_qs.order_by('-created_at')[:15]]
+        'vs_bot': g.vs_bot,
+        'participants': [p.display_name for p in g.participants.all()],
+        'created_at': g.created_at,
+    } for g in duel_qs.order_by('-created_at')]
 
-    quiz_qs = QuizGame.objects.select_related('teacher')
+    quiz_qs = QuizGame.objects.select_related('teacher').prefetch_related('participants')
     quiz_stats = counts(quiz_qs)
     quiz_stats['by_status'] = dict(quiz_qs.order_by().values_list('status').annotate(n=Count('id')))
     quiz_stats['daily'] = daily_series(quiz_qs)
     quiz_stats['recent'] = [{
-        'code': g.code, 'teacher_name': _teacher_display_name(g.teacher),
-        'participant_count': g.participants.count(), 'status': g.status, 'created_at': g.created_at,
-    } for g in quiz_qs.order_by('-created_at')[:15]]
+        'code': g.code, 'teacher_name': _teacher_display_name(g.teacher), 'status': g.status,
+        'participants': [p.display_name for p in g.participants.all()],
+        'created_at': g.created_at,
+    } for g in quiz_qs.order_by('-created_at')]
 
     print_qs = PrintEvent.objects.select_related('teacher')
     print_stats = counts(print_qs)
@@ -3103,7 +3106,7 @@ def get_engagement_stats(request):
     print_stats['recent'] = [{
         'kind': p.kind, 'teacher_name': _teacher_display_name(p.teacher),
         'item_count': p.item_count, 'created_at': p.created_at,
-    } for p in print_qs.order_by('-created_at')[:15]]
+    } for p in print_qs.order_by('-created_at')]
 
     return Response({'duel': duel_stats, 'quiz': quiz_stats, 'print': print_stats})
 

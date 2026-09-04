@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { RouterLink } from 'vue-router';
 import { getRecentActivity } from '@/api/apiClient';
 import Spinner from '@/components/Spinner.vue';
 import { useI18n } from 'vue-i18n';
@@ -49,6 +50,10 @@ const actionClass = (row) => {
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t('activityAnalyticsTitle') }}</h1>
       <div class="flex items-center gap-3">
+        <RouterLink to="/analytics/engagement"
+                class="px-4 py-1.5 bg-accent text-white rounded-lg text-sm hover:opacity-90 whitespace-nowrap">
+          🪢🎮🖨️ {{ t('navEngagement') }}
+        </RouterLink>
         <select v-model="limit" @change="load"
                 class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600
                        bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm">

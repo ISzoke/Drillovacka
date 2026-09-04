@@ -106,7 +106,7 @@ const printTotal = computed(() => stats.value?.print?.total ?? 0);
                 <td class="px-3 py-2 font-mono">{{ g.code }}</td>
                 <td class="px-3 py-2">{{ g.mode }}<span v-if="g.vs_bot"> 🤖</span></td>
                 <td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full" :class="statusBadgeClass(g.status)">{{ g.status }}</span></td>
-                <td class="px-3 py-2">{{ g.participant_count }}</td>
+                <td class="px-3 py-2">{{ g.participants.join(', ') || '—' }}</td>
               </tr>
             </tbody>
           </table>
@@ -139,7 +139,7 @@ const printTotal = computed(() => stats.value?.print?.total ?? 0);
                 <td class="px-3 py-2 font-mono">{{ g.code }}</td>
                 <td class="px-3 py-2">{{ g.teacher_name || '—' }}</td>
                 <td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full" :class="statusBadgeClass(g.status)">{{ g.status }}</span></td>
-                <td class="px-3 py-2">{{ g.participant_count }}</td>
+                <td class="px-3 py-2">{{ g.participants.join(', ') || '—' }}</td>
               </tr>
             </tbody>
           </table>
