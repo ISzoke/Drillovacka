@@ -15,6 +15,7 @@ import GradeTopicsView from '@/views/GradeTopicsView.vue'
 import SkillAnalyticsView from '@/views/SkillAnalyticsView.vue'
 import AdminMyDataView from '@/views/AdminMyDataView.vue'
 import AdminActivityView from '@/views/AdminActivityView.vue'
+import AdminEngagementView from '@/views/AdminEngagementView.vue'
 import AdminTeachersView from '@/views/AdminTeachersView.vue'
 import BulkImportView from '@/views/BulkImportView.vue'
 import LeaderboardView from '@/views/LeaderboardView.vue'
@@ -152,6 +153,12 @@ const router = createRouter({
       path: '/analytics/activity',
       name: 'admin-activity',
       component: AdminActivityView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/analytics/engagement',
+      name: 'admin-engagement',
+      component: AdminEngagementView,
       meta: { requiresAdmin: true }
     },
     {

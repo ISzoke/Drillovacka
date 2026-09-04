@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer, StudentInsight
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer, StudentInsight, PrintEvent
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -3029,6 +3029,83 @@ def get_recent_activity(request):
             'source': a.source,
         })
     return Response(data)
+
+
+def _teacher_display_name(teacher):
+    if not teacher:
+        return None
+    full = f"{teacher.first_name} {teacher.last_name}".strip()
+    return full or teacher.email
+
+
+@api_view(['GET'])
+def get_engagement_stats(request):
+    """
+    Usage stats for the newer features (duel, live kvíz, PDF tlač) — so it's
+    visible from the admin panel whether real users actually touch them, not
+    just that they work. Same as get_recent_activity above, this endpoint has
+    no server-side auth check of its own; it's protected only by the
+    frontend's requiresAdmin route guard, matching the existing pattern here.
+    """
+    now = timezone.now()
+    since_24h = now - timezone.timedelta(hours=24)
+    since_7d = now - timezone.timedelta(days=7)
+    since_30d = now - timezone.timedelta(days=30)
+    window_start = (now - timezone.timedelta(days=13)).date()  # 14-day window incl. today
+
+    def counts(qs):
+        return {
+            'total': qs.count(),
+            'last_24h': qs.filter(created_at__gte=since_24h).count(),
+            'last_7d': qs.filter(created_at__gte=since_7d).count(),
+            'last_30d': qs.filter(created_at__gte=since_30d).count(),
+        }
+
+    def daily_series(qs):
+        # .order_by() clears the model's default Meta.ordering (both DuelGame
+        # and QuizGame order by -created_at) — left in place, Django folds that
+        # ordering field into the GROUP BY since it's not in values(), which
+        # (created_at being ~unique per row) would silently turn every day's
+        # count into 1. Same reason by_status below clears it too.
+        rows = (
+            qs.order_by().filter(created_at__date__gte=window_start)
+            .annotate(day=TruncDate('created_at')).values('day').annotate(n=Count('id'))
+        )
+        by_day = {r['day']: r['n'] for r in rows}
+        return [
+            {'date': (window_start + timezone.timedelta(days=i)).isoformat(),
+             'count': by_day.get(window_start + timezone.timedelta(days=i), 0)}
+            for i in range(14)
+        ]
+
+    duel_qs = DuelGame.objects.all()
+    duel_stats = counts(duel_qs)
+    duel_stats['by_status'] = dict(duel_qs.order_by().values_list('status').annotate(n=Count('id')))
+    duel_stats['daily'] = daily_series(duel_qs)
+    duel_stats['recent'] = [{
+        'code': g.code, 'mode': g.mode, 'visibility': g.visibility, 'status': g.status,
+        'vs_bot': g.vs_bot, 'participant_count': g.participants.count(), 'created_at': g.created_at,
+    } for g in duel_qs.order_by('-created_at')[:15]]
+
+    quiz_qs = QuizGame.objects.select_related('teacher')
+    quiz_stats = counts(quiz_qs)
+    quiz_stats['by_status'] = dict(quiz_qs.order_by().values_list('status').annotate(n=Count('id')))
+    quiz_stats['daily'] = daily_series(quiz_qs)
+    quiz_stats['recent'] = [{
+        'code': g.code, 'teacher_name': _teacher_display_name(g.teacher),
+        'participant_count': g.participants.count(), 'status': g.status, 'created_at': g.created_at,
+    } for g in quiz_qs.order_by('-created_at')[:15]]
+
+    print_qs = PrintEvent.objects.select_related('teacher')
+    print_stats = counts(print_qs)
+    print_stats['by_kind'] = dict(print_qs.order_by().values_list('kind').annotate(n=Count('id')))
+    print_stats['daily'] = daily_series(print_qs)
+    print_stats['recent'] = [{
+        'kind': p.kind, 'teacher_name': _teacher_display_name(p.teacher),
+        'item_count': p.item_count, 'created_at': p.created_at,
+    } for p in print_qs.order_by('-created_at')[:15]]
+
+    return Response({'duel': duel_stats, 'quiz': quiz_stats, 'print': print_stats})
 
 
 @api_view(['GET'])

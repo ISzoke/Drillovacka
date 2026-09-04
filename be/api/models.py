@@ -725,3 +725,20 @@ class StudentInsight(models.Model):
 
     def __str__(self):
         return f"Insight for {self.student.username} ({self.generated_at:%Y-%m-%d %H:%M})"
+
+
+class PrintEvent(models.Model):
+    """
+    One successful PDF generation — logged purely so the admin usage-stats
+    page (see get_engagement_stats) can show whether print export is actually
+    being used, since neither pdf_export.py view persisted anything before.
+    """
+    KIND_CHOICES = [('teacher', 'Teacher test'), ('parent', 'Parent/student sheet')]
+
+    kind = models.CharField(max_length=7, choices=KIND_CHOICES)
+    teacher = models.ForeignKey(Teacher, null=True, blank=True, on_delete=models.SET_NULL, related_name='print_events')
+    item_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.kind} print ({self.item_count} items) at {self.created_at:%Y-%m-%d %H:%M}"

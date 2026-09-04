@@ -143,6 +143,7 @@ const handleLogoClick = () => {
             <RouterLink to="/tasks/grades" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('tasksByGrade') }}</RouterLink>
             <RouterLink to="/skill-creator" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('skills') }}</RouterLink>
             <RouterLink to="/analytics/activity" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('navActivity') }}</RouterLink>
+            <RouterLink to="/analytics/engagement" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('navEngagement') }}</RouterLink>
             <RouterLink to="/admin/teachers" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('navTeachers') }}</RouterLink>
             <RouterLink to="/analytics/my-data" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('myData') }}</RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">{{ t('contact') }}</RouterLink>
@@ -254,6 +255,7 @@ const handleLogoClick = () => {
             <RouterLink to="/tasks/grades" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('tasksByGrade') }}</RouterLink>
             <RouterLink to="/skill-creator" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('skills') }}</RouterLink>
             <RouterLink to="/analytics/activity" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('navActivity') }}</RouterLink>
+            <RouterLink to="/analytics/engagement" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('navEngagement') }}</RouterLink>
             <RouterLink to="/admin/teachers" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('navTeachers') }}</RouterLink>
             <RouterLink to="/analytics/my-data" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('myData') }}</RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">{{ t('contact') }}</RouterLink>

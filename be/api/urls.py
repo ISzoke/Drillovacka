@@ -146,6 +146,7 @@ urlpatterns = [
     path('teacher/print/test/', pdf_export.teacher_print_test, name='teacher-print-test'),
     path('print/parent/', pdf_export.parent_print_test, name='parent-print-test'),
     path('analytics/activity/', views.get_recent_activity, name='recent-activity'),
+    path('analytics/engagement/', views.get_engagement_stats, name='engagement-stats'),
     path('admin/teachers/', views.get_all_teachers, name='admin-teachers'),
     path('admin/classrooms/<int:classroom_id>/students/', views.admin_classroom_students, name='admin-classroom-students'),
     path('admin/tasks/<int:task_id>/examples/', views.admin_task_examples, name='admin-task-examples'),

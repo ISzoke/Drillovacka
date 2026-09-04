@@ -1327,6 +1327,11 @@ export const getRecentActivity = async (limit = 100) => {
   return response.data;
 };
 
+export const getEngagementStats = async () => {
+  const response = await apiClient.get('analytics/engagement/');
+  return response.data;
+};
+
 export const getAllTeachers = async () => {
   const response = await apiClient.get('admin/teachers/');
   return response.data;
