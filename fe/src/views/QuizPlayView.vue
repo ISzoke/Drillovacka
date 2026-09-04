@@ -23,7 +23,10 @@ const answerText = ref('');
 const fractionInputRef = ref(null);
 const hasAnsweredThisQuestion = ref(false);
 
-const isAnonymous = () => !(authStore.isAuthenticated || localStorage.getItem('role') !== null);
+// Matches useQuizStore's myIdentity(): only a logged-in student sends
+// student_id — admin/teacher (and everyone else) plays as an anonymous
+// session and needs the name box, even though authStore.isAuthenticated is true for them.
+const isAnonymous = () => !(authStore.isAuthenticated && authStore.role === 'student');
 const needsNamePrompt = ref(false);
 const promptName = ref('');
 const showNameInManualForm = computed(() => isAnonymous() && !getDisplayName());

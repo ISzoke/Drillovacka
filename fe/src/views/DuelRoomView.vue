@@ -92,7 +92,10 @@ watch(() => duelStore.errorMessage, (msg) => {
   }
 });
 
-const isAnonymous = () => !(authStore.isAuthenticated || localStorage.getItem('role') !== null);
+// Matches useDuelStore's myIdentity(): only a logged-in student sends
+// student_id — admin/teacher (and everyone else) plays as an anonymous
+// session and needs the name box, even though authStore.isAuthenticated is true for them.
+const isAnonymous = () => !(authStore.isAuthenticated && authStore.role === 'student');
 const needsNamePrompt = ref(false);
 const promptName = ref('');
 

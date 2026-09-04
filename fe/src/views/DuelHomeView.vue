@@ -16,7 +16,10 @@ const toastStore = useToastStore();
 const authStore = useAuthStore();
 
 const displayName = ref(getDisplayName());
-const isAnonymous = computed(() => !authStore.isAuthenticated);
+// Matches useDuelStore's myIdentity(): only a logged-in student sends
+// student_id — admin/teacher (and everyone else) plays as an anonymous
+// session and needs the name box, even though authStore.isAuthenticated is true for them.
+const isAnonymous = computed(() => !(authStore.isAuthenticated && authStore.role === 'student'));
 
 const mode = ref('1v1');
 const visibility = ref('public');

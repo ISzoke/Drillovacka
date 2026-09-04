@@ -5456,9 +5456,17 @@ def join_duel_game(request):
                      status=status.HTTP_201_CREATED)
 
 
+DUEL_LOBBY_STALE_MINUTES = 15  # a waiting room nobody joined this long ago is dead — hide it
+
+
 @api_view(['GET'])
 def list_public_duel_games(request):
-    games = DuelGame.objects.filter(visibility='public', status='waiting').select_related('task').order_by('-created_at')[:50]
+    stale_cutoff = timezone.now() - timezone.timedelta(minutes=DUEL_LOBBY_STALE_MINUTES)
+    games = (
+        DuelGame.objects
+        .filter(visibility='public', status='waiting', created_at__gte=stale_cutoff)
+        .select_related('task').order_by('-created_at')[:50]
+    )
     data = []
     for g in games:
         required_count = 2 if g.mode == '1v1' else 4

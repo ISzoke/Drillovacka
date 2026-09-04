@@ -33,6 +33,19 @@ from .models import Answer, DuelGame, DuelParticipant, Example, StudentExample
 DISCONNECT_GRACE_SECONDS = 30
 QUESTIONS_PER_LANE = 200  # sampled with replacement — plenty for any time limit at typed pace
 
+# asyncio only holds a *weak* reference to a task started with create_task() —
+# with nothing else referencing it, the loop is free to garbage-collect it
+# mid-run (rare, GC-timing-dependent, but a live game with a stuck rope/timer
+# is exactly what it looks like). Keep a strong ref here until each finishes.
+_background_tasks = set()
+
+
+def _spawn_background_task(coro):
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+    return task
+
 # Bot pacing: "medium" answers at the real average solve time for the task
 # (same metric shown to students on the task detail page, see get_task_stats'
 # global_avg_time). "easy"/"hard" scale that pace; a jitter factor is layered
@@ -138,11 +151,11 @@ class DuelConsumer(AsyncWebsocketConsumer):
             'type': 'duel_message',
             'payload': {'type': 'game_start', 'started_at': game.started_at.isoformat(), 'questions': questions},
         })
-        asyncio.create_task(_run_duel_timer(self.group_name, self.game_id))
+        _spawn_background_task(_run_duel_timer(self.group_name, self.game_id))
         if game.vs_bot:
             bot_participant_id = await database_sync_to_async(_get_bot_participant_id)(self.game_id)
             if bot_participant_id is not None:
-                asyncio.create_task(_run_bot_player(self.group_name, self.game_id, bot_participant_id, game.bot_difficulty))
+                _spawn_background_task(_run_bot_player(self.group_name, self.game_id, bot_participant_id, game.bot_difficulty))
 
     async def _handle_answer(self, answer_payload):
         result = await database_sync_to_async(_apply_duel_answer)(self.game_id, self.participant_id, answer_payload)
