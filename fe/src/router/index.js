@@ -45,6 +45,9 @@ import DuelHomeView from '@/views/DuelHomeView.vue'
 import DuelRoomView from '@/views/DuelRoomView.vue'
 import QuizHostView from '@/views/QuizHostView.vue'
 import QuizPlayView from '@/views/QuizPlayView.vue'
+import TugOfWarHomeView from '@/views/TugOfWarHomeView.vue'
+import TugOfWarHostView from '@/views/TugOfWarHostView.vue'
+import TugOfWarPlayView from '@/views/TugOfWarPlayView.vue'
 
 // Student classroom views
 import JoinClassroomView from '@/views/JoinClassroomView.vue'
@@ -269,6 +272,19 @@ const router = createRouter({
       props: true,
     },
     {
+      path: '/teacher/tug-of-war',
+      name: 'teacher-tow-home',
+      component: TugOfWarHomeView,
+      meta: { requiresTeacher: true },
+    },
+    {
+      path: '/teacher/tug-of-war/:code',
+      name: 'teacher-tow-host',
+      component: TugOfWarHostView,
+      meta: { requiresTeacher: true },
+      props: true,
+    },
+    {
       path: '/teacher/library',
       name: 'teacher-library',
       component: TeacherLibraryView,
@@ -355,6 +371,19 @@ const router = createRouter({
       path: '/quiz/:code',
       name: 'quiz-play',
       component: QuizPlayView,
+      props: true,
+    },
+
+    // Team tug of war — teacher hosts (see teacher-tow-host above), open join for anonymous/registered
+    {
+      path: '/tug-of-war',
+      name: 'tow-join-manual',
+      component: TugOfWarPlayView,
+    },
+    {
+      path: '/tug-of-war/:code',
+      name: 'tow-play',
+      component: TugOfWarPlayView,
       props: true,
     },
   ]

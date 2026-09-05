@@ -39,6 +39,7 @@ const statusBadgeClass = (s) => ({
 }[s] || 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400');
 
 const printTotal = computed(() => stats.value?.print?.total ?? 0);
+const towWinnerLabel = (g) => (g.status !== 'finished' ? '—' : g.winner_team ? `${t('duelTeam')} ${g.winner_team}` : t('towDraw'));
 </script>
 
 <template>
@@ -57,7 +58,7 @@ const printTotal = computed(() => stats.value?.print?.total ?? 0);
     <div v-else class="space-y-8">
 
       <!-- Summary tiles -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
           <div class="text-xs uppercase text-slate-400 mb-1">{{ t('engagementDuelSection') }}</div>
           <div class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ stats.duel.total }}</div>
@@ -77,6 +78,13 @@ const printTotal = computed(() => stats.value?.print?.total ?? 0);
           <div class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ printTotal }}</div>
           <div class="text-xs text-slate-400 mt-1">
             {{ t('engagementLast24h') }}: {{ stats.print.last_24h }} · {{ t('engagementLast7d') }}: {{ stats.print.last_7d }}
+          </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div class="text-xs uppercase text-slate-400 mb-1">{{ t('engagementTowSection') }}</div>
+          <div class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ stats.tow.total }}</div>
+          <div class="text-xs text-slate-400 mt-1">
+            {{ t('engagementLast24h') }}: {{ stats.tow.last_24h }} · {{ t('engagementLast7d') }}: {{ stats.tow.last_7d }}
           </div>
         </div>
       </div>
@@ -175,6 +183,43 @@ const printTotal = computed(() => stats.value?.print?.total ?? 0);
             </tbody>
           </table>
           <p v-if="!stats.print.recent.length" class="text-center py-6 text-slate-400 text-sm">{{ t('engagementNoData') }}</p>
+        </div>
+      </section>
+
+      <!-- Tug of War -->
+      <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+        <h2 class="font-bold text-lg text-slate-800 dark:text-slate-100 mb-3">🪢 {{ t('engagementTowSection') }}</h2>
+        <div class="flex items-end gap-1 h-16 mb-4">
+          <div v-for="d in stats.tow.daily" :key="d.date" class="flex-1 flex flex-col items-center justify-end gap-1" :title="`${d.date}: ${d.count}`">
+            <div class="w-full bg-green-500/70 rounded-t" :style="{ height: `${(d.count / maxDaily(stats.tow.daily)) * 100}%`, minHeight: d.count ? '2px' : '0' }"></div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="border-b border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 uppercase">
+              <tr>
+                <th class="px-3 py-2">{{ t('engagementCreated') }}</th>
+                <th class="px-3 py-2">{{ t('engagementCode') }}</th>
+                <th class="px-3 py-2">{{ t('engagementTeacher') }}</th>
+                <th class="px-3 py-2">{{ t('engagementMode') }}</th>
+                <th class="px-3 py-2">{{ t('engagementStatus') }}</th>
+                <th class="px-3 py-2">{{ t('engagementParticipants') }}</th>
+                <th class="px-3 py-2">{{ t('engagementTowWinner') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+              <tr v-for="g in stats.tow.recent" :key="g.code">
+                <td class="px-3 py-2 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ fmt(g.created_at) }}</td>
+                <td class="px-3 py-2 font-mono">{{ g.code }}</td>
+                <td class="px-3 py-2">{{ g.teacher_name || '—' }}</td>
+                <td class="px-3 py-2">{{ g.end_mode === 'time' ? t('towEndModeTime') : t('towEndModeTarget') }}</td>
+                <td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full" :class="statusBadgeClass(g.status)">{{ g.status }}</span></td>
+                <td class="px-3 py-2">A: {{ g.team_a_count }} · B: {{ g.team_b_count }}</td>
+                <td class="px-3 py-2">{{ towWinnerLabel(g) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-if="!stats.tow.recent.length" class="text-center py-6 text-slate-400 text-sm">{{ t('engagementNoData') }}</p>
         </div>
       </section>
 

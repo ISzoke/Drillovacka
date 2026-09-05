@@ -459,6 +459,11 @@ onMounted(fetchData);
                                hover:bg-secondary/10 transition-colors disabled:opacity-50">
                   🎯 {{ t('quizLaunchButton') }}
                 </button>
+                <router-link :to="{ name: 'teacher-tow-home' }"
+                        class="text-xs px-3 py-1 rounded border border-secondary text-secondary
+                               hover:bg-secondary/10 transition-colors inline-block">
+                  🪢 {{ t('towLaunchButton') }}
+                </router-link>
                 <button @click="toggleHomework(a)"
                         :class="[
                           'text-xs px-3 py-1 rounded border transition-colors',

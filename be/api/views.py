@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer, StudentInsight, PrintEvent
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer, StudentInsight, PrintEvent, TugOfWarGame, TugOfWarParticipant
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -3041,7 +3041,8 @@ def _teacher_display_name(teacher):
 @api_view(['GET'])
 def get_engagement_stats(request):
     """
-    Usage stats for the newer features (duel, live kvíz, PDF tlač) — so it's
+    Usage stats for the newer features (duel, live kvíz, tímové pretláčanie
+    lanom, PDF tlač) — so it's
     visible from the admin panel whether real users actually touch them, not
     just that they work. Same as get_recent_activity above, this endpoint has
     no server-side auth check of its own; it's protected only by the
@@ -3108,7 +3109,19 @@ def get_engagement_stats(request):
         'item_count': p.item_count, 'created_at': p.created_at,
     } for p in print_qs.order_by('-created_at')]
 
-    return Response({'duel': duel_stats, 'quiz': quiz_stats, 'print': print_stats})
+    tow_qs = TugOfWarGame.objects.select_related('teacher').prefetch_related('participants')
+    tow_stats = counts(tow_qs)
+    tow_stats['by_status'] = dict(tow_qs.order_by().values_list('status').annotate(n=Count('id')))
+    tow_stats['daily'] = daily_series(tow_qs)
+    tow_stats['recent'] = [{
+        'code': g.code, 'teacher_name': _teacher_display_name(g.teacher), 'status': g.status,
+        'end_mode': g.end_mode, 'winner_team': g.winner_team,
+        'team_a_count': sum(1 for p in g.participants.all() if p.team == 'A'),
+        'team_b_count': sum(1 for p in g.participants.all() if p.team == 'B'),
+        'created_at': g.created_at,
+    } for g in tow_qs.order_by('-created_at')]
+
+    return Response({'duel': duel_stats, 'quiz': quiz_stats, 'print': print_stats, 'tow': tow_stats})
 
 
 @api_view(['GET'])
@@ -5657,3 +5670,131 @@ def join_quiz_game(request):
 def get_quiz_game_state(request, code):
     game = get_object_or_404(QuizGame, code=code.upper())
     return Response(_serialize_quiz_game(game))
+
+
+# ─── Tug of War (team pretláčanie lanom) ─────────────────────────────────────
+
+def generate_tow_code(length=8):
+    chars = _string.ascii_uppercase + _string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=length))
+        if not TugOfWarGame.objects.filter(code=code).exists():
+            return code
+
+
+def _serialize_tow_participant(p):
+    return {
+        'id': p.id,
+        'team': p.team,
+        'display_name': p.display_name,
+        'connected': p.connected,
+        'correct_count': p.correct_count,
+        'wrong_count': p.wrong_count,
+        'is_student': p.student_id is not None,
+    }
+
+
+def _serialize_tow_game(game):
+    participants = list(game.participants.all())
+    return {
+        'code': game.code,
+        'status': game.status,
+        'end_mode': game.end_mode,
+        'time_limit_seconds': game.time_limit_seconds,
+        'target_diff': game.target_diff,
+        'max_team_size': game.max_team_size,
+        'task_id': game.task_id,
+        'task_name': game.task.name,
+        'rope_position': game.rope_position,
+        'winner_team': game.winner_team,
+        'started_at': game.started_at.isoformat() if game.started_at else None,
+        'team_a': [_serialize_tow_participant(p) for p in participants if p.team == 'A'],
+        'team_b': [_serialize_tow_participant(p) for p in participants if p.team == 'B'],
+    }
+
+
+@api_view(['POST'])
+def create_tow_game(request):
+    teacher_id = request.data.get('teacher_id')
+    task_id = request.data.get('task_id')
+    end_mode = request.data.get('end_mode')
+    if not teacher_id or not task_id or end_mode not in ('time', 'target'):
+        return Response({'error': 'teacher_id, task_id and end_mode (time/target) are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    task = get_object_or_404(Task, id=task_id)
+    if not task.example_set.exists():
+        return Response({'error': 'Sada neobsahuje žiadne príklady'}, status=status.HTTP_400_BAD_REQUEST)
+
+    time_limit_seconds = None
+    target_diff = None
+    if end_mode == 'time':
+        try:
+            time_limit_seconds = int(request.data.get('time_limit_seconds'))
+        except (TypeError, ValueError):
+            return Response({'error': 'Invalid time_limit_seconds'}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        try:
+            target_diff = int(request.data.get('target_diff'))
+        except (TypeError, ValueError):
+            return Response({'error': 'Invalid target_diff'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        max_team_size = min(30, max(1, int(request.data.get('max_team_size') or 30)))
+    except (TypeError, ValueError):
+        max_team_size = 30
+
+    game = TugOfWarGame.objects.create(
+        code=generate_tow_code(), teacher=teacher, task=task, end_mode=end_mode,
+        time_limit_seconds=time_limit_seconds, target_diff=target_diff, max_team_size=max_team_size,
+    )
+    return Response(_serialize_tow_game(game), status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def join_tow_game(request):
+    student, session = get_user_identity(request)
+    if not student and not session:
+        return Response({'error': 'student_id or session_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    code = (request.data.get('code') or '').strip().upper()
+    if not code:
+        return Response({'error': 'code is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        game = TugOfWarGame.objects.get(code=code)
+    except TugOfWarGame.DoesNotExist:
+        return Response({'error': 'Hra s týmto kódom neexistuje'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Rejoin case (e.g. reconnect after a page refresh) — same identity already has a spot,
+    # regardless of the game's current status (mirrors join_duel_game/join_quiz_game).
+    existing = game.participants.filter(student=student, anonymous_session=session).first()
+    if existing:
+        return Response({**_serialize_tow_game(game), 'you': {'participant_id': existing.id, 'team': existing.team}},
+                         status=status.HTTP_200_OK)
+
+    if game.status != 'waiting':
+        return Response({'error': 'Hra už začala alebo skončila'}, status=status.HTTP_409_CONFLICT)
+
+    team = request.data.get('team')
+    if team not in ('A', 'B'):
+        return Response({'error': 'team must be A or B'}, status=status.HTTP_400_BAD_REQUEST)
+    if game.participants.filter(team=team).count() >= game.max_team_size:
+        return Response({'error': 'Tím je plný'}, status=status.HTTP_409_CONFLICT)
+
+    display_name = _resolve_display_name(student, request.data.get('display_name'))
+    participant = TugOfWarParticipant.objects.create(
+        game=game, student=student, anonymous_session=session, team=team, display_name=display_name,
+    )
+    return Response({**_serialize_tow_game(game), 'you': {'participant_id': participant.id, 'team': participant.team}},
+                     status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def get_tow_game_state(request, code):
+    game = get_object_or_404(TugOfWarGame, code=code.upper())
+    return Response(_serialize_tow_game(game))

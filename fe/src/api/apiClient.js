@@ -1403,4 +1403,29 @@ export const getQuizState = async (code) => {
   return response.data;
 };
 
+// ── Pretláčanie lanom v tíme (Tug of War) ───────────────────────────────────
+
+export const createTugOfWar = async (teacherId, { taskId, endMode, timeLimitSeconds, targetDiff, maxTeamSize }) => {
+  const response = await apiClient.post('tug-of-war/create/', {
+    teacher_id: teacherId,
+    task_id: taskId,
+    end_mode: endMode,
+    time_limit_seconds: timeLimitSeconds,
+    target_diff: targetDiff,
+    max_team_size: maxTeamSize,
+  });
+  return response.data;
+};
+
+export const joinTugOfWar = async (studentId, code, team, displayName) => {
+  const userIdentifier = getUserIdentifier(studentId);
+  const response = await apiClient.post('tug-of-war/join/', { ...userIdentifier, code, team, display_name: displayName });
+  return response.data;
+};
+
+export const getTugOfWarState = async (code) => {
+  const response = await apiClient.get(`tug-of-war/state/${code}/`);
+  return response.data;
+};
+
 export default apiClient;

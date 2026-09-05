@@ -19,6 +19,7 @@ from api.consumers import SpeechRecognitionConsumer
 from api.consumersSurvey import SurveySpeechTranscriptionConsumer
 from api.consumersDuel import DuelConsumer
 from api.consumersQuiz import QuizConsumer
+from api.consumersTugOfWar import TugOfWarConsumer
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'be.settings')
 
@@ -32,6 +33,7 @@ application = ProtocolTypeRouter({
             path("ws/survey/", SurveySpeechTranscriptionConsumer.as_asgi()),
             path("ws/duel/<str:code>/", DuelConsumer.as_asgi()),
             path("ws/quiz/<str:code>/", QuizConsumer.as_asgi()),
+            path("ws/tug-of-war/<str:code>/", TugOfWarConsumer.as_asgi()),
         ])
     ),
 })

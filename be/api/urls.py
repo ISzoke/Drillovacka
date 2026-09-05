@@ -160,6 +160,10 @@ urlpatterns = [
     path('quiz/create/', views.create_quiz_game, name='quiz-create'),
     path('quiz/join/', views.join_quiz_game, name='quiz-join'),
     path('quiz/state/<str:code>/', views.get_quiz_game_state, name='quiz-state'),
+
+    path('tug-of-war/create/', views.create_tow_game, name='tow-create'),
+    path('tug-of-war/join/', views.join_tow_game, name='tow-join'),
+    path('tug-of-war/state/<str:code>/', views.get_tow_game_state, name='tow-state'),
 ]
 
 websocket_urlpatterns = [

@@ -707,6 +707,87 @@ class QuizAnswer(models.Model):
         return f"Q{self.question_index} by {self.participant_id}: {'ok' if self.is_correct else 'x'}"
 
 
+class TugOfWarGame(models.Model):
+    """
+    Team version of the duel's tug-of-war mechanic: up to `max_team_size`
+    students per side, each solving their OWN randomized queue of examples
+    (see TugOfWarParticipant.question_order) rather than a shared lane —
+    every correct answer pulls the shared rope toward that student's team.
+    Teacher-hosted (see QuizGame) rather than player-founded (see DuelGame).
+    """
+    END_MODE_CHOICES = [('time', 'Time limit'), ('target', 'First to target')]
+    STATUS_CHOICES = [('waiting', 'Waiting'), ('active', 'Active'), ('finished', 'Finished')]
+
+    code = models.CharField(max_length=8, unique=True, db_index=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='tug_of_war_games')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='tug_of_war_games')
+    status = models.CharField(max_length=8, choices=STATUS_CHOICES, default='waiting')
+    end_mode = models.CharField(max_length=6, choices=END_MODE_CHOICES, default='time')
+    time_limit_seconds = models.IntegerField(null=True, blank=True)
+    target_diff = models.IntegerField(null=True, blank=True)
+    max_team_size = models.IntegerField(default=30)
+    # Signed tug-of-war position: positive leans toward team A, negative toward team B.
+    rope_position = models.IntegerField(default=0)
+    winner_team = models.CharField(max_length=1, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"TugOfWar {self.code} ({self.status})"
+
+
+class TugOfWarParticipant(models.Model):
+    TEAM_CHOICES = [('A', 'A'), ('B', 'B')]
+
+    game = models.ForeignKey(TugOfWarGame, on_delete=models.CASCADE, related_name='participants')
+    student = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL, related_name='tow_participations')
+    anonymous_session = models.ForeignKey(AnonymousSession, null=True, blank=True, on_delete=models.SET_NULL, related_name='tow_participations')
+    team = models.CharField(max_length=1, choices=TEAM_CHOICES)
+    display_name = models.CharField(max_length=64)
+    # Own shuffled-with-replacement queue of example ids, generated once at
+    # game start — plenty deep (see QUESTIONS_PER_PLAYER) that no player can
+    # realistically exhaust it before the round ends, so no reshuffle needed.
+    question_order = models.JSONField(default=list, blank=True)
+    current_index = models.IntegerField(default=0)
+    current_question_started_at = models.DateTimeField(null=True, blank=True)
+    correct_count = models.IntegerField(default=0)
+    wrong_count = models.IntegerField(default=0)
+    connected = models.BooleanField(default=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    disconnected_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['team', 'joined_at']
+        unique_together = ('game', 'student', 'anonymous_session')
+        constraints = [
+            models.CheckConstraint(
+                check=Q(student__isnull=False) | Q(anonymous_session__isnull=False),
+                name='tow_participant_student_or_session_required'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.display_name} ({self.team}) in {self.game.code}"
+
+
+class TugOfWarAnswer(models.Model):
+    """Per-question result log (see QuizAnswer) — needed for the end-of-game
+    fastest/most-correct and worst-performers breakdowns, which a running
+    correct_count alone (DuelParticipant's approach) can't provide."""
+    participant = models.ForeignKey(TugOfWarParticipant, on_delete=models.CASCADE, related_name='answers')
+    example = models.ForeignKey(Example, on_delete=models.CASCADE)
+    is_correct = models.BooleanField()
+    time_taken_ms = models.IntegerField()
+    answered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.participant_id}: {'ok' if self.is_correct else 'x'}"
+
+
 class StudentInsight(models.Model):
     """
     Cached AI-generated performance summary for one student (optionally scoped to
