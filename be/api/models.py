@@ -808,6 +808,24 @@ class StudentInsight(models.Model):
         return f"Insight for {self.student.username} ({self.generated_at:%Y-%m-%d %H:%M})"
 
 
+class TeacherGenerationEvent(models.Model):
+    """One row per teacher-triggered Gemini call — task generation (single-type,
+    mix, or 'generate more') or a student AI-insight regeneration — purely to
+    enforce a daily cost quota against the paid API. Neither had any quota
+    before this (unlike students' DAILY_GENERATION_LIMIT via GeneratedTaskBatch).
+    `kind` lets task-generation and insight calls carry separate daily caps
+    since their per-call cost profile differs (a mix task call can fan out
+    into many Gemini calls; an insight call is always exactly one)."""
+    KIND_CHOICES = [('task', 'Task generation'), ('insight', 'Student AI insight')]
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='generation_events')
+    kind = models.CharField(max_length=7, choices=KIND_CHOICES, default='task')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"TeacherGenerationEvent({self.teacher_id}, {self.kind}) at {self.created_at:%Y-%m-%d %H:%M}"
+
+
 class PrintEvent(models.Model):
     """
     One successful PDF generation — logged purely so the admin usage-stats

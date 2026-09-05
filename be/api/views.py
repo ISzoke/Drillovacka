@@ -23,7 +23,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 import math
 import shutil
-from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer, StudentInsight, PrintEvent, TugOfWarGame, TugOfWarParticipant
+from .models import Task, Example, Answer, Student, Skill, ExampleSkill, StudentExample, ExampleAttempt, ExampleReport, SurveyFeedback, Admin, Step, GradeLevel, AnonymousSession, ExampleRequest, GeneratedTaskBatch, GeneratedTaskBatchSurvey, Teacher, Classroom, ClassroomStudent, ClassroomTask, SkillMastery, DuelGame, DuelParticipant, QuizGame, QuizParticipant, QuizAnswer, StudentInsight, PrintEvent, TugOfWarGame, TugOfWarParticipant, TeacherGenerationEvent
 from .serializers import ExampleSerializer, SkillSerializer, RecordInitSerializer, ExampleAttemptSerializer
 from .utils import get_height, build_skill_tree, get_skill_paths, get_skill_names_string_sync
 from .answerChecker import InlineAnswerChecker, FractionAnswerChecker, VariableAnswerChecker
@@ -1526,7 +1526,7 @@ def login_admin(request):
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_400_BAD_REQUEST)
 
     if check_password(password, admin.password):
-        return Response({'message': 'Přihlášení proběhlo úspěšně!', 'role': 'admin'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Přihlášení proběhlo úspěšně!', 'role': 'admin', 'id': admin.id}, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Nesprávné přihlašovací údaje'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -2947,8 +2947,23 @@ def get_all_anonymous_sessions_stats(request):
 # Admin: activity feed + teachers list + publish teacher task
 # ──────────────────────────────────────────────────────────────────────────────
 
+def _require_admin(request):
+    """Client-supplied admin_id checked against the Admin table — the same
+    weak-but-consistent identity pattern used for teacher_id/student_id
+    everywhere else in this app (not real session/token auth). These five
+    endpoints previously had NO check of any kind (not even this), unlike
+    every other admin_id-free admin view here which relies purely on the
+    frontend's requiresAdmin route guard for read access — this at least
+    matches the baseline elsewhere for reads, and is required for the one
+    endpoint here that mutates data (admin_publish_teacher_task)."""
+    admin_id = request.GET.get('admin_id') if request.method == 'GET' else request.data.get('admin_id')
+    return bool(admin_id) and Admin.objects.filter(id=admin_id).exists()
+
+
 @api_view(['GET'])
 def admin_classroom_students(request, classroom_id):
+    if not _require_admin(request):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
     memberships = ClassroomStudent.objects.filter(
         classroom_id=classroom_id
     ).select_related('student').order_by('student__username')
@@ -2960,6 +2975,8 @@ def admin_classroom_students(request, classroom_id):
 
 @api_view(['GET'])
 def admin_task_examples(request, task_id):
+    if not _require_admin(request):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
     try:
         task = Task.objects.prefetch_related('example_set__answers').get(id=task_id)
     except Task.DoesNotExist:
@@ -2977,6 +2994,8 @@ def admin_task_examples(request, task_id):
 
 @api_view(['POST'])
 def admin_publish_teacher_task(request, task_id):
+    if not _require_admin(request):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
     try:
         task = Task.objects.get(id=task_id)
     except Task.DoesNotExist:
@@ -3126,6 +3145,8 @@ def get_engagement_stats(request):
 
 @api_view(['GET'])
 def get_all_teachers(request):
+    if not _require_admin(request):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
     teachers = Teacher.objects.prefetch_related('classrooms').order_by('-created_at')
     data = []
     for t in teachers:
@@ -3198,6 +3219,8 @@ def bulk_import_tasks(request):
       ]
     }
     """
+    if not _require_admin(request):
+        return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
     tasks_data = request.data.get('tasks', [])
     if not tasks_data:
         return Response({"error": "No tasks provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -4725,6 +4748,13 @@ def student_ai_insight(request, classroom_id, student_id):
     if existing and (timezone.now() - existing.generated_at).total_seconds() < 30:
         return Response({'insight': _serialize(existing), 'cached': True})
 
+    teacher = Teacher.objects.get(id=int(teacher_id))
+    if _teacher_generation_quota_remaining(teacher, kind='insight') <= 0:
+        return Response(
+            {'error': f'Denný limit {DAILY_TEACHER_INSIGHT_LIMIT} AI prehľadov bol dosiahnutý. Skús zajtra.', 'quota_exceeded': True},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
     attempts_qs = ExampleAttempt.objects.filter(
         student=student
     ).select_related('example').order_by('-created_at')[:60]
@@ -4763,6 +4793,7 @@ def student_ai_insight(request, classroom_id, student_id):
             'model_used': payload.get('meta', {}).get('model', ''),
         },
     )
+    TeacherGenerationEvent.objects.create(teacher=teacher, kind='insight')
     return Response({'insight': _serialize(row)})
 
 
@@ -4826,6 +4857,24 @@ def get_classroom_task_homework_stats(request, classroom_id, task_id):
 
 # ─── Teacher Task Generation ──────────────────────────────────────────────────
 
+# Teacher generation had no cost quota at all before this (unlike students'
+# DAILY_GENERATION_LIMIT via GeneratedTaskBatch) — combined with free/instant
+# teacher signup, that was the single easiest way to run up a real Gemini
+# bill. One shared daily counter (TeacherGenerationEvent) across single-type,
+# mix, and "generate more" calls; mix segments are also capped so one request
+# can't fan out into dozens of Gemini calls on its own.
+DAILY_TEACHER_GENERATION_LIMIT = 5
+DAILY_TEACHER_INSIGHT_LIMIT = 50  # higher than task-gen: one real classroom re-run touches every student
+MAX_MIX_SEGMENTS = 10
+
+
+def _teacher_generation_quota_remaining(teacher, kind='task'):
+    limit = DAILY_TEACHER_GENERATION_LIMIT if kind == 'task' else DAILY_TEACHER_INSIGHT_LIMIT
+    today = timezone.now().date()
+    used_today = TeacherGenerationEvent.objects.filter(teacher=teacher, kind=kind, created_at__date=today).count()
+    return max(0, limit - used_today)
+
+
 @api_view(['POST'])
 def teacher_generate_task_preview(request):
     teacher_id = request.data.get('teacher_id')
@@ -4836,6 +4885,12 @@ def teacher_generate_task_preview(request):
         teacher = Teacher.objects.get(id=int(teacher_id))
     except Teacher.DoesNotExist:
         return Response({'error': 'Teacher not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if _teacher_generation_quota_remaining(teacher) <= 0:
+        return Response(
+            {'error': f'Denný limit {DAILY_TEACHER_GENERATION_LIMIT} generovaní bol dosiahnutý. Skús zajtra.', 'quota_exceeded': True},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
 
     task_type = request.data.get('type', 'arithmetic')
     try:
@@ -4850,7 +4905,7 @@ def teacher_generate_task_preview(request):
         language = 'sk'
 
     if task_type == 'mix':
-        segments = request.data.get('segments', [])
+        segments = (request.data.get('segments', []) or [])[:MAX_MIX_SEGMENTS]
         if not segments:
             return Response({'error': 'segments are required for mix type'}, status=status.HTTP_400_BAD_REQUEST)
         from .generators.teacher_generator import generate_teacher_task_mix
@@ -4869,6 +4924,7 @@ def teacher_generate_task_preview(request):
         except RuntimeError as e:
             return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
+    TeacherGenerationEvent.objects.create(teacher=teacher)
     return Response(data)
 
 
@@ -5199,6 +5255,13 @@ def teacher_generate_more_examples_preview(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     if not teacher_id or task.owner_teacher_id != int(teacher_id):
         return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+    teacher = Teacher.objects.get(id=int(teacher_id))
+
+    if _teacher_generation_quota_remaining(teacher) <= 0:
+        return Response(
+            {'error': f'Denný limit {DAILY_TEACHER_GENERATION_LIMIT} generovaní bol dosiahnutý. Skús zajtra.', 'quota_exceeded': True},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
 
     description = (request.data.get('description') or '').strip()
     if not description:
@@ -5226,6 +5289,7 @@ def teacher_generate_more_examples_preview(request, task_id):
         return Response({'error': str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
     except RuntimeError as e:
         return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    TeacherGenerationEvent.objects.create(teacher=teacher)
     return Response(data)
 
 

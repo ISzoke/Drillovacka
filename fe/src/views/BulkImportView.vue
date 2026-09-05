@@ -4,9 +4,11 @@ import { useI18n } from 'vue-i18n';
 import Spinner from '@/components/Spinner.vue';
 import { getGradeLevels, getSkillTree, bulkImportTasks } from '@/api/apiClient';
 import { useToastStore } from '@/stores/useToastStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const { t } = useI18n();
 const toastStore = useToastStore();
+const authStore = useAuthStore();
 
 const gradeLevels = ref([]);
 const skills = ref([]);
@@ -121,7 +123,7 @@ const handleImport = async () => {
       skill_name: t.skill_name || "",
       examples: t.examples || [],
     }));
-    const response = await bulkImportTasks(tasks);
+    const response = await bulkImportTasks(tasks, authStore.id);
     results.value = response.results;
     const created = response.results.filter(r => r.status === 'created' || r.status === 'updated').length;
     const totalExamples = response.results.reduce((s, r) => s + (r.examples_added || 0), 0);

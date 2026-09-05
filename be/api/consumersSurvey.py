@@ -23,6 +23,14 @@ django.setup()
 from .utils import get_skill_names_string
 from .survey_feedback_sync import create_survey_feedback, retry_pending_survey_feedback_uploads, sync_survey_feedback_to_mega
 
+# Cost control: fully anonymous survey answers are a deliberate product
+# feature (no student_id/session_id required), so this socket can't require
+# identity the way the main speech consumer does — instead just cap total
+# connection time so a single socket can't stream to the paid Azure API
+# indefinitely (matches the 24h nginx ws timeout being otherwise the only limit).
+MAX_CONNECTION_SECONDS = 300
+
+
 class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # Buffer for incoming audio data (for transcription)
@@ -45,16 +53,25 @@ class SurveySpeechTranscriptionConsumer(AsyncWebsocketConsumer):
         self.language = "sk-SK"
         
         self.speech_recognizer, self.stream = self.create_speech_recognizer()
-        
+
         await self.accept()
         print("WebSocket connection established")
+        self.max_duration_task = asyncio.create_task(self._enforce_max_duration())
+
+    async def _enforce_max_duration(self):
+        try:
+            await asyncio.sleep(MAX_CONNECTION_SECONDS)
+            await self.close()
+        except asyncio.CancelledError:
+            pass
 
     async def disconnect(self, close_code):
+        self.max_duration_task.cancel()
 
         # User terminated question answering - save the transcription and audio
         # Wait a bit for pending transcriptions to come through
         await asyncio.sleep(0.5)
-        
+
         self.speech_recognizer.stop_continuous_recognition_async().get()
         self.stream.close()
 

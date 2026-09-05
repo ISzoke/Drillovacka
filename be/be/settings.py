@@ -127,12 +127,24 @@ USE_TZ = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS settings 
-CORS_ALLOW_ALL_ORIGINS = True
+# Host / CORS settings — both used to be wide open (ALLOWED_HOSTS=['*'],
+# CORS_ALLOW_ALL_ORIGINS=True) even though docker-compose.yml already passes
+# a real ALLOWED_HOSTS env var that was simply never read here. With CORS wide
+# open, any third-party website's JS could call every API endpoint using a
+# visitor's own browser as an unwitting, distributed source — that's what
+# turned "no rate limiting" into "trivially abusable from anywhere" for the
+# paid Gemini/Azure endpoints. Derive both from the same host list so no new
+# env var/deploy step is needed.
+_allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '').strip()
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()] or ['localhost', '127.0.0.1']
 
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = []
-
-ALLOWED_HOSTS = ['*']
+for _host in ALLOWED_HOSTS:
+    if _host in ('localhost', '127.0.0.1'):
+        CORS_ALLOWED_ORIGINS += [f'http://{_host}:5173', f'http://{_host}:8000', f'http://{_host}']
+    else:
+        CORS_ALLOWED_ORIGINS += [f'https://{_host}', f'http://{_host}']
 
 # Email (SMTP)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

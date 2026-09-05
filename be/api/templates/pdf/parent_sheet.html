@@ -31,7 +31,13 @@
     justify-content: space-between;
     gap: 3mm;
     border-bottom: 0.25mm dotted #bbb;
-    overflow: hidden;
+    /* NOT overflow:hidden here — a stacked fraction (num/bar/den) is taller
+       than one text line, and with a fixed row height + vertical centering,
+       clipping the row would cut the top off the numerator and the bottom
+       off the denominator (only the middle bar stays visible). Row height
+       still drives vertical rhythm (the flex box keeps its set height for
+       layout), this only stops taller content from being clipped visually.
+       Horizontal overflow of long text is still handled by .prow .q below. */
     white-space: nowrap;
   }
   .prow .q { font-size: 13pt; overflow: hidden; text-overflow: ellipsis; }
@@ -63,9 +69,10 @@
   /* math bits produced by latex_to_html */
   .frac {
     display: inline-block;
-    vertical-align: -0.6em;
+    vertical-align: -0.55em;
     text-align: center;
     margin: 0 0.6mm;
+    line-height: 1.05;
   }
   .frac .num {
     display: block;

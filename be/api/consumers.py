@@ -28,6 +28,7 @@ from django.test import RequestFactory
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "be.settings")
 django.setup()
 
+from channels.db import database_sync_to_async
 from .views import skip_example, delete_example_record
 from .answerChecker import GeminiRateLimitError
 from .attempt_cloud_sync import retry_pending_attempt_uploads, sync_attempt_to_mega
@@ -40,6 +41,25 @@ os.makedirs(ATTEMPT_AUDIO_DIR, exist_ok=True)
 # Set to True to enable audio dumping
 DUMP_AUDIO=False
 
+# Cost control: this socket drives a paid Azure Speech recognizer per
+# connection. IDENTIFY_TIMEOUT_SECONDS bounds how long a socket can sit open
+# without ever proving it belongs to a real student/session (no recognizer is
+# provisioned until then, so an unidentified socket costs nothing);
+# MAX_CONNECTION_SECONDS caps total streaming time per connection regardless
+# of activity, so a single connection can't run up Azure minutes indefinitely.
+IDENTIFY_TIMEOUT_SECONDS = 15
+MAX_CONNECTION_SECONDS = 300
+
+
+def _speech_identity_is_valid(student_id, session_id):
+    from .models import Student, AnonymousSession
+    if student_id and student_id != 'unknown':
+        return Student.objects.filter(id=student_id).exists()
+    if session_id:
+        return AnonymousSession.objects.filter(session_id=session_id).exists()
+    return False
+
+
 class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
@@ -49,36 +69,61 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
         self.loop = asyncio.get_event_loop()
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.language = "sk-SK"
-        
+
         # Metadata about language, user and currently solved example
         self.metadata = {}
         self.audio_format = None
 
-        # Set up Azure speech recognizer and audio stream
-        self.speech_recognizer, self.stream = self.create_speech_recognizer()
-        
+        # Azure recognizer is provisioned lazily, only once receive() confirms
+        # a real student_id/session_id (see below) — never eagerly on connect.
+        # An unidentified socket therefore never touches the paid Azure API.
+        self.speech_recognizer = None
+        self.stream = None
+        self.identified = False
+
         await self.accept()
-        
+
         # Start receiving audio
         self.receive_task = asyncio.create_task(self.receive_audio())
+        self.identify_timeout_task = asyncio.create_task(self._enforce_identify_timeout())
+        self.max_duration_task = asyncio.create_task(self._enforce_max_duration())
+
+    async def _enforce_identify_timeout(self):
+        try:
+            await asyncio.sleep(IDENTIFY_TIMEOUT_SECONDS)
+            if not self.identified:
+                await self.close()
+        except asyncio.CancelledError:
+            pass
+
+    async def _enforce_max_duration(self):
+        try:
+            await asyncio.sleep(MAX_CONNECTION_SECONDS)
+            await self.close()
+        except asyncio.CancelledError:
+            pass
 
     async def disconnect(self, close_code):
         self.receive_task.cancel()
+        self.identify_timeout_task.cancel()
+        self.max_duration_task.cancel()
         try:
             await self.receive_task
         except asyncio.CancelledError:
             pass
-        try:
-            self.stream.close()
-        except Exception:
-            pass
-        try:
-            self.speech_recognizer.stop_continuous_recognition()
-        except Exception:
-            pass
+        if self.stream is not None:
+            try:
+                self.stream.close()
+            except Exception:
+                pass
+        if self.speech_recognizer is not None:
+            try:
+                self.speech_recognizer.stop_continuous_recognition()
+            except Exception:
+                pass
         self.executor.shutdown(wait=False)
-        del self.speech_recognizer
-        del self.stream
+        self.speech_recognizer = None
+        self.stream = None
         print("Speech recognition stopped.")
 
     def _resolve_student_example(self, student_id, session_id, example_id, record_date):
@@ -247,10 +292,10 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
             try:
                 new_metadata = json.loads(text_data)
                 self.metadata.update(new_metadata)
-            
+
                 if 'format' in new_metadata:
                     self.audio_format = new_metadata['format']
-                
+
                 # Check if language was changed
                 if 'language' in new_metadata:
                     requested_lang = new_metadata['language']
@@ -264,20 +309,34 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
                     self.language = requested_lang
                     print(f"ASR language changed to: {self.language}")
 
-                    try:
-                        self.speech_recognizer.stop_continuous_recognition()
-                    except Exception:
-                        pass  # ak ešte nebežal
+                    # Only recreate a recognizer that's already running — the
+                    # very first recognizer is provisioned below, once identity
+                    # is confirmed, not here.
+                    if self.speech_recognizer is not None:
+                        try:
+                            self.speech_recognizer.stop_continuous_recognition()
+                        except Exception:
+                            pass  # ak ešte nebežal
 
-                    try:
-                        self.stream.close()
-                    except Exception:
-                        pass
+                        try:
+                            self.stream.close()
+                        except Exception:
+                            pass
 
-                    del self.speech_recognizer
-                    del self.stream
+                        self.speech_recognizer, self.stream = self.create_speech_recognizer()
 
-                    # Vytvor nový recognizer s novým jazykom (automatically starts via create_speech_recognizer)
+                # First message on this connection: confirm student_id/session_id
+                # is a real, existing identity before ever provisioning the paid
+                # Azure recognizer. An unidentified socket is closed here instead.
+                if not self.identified:
+                    student_id = self.metadata.get('student_id')
+                    session_id = self.metadata.get('session_id')
+                    valid = await database_sync_to_async(_speech_identity_is_valid)(student_id, session_id)
+                    if not valid:
+                        await self.send(text_data=json.dumps({'type': 'error', 'error': 'Neplatná identita'}))
+                        await self.close()
+                        return
+                    self.identified = True
                     self.speech_recognizer, self.stream = self.create_speech_recognizer()
 
             except json.JSONDecodeError:
@@ -285,11 +344,13 @@ class SpeechRecognitionConsumer(AsyncWebsocketConsumer):
 
         # Audio data was received via websocket
         elif bytes_data:
+            if self.stream is None:
+                return  # not identified yet — drop audio instead of touching Azure
             #print(f"[DEBUG] Received {len(bytes_data)} bytes of audio data")
             # Send raw PCM data directly to Azure
             self.stream.write(bytes_data)
             #print(f"[DEBUG] Written {len(bytes_data)} bytes to Azure stream")
-            
+
             # Accumulate audio data to dump
             self.speech_data.extend(bytes_data)
 

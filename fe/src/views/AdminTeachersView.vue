@@ -2,9 +2,11 @@
 import { ref, onMounted, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getAllTeachers, publishTeacherTask, getAdminTaskExamples, getAdminClassroomStudents } from '@/api/apiClient';
+import { useAuthStore } from '@/stores/useAuthStore';
 import Spinner from '@/components/Spinner.vue';
 
 const { t } = useI18n();
+const authStore = useAuthStore();
 
 const teachers = ref([]);
 const loading = ref(true);
@@ -23,7 +25,7 @@ const toggleStudentList = async (classroom) => {
   if (expandedStudents[id] && classroomStudents[id] === undefined) {
     classroomStudentsLoading[id] = true;
     try {
-      classroomStudents[id] = await getAdminClassroomStudents(id);
+      classroomStudents[id] = await getAdminClassroomStudents(id, authStore.id);
     } catch (e) {
       classroomStudents[id] = [];
     }
@@ -42,7 +44,7 @@ const toggleTaskPreview = async (task) => {
   if (expandedTask[id] && taskExamples[id] === undefined) {
     taskExamplesLoading[id] = true;
     try {
-      taskExamples[id] = await getAdminTaskExamples(id);
+      taskExamples[id] = await getAdminTaskExamples(id, authStore.id);
     } catch (e) {
       taskExamples[id] = [];
     }
@@ -65,7 +67,7 @@ const confirmPublish = async () => {
   if (!publishModal.value) return;
   publishing.value = true;
   try {
-    await publishTeacherTask(publishModal.value.id, publishGrades.value);
+    await publishTeacherTask(publishModal.value.id, publishGrades.value, authStore.id);
     publishedTasks.value.add(publishModal.value.id);
     publishModal.value = null;
   } catch (e) {
@@ -78,7 +80,7 @@ const load = async () => {
   loading.value = true;
   error.value = null;
   try {
-    teachers.value = await getAllTeachers();
+    teachers.value = await getAllTeachers(authStore.id);
   } catch (e) {
     error.value = String(e);
   }

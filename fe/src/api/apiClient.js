@@ -878,9 +878,9 @@ export const updateStudentLanguage = async (studentId, language) => {
  * @param {Array<Object>} tasks - Array of task objects
  * @returns {Promise<Object>} Import results
  */
-export const bulkImportTasks = async (tasks) => {
+export const bulkImportTasks = async (tasks, adminId) => {
   try {
-    const response = await apiClient.post('bulk-import-tasks/', { tasks });
+    const response = await apiClient.post('bulk-import-tasks/', { tasks, admin_id: adminId });
     return response.data;
   } catch (error) {
     throw error.response?.data?.error || 'Error importing tasks.';
@@ -1332,23 +1332,23 @@ export const getEngagementStats = async () => {
   return response.data;
 };
 
-export const getAllTeachers = async () => {
-  const response = await apiClient.get('admin/teachers/');
+export const getAllTeachers = async (adminId) => {
+  const response = await apiClient.get('admin/teachers/', { params: { admin_id: adminId } });
   return response.data;
 };
 
-export const getAdminClassroomStudents = async (classroomId) => {
-  const response = await apiClient.get(`admin/classrooms/${classroomId}/students/`);
+export const getAdminClassroomStudents = async (classroomId, adminId) => {
+  const response = await apiClient.get(`admin/classrooms/${classroomId}/students/`, { params: { admin_id: adminId } });
   return response.data;
 };
 
-export const getAdminTaskExamples = async (taskId) => {
-  const response = await apiClient.get(`admin/tasks/${taskId}/examples/`);
+export const getAdminTaskExamples = async (taskId, adminId) => {
+  const response = await apiClient.get(`admin/tasks/${taskId}/examples/`, { params: { admin_id: adminId } });
   return response.data;
 };
 
-export const publishTeacherTask = async (taskId, gradeIds) => {
-  const response = await apiClient.post(`admin/tasks/${taskId}/publish/`, { grade_ids: gradeIds });
+export const publishTeacherTask = async (taskId, gradeIds, adminId) => {
+  const response = await apiClient.post(`admin/tasks/${taskId}/publish/`, { grade_ids: gradeIds, admin_id: adminId });
   return response.data;
 };
 
