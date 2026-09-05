@@ -68,11 +68,19 @@ const studentLabel = (count) => {
           {{ t('libraryHintInNav') }}
         </p>
       </div>
-      <button @click="showCreateModal = true"
-              class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white rounded-full hover:bg-blue-600
-                     font-semibold transition-colors flex-shrink-0">
-        <TeacherIcon name="plus" :size="14" /> {{ t('createClassroom') }}
-      </button>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <a href="/manual.pdf" target="_blank" rel="noopener noreferrer"
+           class="flex items-center gap-1.5 px-4 py-2 bg-amber-50 dark:bg-slate-700 text-amber-700 dark:text-amber-400
+                  border-2 border-amber-400 dark:border-amber-500 rounded-full hover:bg-amber-100 dark:hover:bg-slate-600
+                  font-semibold transition-colors text-sm">
+          📖 {{ t('teacherManual') || 'Manuál pre učiteľov' }}
+        </a>
+        <button @click="showCreateModal = true"
+                class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white rounded-full hover:bg-blue-600
+                       font-semibold transition-colors">
+          <TeacherIcon name="plus" :size="14" /> {{ t('createClassroom') }}
+        </button>
+      </div>
     </div>
 
     <Spinner v-if="loading" />

@@ -96,7 +96,7 @@ const handleLogin = async () => {
       </p>
 
       <div class="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
-        <a href="/manual.pdf" download
+        <a href="/manual.pdf" target="_blank" rel="noopener noreferrer"
            class="w-full flex items-center justify-center gap-2 py-3 px-4
                   bg-amber-50 dark:bg-slate-700 text-amber-700 dark:text-amber-400
                   border-2 border-amber-400 dark:border-amber-500 rounded-md
