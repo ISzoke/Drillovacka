@@ -4601,24 +4601,31 @@ def _classroom_example_rows(classroom, student_ids):
     Per-example class stats across every task assigned to the classroom.
     Returns rows: {example_id, question, task_id, task_name, attempts, solved, accuracy}.
     """
-    rows = []
     tasks = Task.objects.filter(classroom_assignments__classroom=classroom).distinct()
-    for task in tasks:
-        for ex in task.example_set.all().only('id', 'example'):
-            records = StudentExample.objects.filter(student_id__in=student_ids, example=ex)
-            total = records.count()
-            if total == 0:
-                continue
-            solved = records.filter(solved=True).count()
-            rows.append({
-                'example_id': ex.id,
-                'question': ex.example,
-                'task_id': task.id,
-                'task_name': task.name,
-                'attempts': total,
-                'solved': solved,
-                'accuracy': round(solved / total * 100, 1),
-            })
+    examples = Example.objects.filter(task__in=tasks).select_related('task').only('id', 'example', 'task_id', 'task__name')
+
+    stats_by_example = {
+        row['example_id']: row
+        for row in StudentExample.objects
+            .filter(student_id__in=student_ids, example__task__in=tasks)
+            .values('example_id')
+            .annotate(total=Count('id'), solved=Count('id', filter=Q(solved=True)))
+    }
+
+    rows = []
+    for ex in examples:
+        stats = stats_by_example.get(ex.id)
+        if not stats or stats['total'] == 0:
+            continue
+        rows.append({
+            'example_id': ex.id,
+            'question': ex.example,
+            'task_id': ex.task_id,
+            'task_name': ex.task.name,
+            'attempts': stats['total'],
+            'solved': stats['solved'],
+            'accuracy': round(stats['solved'] / stats['total'] * 100, 1),
+        })
     return rows
 
 
@@ -5766,30 +5773,37 @@ def join_tow_game(request):
         return Response({'error': 'code is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        game = TugOfWarGame.objects.get(code=code)
+        TugOfWarGame.objects.get(code=code)
     except TugOfWarGame.DoesNotExist:
         return Response({'error': 'Hra s týmto kódom neexistuje'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Rejoin case (e.g. reconnect after a page refresh) — same identity already has a spot,
-    # regardless of the game's current status (mirrors join_duel_game/join_quiz_game).
-    existing = game.participants.filter(student=student, anonymous_session=session).first()
-    if existing:
-        return Response({**_serialize_tow_game(game), 'you': {'participant_id': existing.id, 'team': existing.team}},
-                         status=status.HTTP_200_OK)
+    # Locked so this can't race _start_tow_game's snapshot: without the lock, a join
+    # that passes the 'waiting' check just as the host starts the round can commit
+    # its participant row after question_order generation already ran, leaving that
+    # player stuck in an 'active' game with an empty queue and no question ever sent.
+    with transaction.atomic():
+        game = TugOfWarGame.objects.select_for_update().get(code=code)
 
-    if game.status != 'waiting':
-        return Response({'error': 'Hra už začala alebo skončila'}, status=status.HTTP_409_CONFLICT)
+        # Rejoin case (e.g. reconnect after a page refresh) — same identity already has a spot,
+        # regardless of the game's current status (mirrors join_duel_game/join_quiz_game).
+        existing = game.participants.filter(student=student, anonymous_session=session).first()
+        if existing:
+            return Response({**_serialize_tow_game(game), 'you': {'participant_id': existing.id, 'team': existing.team}},
+                             status=status.HTTP_200_OK)
 
-    team = request.data.get('team')
-    if team not in ('A', 'B'):
-        return Response({'error': 'team must be A or B'}, status=status.HTTP_400_BAD_REQUEST)
-    if game.participants.filter(team=team).count() >= game.max_team_size:
-        return Response({'error': 'Tím je plný'}, status=status.HTTP_409_CONFLICT)
+        if game.status != 'waiting':
+            return Response({'error': 'Hra už začala alebo skončila'}, status=status.HTTP_409_CONFLICT)
 
-    display_name = _resolve_display_name(student, request.data.get('display_name'))
-    participant = TugOfWarParticipant.objects.create(
-        game=game, student=student, anonymous_session=session, team=team, display_name=display_name,
-    )
+        team = request.data.get('team')
+        if team not in ('A', 'B'):
+            return Response({'error': 'team must be A or B'}, status=status.HTTP_400_BAD_REQUEST)
+        if game.participants.filter(team=team).count() >= game.max_team_size:
+            return Response({'error': 'Tím je plný'}, status=status.HTTP_409_CONFLICT)
+
+        display_name = _resolve_display_name(student, request.data.get('display_name'))
+        participant = TugOfWarParticipant.objects.create(
+            game=game, student=student, anonymous_session=session, team=team, display_name=display_name,
+        )
     return Response({**_serialize_tow_game(game), 'you': {'participant_id': participant.id, 'team': participant.team}},
                      status=status.HTTP_201_CREATED)
 

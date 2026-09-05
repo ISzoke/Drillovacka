@@ -671,7 +671,8 @@ def teacher_print_test(request):
     else:
         pdf_bytes = HTML(string=html).write_pdf()
 
-    PrintEvent.objects.create(kind='teacher', teacher=teacher, item_count=len(entries))
+    if not data.get('preview'):
+        PrintEvent.objects.create(kind='teacher', teacher=teacher, item_count=len(entries))
 
     safe_title = re.sub(r'[^\w\- ]', '', title).strip().replace(' ', '_') or 'test'
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
@@ -800,7 +801,8 @@ def parent_print_test(request):
         )
 
     pdf_bytes = HTML(string=html).write_pdf()
-    PrintEvent.objects.create(kind='parent', item_count=len(entries))
+    if not data.get('preview'):
+        PrintEvent.objects.create(kind='parent', item_count=len(entries))
     safe_title = re.sub(r'[^\w\- ]', '', title).strip().replace(' ', '_') or 'pisomka'
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{safe_title}.pdf"'

@@ -160,7 +160,13 @@ class DuelConsumer(AsyncWebsocketConsumer):
     async def _handle_answer(self, answer_payload):
         result = await database_sync_to_async(_apply_duel_answer)(self.game_id, self.participant_id, answer_payload)
         if result:
+            # xp carries the answering student's own grade/total_xp/streak/badges —
+            # strip it from the group broadcast (visible to the opponent otherwise)
+            # and deliver it only to this socket.
+            xp_data = result.pop('xp', None)
             await self.channel_layer.group_send(self.group_name, {'type': 'duel_message', 'payload': result})
+            if xp_data:
+                await self.send(text_data=json.dumps({'type': 'xp_update', 'xp': xp_data}))
 
     async def duel_message(self, event):
         await self.send(text_data=json.dumps(event['payload']))

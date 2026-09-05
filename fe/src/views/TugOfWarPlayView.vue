@@ -97,12 +97,14 @@ const needsNamePrompt = ref(false);
 const promptName = ref('');
 const needsTeamChoice = ref(false);
 const teamCounts = ref({ A: 0, B: 0 });
+const joinMaxTeamSize = ref(30);
 const chosenTeam = ref(null);
 
 const loadTeamCounts = async () => {
   try {
     const state = await getTugOfWarState(props.code);
     teamCounts.value = { A: (state.team_a || []).length, B: (state.team_b || []).length };
+    joinMaxTeamSize.value = state.max_team_size ?? 30;
   } catch (e) {
     // best-effort — the join call below will surface a real error if the code is bad
   }
@@ -178,13 +180,13 @@ onUnmounted(() => {
                 class="py-8 rounded-3xl font-bold text-lg border-2 border-secondary text-secondary
                        hover:bg-secondary/10 transition-colors">
           {{ t('duelTeam') }} A
-          <div class="text-sm font-normal text-gray-400 mt-1">{{ teamCounts.A }}/30</div>
+          <div class="text-sm font-normal text-gray-400 mt-1">{{ teamCounts.A }}/{{ joinMaxTeamSize }}</div>
         </button>
         <button @click="proceedJoin('B')"
                 class="py-8 rounded-3xl font-bold text-lg border-2 border-accent text-accent
                        hover:bg-accent/10 transition-colors">
           {{ t('duelTeam') }} B
-          <div class="text-sm font-normal text-gray-400 mt-1">{{ teamCounts.B }}/30</div>
+          <div class="text-sm font-normal text-gray-400 mt-1">{{ teamCounts.B }}/{{ joinMaxTeamSize }}</div>
         </button>
       </div>
     </div>

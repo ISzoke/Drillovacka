@@ -15,6 +15,7 @@
 
 import asyncio
 import json
+import logging
 import random
 
 import django
@@ -34,6 +35,8 @@ from .consumersDuel import _check_duel_answer, _serialize_duel_example, _spawn_b
 from .models import Example, TugOfWarGame, TugOfWarParticipant, TugOfWarAnswer
 
 QUESTIONS_PER_PLAYER = 200  # sampled with replacement — plenty for any time limit at typed pace
+
+logger = logging.getLogger(__name__)
 
 
 class TugOfWarConsumer(AsyncWebsocketConsumer):
@@ -214,13 +217,16 @@ def _start_tow_game(game_id):
 
         example_ids = list(game.task.example_set.values_list('id', flat=True))
         now = timezone.now()
-        questions = {}
         for p in participants:
             p.question_order = random.choices(example_ids, k=QUESTIONS_PER_PLAYER)
             p.current_index = 0
             p.current_question_started_at = now
-            p.save(update_fields=['question_order', 'current_index', 'current_question_started_at'])
-            questions[str(p.id)] = _serialize_duel_example(Example.objects.get(id=p.question_order[0]))
+        TugOfWarParticipant.objects.bulk_update(
+            participants, ['question_order', 'current_index', 'current_question_started_at']
+        )
+
+        first_examples = Example.objects.in_bulk({p.question_order[0] for p in participants})
+        questions = {str(p.id): _serialize_duel_example(first_examples[p.question_order[0]]) for p in participants}
 
         game.status = 'active'
         game.started_at = now
@@ -245,27 +251,39 @@ def _randomize_tow_teams(game_id):
 
 
 def _tow_ranked_team(game, team):
-    participants = TugOfWarParticipant.objects.filter(game=game, team=team)
-    stats = []
-    for p in participants:
-        avg_ms = p.answers.filter(is_correct=True).aggregate(avg=Avg('time_taken_ms'))['avg']
-        stats.append({
-            'id': p.id, 'display_name': p.display_name, 'is_student': p.student_id is not None,
-            'correct_count': p.correct_count, 'wrong_count': p.wrong_count,
-            'avg_time_ms': round(avg_ms) if avg_ms is not None else None,
-        })
+    participants = list(TugOfWarParticipant.objects.filter(game=game, team=team))
+    avg_by_participant = dict(
+        TugOfWarAnswer.objects
+        .filter(participant__game=game, participant__team=team, is_correct=True)
+        .values('participant_id').annotate(avg=Avg('time_taken_ms'))
+        .values_list('participant_id', 'avg')
+    )
+    stats = [{
+        'id': p.id, 'display_name': p.display_name, 'is_student': p.student_id is not None,
+        'correct_count': p.correct_count, 'wrong_count': p.wrong_count,
+        'avg_time_ms': round(avg_by_participant[p.id]) if avg_by_participant.get(p.id) is not None else None,
+    } for p in participants]
     # Best first: most correct, then fastest average time on correct answers.
     stats.sort(key=lambda s: (-s['correct_count'], s['avg_time_ms'] if s['avg_time_ms'] is not None else float('inf')))
     return stats
 
 
 def _tow_results(game):
+    """Full breakdown (top + worst) — only for the teacher-triggered reveal_worst
+    action. Never broadcast this wholesale to the group; see _tow_public_results."""
     ranked_a = _tow_ranked_team(game, 'A')
     ranked_b = _tow_ranked_team(game, 'B')
     return {
         'top': {'A': ranked_a[:3], 'B': ranked_b[:3]},
         'worst': {'A': list(reversed(ranked_a))[:3], 'B': list(reversed(ranked_b))[:3]},
     }
+
+
+def _tow_public_results(game):
+    """What's safe to broadcast to every player when the game ends automatically —
+    top performers only. The worst-performers list must stay behind the teacher's
+    explicit reveal_worst action (see _reveal_tow_worst), not leak out here."""
+    return {'top': _tow_results(game)['top']}
 
 
 def _apply_tow_answer(game_id, participant_id, answer_payload):
@@ -321,7 +339,7 @@ def _apply_tow_answer(game_id, participant_id, answer_payload):
         if not finished and participant.current_index < len(order):
             next_example = _serialize_duel_example(Example.objects.get(id=order[participant.current_index]))
 
-        results = _tow_results(game) if finished else None
+        results = _tow_public_results(game) if finished else None
 
     return {
         'type': 'answer_result',
@@ -353,7 +371,7 @@ def _tick_tow_game(game_id):
         game.winner_team = winner
         game.ended_at = now
         game.save(update_fields=['status', 'winner_team', 'ended_at'])
-        results = _tow_results(game)
+        results = _tow_public_results(game)
 
     return {'type': 'game_over', 'winner_team': winner, 'rope_position': game.rope_position, 'results': results}
 
@@ -370,14 +388,19 @@ def _reveal_tow_worst(game_id):
 
 async def _run_tow_timer(group_name, game_id):
     """Owned by the consumer instance whose host started the round — same
-    single-uvicorn-worker constraint as _run_duel_timer (see consumersDuel.py)."""
+    single-uvicorn-worker constraint as _run_duel_timer (see consumersDuel.py).
+    A transient DB error on one tick must not kill this loop silently — a
+    'time' end_mode game has no other way to ever finish, so swallow and
+    retry rather than letting the task die and leave the round hanging."""
     channel_layer = get_channel_layer()
-    try:
-        while True:
+    while True:
+        try:
             await asyncio.sleep(1)
             result = await database_sync_to_async(_tick_tow_game)(game_id)
             if result is not None:
                 await channel_layer.group_send(group_name, {'type': 'tow_message', 'payload': result})
                 return
-    except asyncio.CancelledError:
-        return
+        except asyncio.CancelledError:
+            return
+        except Exception:
+            logger.exception("tug-of-war timer tick failed for game %s — retrying", game_id)

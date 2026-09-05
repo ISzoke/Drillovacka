@@ -115,7 +115,7 @@ export const useQuizStore = defineStore('quiz', () => {
       if (!finished && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts += 1;
         const delay = RECONNECT_BASE_DELAY_MS * Math.min(reconnectAttempts, 5);
-        reconnectTimer = setTimeout(() => connect(), delay);
+        reconnectTimer = setTimeout(() => connect(undefined, role.value === 'host'), delay);
       }
     };
   }

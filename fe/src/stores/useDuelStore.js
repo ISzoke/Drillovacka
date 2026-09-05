@@ -151,7 +151,6 @@ export const useDuelStore = defineStore('duel', () => {
         if (isMyLane(data.team, data.slot)) {
           lastResult.value = { isCorrect: data.is_correct, at: Date.now() };
           currentQuestion.value = data.finished ? null : data.next_example;
-          if (data.xp) gamStore.handleXPUpdate(data.xp);
         }
         if (roomState.value) {
           roomState.value = {
@@ -161,6 +160,10 @@ export const useDuelStore = defineStore('duel', () => {
             winner_team: data.finished ? data.winner_team : roomState.value.winner_team,
           };
         }
+        break;
+
+      case 'xp_update':
+        if (data.xp) gamStore.handleXPUpdate(data.xp);
         break;
 
       case 'game_over':

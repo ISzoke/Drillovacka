@@ -320,7 +320,8 @@ const clearItems = () => {
 };
 
 // ── PDF ──────────────────────────────────────────────────────────────────────
-const buildPayload = () => ({
+const buildPayload = (preview = false) => ({
+  preview,
   title: settings.value.title,
   class_name: settings.value.class_name,
   note: settings.value.note,
@@ -369,7 +370,7 @@ const loadPreview = async () => {
   const requestId = ++previewRequestSeq;
   previewLoading.value = true;
   try {
-    const blob = await teacherPrintTest(authStore.id, buildPayload());
+    const blob = await teacherPrintTest(authStore.id, buildPayload(true));
     if (requestId !== previewRequestSeq) return; // superseded by a newer edit
     const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
     revokePreviewUrl();

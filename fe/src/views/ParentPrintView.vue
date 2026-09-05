@@ -69,13 +69,14 @@ const loadExamples = async () => {
 watch(grade, loadTasks, { immediate: true });
 watch(selectedTaskId, loadExamples);
 
-const buildPayload = () => ({
+const buildPayload = (preview = false) => ({
   title: title.value.trim() || t('parentPrintDefaultTitle'),
   student_name: childName.value.trim(),
   mirror: mirror.value,
   show_answer_page: withAnswers.value,
   columns: columns.value,
   items: shuffledPool.value.slice(0, count.value).map(e => ({ example_id: e.id })),
+  preview,
 });
 
 // ── Live inline preview — the real WeasyPrint-rendered PDF, byte-for-byte the
@@ -99,7 +100,7 @@ const loadPreview = async () => {
   const reqId = ++previewSeq;
   previewLoading.value = true;
   try {
-    const blob = await parentPrintTest(buildPayload());
+    const blob = await parentPrintTest(buildPayload(true));
     if (reqId !== previewSeq) return;
     const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
     revokePreviewUrl();
