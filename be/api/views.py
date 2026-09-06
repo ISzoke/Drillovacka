@@ -3148,6 +3148,36 @@ def get_all_teachers(request):
     if not _require_admin(request):
         return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
     teachers = Teacher.objects.prefetch_related('classrooms').order_by('-created_at')
+    teacher_ids = [t.id for t in teachers]
+
+    # Grouped aggregates (one query per metric, not per teacher) — library size
+    # is independent of classroom assignment, so it can't be read off `classrooms_data` below.
+    example_counts = dict(
+        Example.objects.filter(owner_teacher_id__in=teacher_ids)
+        .values('owner_teacher_id').annotate(c=Count('id'))
+        .values_list('owner_teacher_id', 'c')
+    )
+    unassigned_example_counts = dict(
+        Example.objects.filter(owner_teacher_id__in=teacher_ids, task__isnull=True)
+        .values('owner_teacher_id').annotate(c=Count('id'))
+        .values_list('owner_teacher_id', 'c')
+    )
+    set_counts = dict(
+        Task.objects.filter(owner_teacher_id__in=teacher_ids)
+        .values('owner_teacher_id').annotate(c=Count('id'))
+        .values_list('owner_teacher_id', 'c')
+    )
+    print_counts = dict(
+        PrintEvent.objects.filter(teacher_id__in=teacher_ids, kind='teacher')
+        .values('teacher_id').annotate(c=Count('id'))
+        .values_list('teacher_id', 'c')
+    )
+    last_print_at = dict(
+        PrintEvent.objects.filter(teacher_id__in=teacher_ids, kind='teacher')
+        .values('teacher_id').annotate(last=Max('created_at'))
+        .values_list('teacher_id', 'last')
+    )
+
     data = []
     for t in teachers:
         classrooms = list(t.classrooms.all())
@@ -3187,6 +3217,11 @@ def get_all_teachers(request):
             'classroom_count': len(classrooms),
             'student_count': len(set(student_ids)),
             'classrooms': classrooms_data,
+            'library_set_count': set_counts.get(t.id, 0),
+            'library_example_count': example_counts.get(t.id, 0),
+            'library_unassigned_example_count': unassigned_example_counts.get(t.id, 0),
+            'print_count': print_counts.get(t.id, 0),
+            'last_print_at': last_print_at.get(t.id),
         })
     return Response(data)
 

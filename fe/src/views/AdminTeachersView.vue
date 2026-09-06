@@ -144,6 +144,18 @@ const studentLabel = (n) => {
               <div class="font-bold text-slate-700 dark:text-slate-200">{{ t.student_count }}</div>
               <div class="text-xs text-slate-400">{{ $t('studentsGenitive') }}</div>
             </div>
+            <div class="text-center" :title="t.library_unassigned_example_count ? `${t.library_unassigned_example_count} ${$t('unassignedGenitive')}` : ''">
+              <div class="font-bold text-slate-700 dark:text-slate-200">
+                {{ t.library_set_count }} / {{ t.library_example_count }}
+              </div>
+              <div class="text-xs text-slate-400">{{ $t('setsSlashExamples') }}</div>
+            </div>
+            <div class="text-center">
+              <div class="font-bold" :class="t.print_count ? 'text-green-600 dark:text-green-400' : 'text-slate-300 dark:text-slate-600'">
+                {{ t.print_count ? `🖨️ ${t.print_count}` : '—' }}
+              </div>
+              <div class="text-xs text-slate-400">{{ t.print_count ? fmt(t.last_print_at) : $t('neverPrinted') }}</div>
+            </div>
             <div class="text-xs text-slate-400">{{ fmt(t.created_at) }}</div>
           </div>
         </div>
