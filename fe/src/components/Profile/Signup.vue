@@ -14,6 +14,7 @@ import generatePassphrase from '@/utils/passphraseGenerator';
 import { registerStudent } from '@/api/apiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLanguageStore } from '@/stores/useLanguageStore';
+import { RouterLink } from 'vue-router';
 
 const username = ref('');
 const passphrase = ref('');
@@ -74,6 +75,20 @@ const copyToClipboard = () => {
 
 <template>
   <div class="max-w-lg mx-auto px-4">
+
+    <!-- Teacher redirect banner -->
+    <RouterLink to="/teacher/register"
+      class="flex items-center justify-between gap-3 mb-5 px-5 py-4 rounded-2xl
+             bg-sky-50 dark:bg-sky-900/30 border-[3px] border-sky-200 dark:border-sky-800
+             hover:border-sky-300 dark:hover:border-sky-700 transition">
+      <span class="text-sm font-semibold text-sky-800 dark:text-sky-200 leading-snug">
+        🏫 {{ t('teacherSignupBannerText') }}
+      </span>
+      <span class="shrink-0 text-sm font-black text-sky-600 dark:text-sky-300 whitespace-nowrap">
+        {{ t('teacherSignupBannerCta') }}
+      </span>
+    </RouterLink>
+
     <div class="bg-white dark:bg-slate-800 rounded-3xl border-[3px] border-slate-200 dark:border-slate-700
                 border-b-[8px] border-b-slate-300 dark:border-b-slate-600 p-8 shadow-sm">
 

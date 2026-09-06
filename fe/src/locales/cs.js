@@ -163,6 +163,8 @@ export default {
         teacherLogin: "Přihlášení učitele",
         teacherManual: "Manuál pro učitele",
         teacherRegister: "Registrace učitele",
+        teacherSignupBannerText: "Jste učitel? Vytvořte si třídu, sledujte pokrok žáků a tiskněte písemky.",
+        teacherSignupBannerCta: "Registrace pro učitele →",
         teacherDashboard: "Přehled učitele",
         teacherDashboardWelcome: "Vítejte v přehledu učitele",
         goToDashboard: "Přejít na přehled",

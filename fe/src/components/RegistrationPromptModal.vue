@@ -9,7 +9,7 @@
 -->
 
 <script setup>
-import { useRouter } from 'vue-router';
+import { useRouter, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 const emit = defineEmits(['skip', 'register']);
@@ -87,6 +87,14 @@ const onSkip = () => {
                  underline underline-offset-2 transition-colors">
           {{ t('regPromptSkip') }}
         </button>
+
+        <!-- Teacher redirect -->
+        <RouterLink to="/teacher/register"
+          class="mt-2 text-sm text-sky-600 dark:text-sky-400
+                 hover:text-sky-700 dark:hover:text-sky-300
+                 underline underline-offset-2 transition-colors">
+          🏫 {{ t('teacherSignupBannerCta') }}
+        </RouterLink>
 
       </div>
     </div>

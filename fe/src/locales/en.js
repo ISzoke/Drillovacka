@@ -164,6 +164,8 @@ export default {
         teacherLogin: "Teacher login",
         teacherManual: "Teacher manual",
         teacherRegister: "Teacher registration",
+        teacherSignupBannerText: "Are you a teacher? Create a classroom, track student progress, and print worksheets.",
+        teacherSignupBannerCta: "Teacher registration →",
         teacherDashboard: "Teacher dashboard",
         teacherDashboardWelcome: "Welcome to the teacher dashboard",
         goToDashboard: "Go to dashboard",
