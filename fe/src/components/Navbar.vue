@@ -116,13 +116,13 @@ const handleLogoClick = () => {
               {{ t('contact') }}
             </RouterLink>
             <RouterLink to="/teacher" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🏫 {{ t('teacherLogin') || 'Pre učiteľov' }}
+              {{ t('teacherLogin') || 'Pre učiteľov' }}
             </RouterLink>
             <RouterLink to="/duel" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🪢 {{ t('duelTitle') }}
+              {{ t('duelTitle') }}
             </RouterLink>
             <RouterLink to="/skusobna-pisomka" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🖨️ {{ t('parentPrintNav') }}
+              {{ t('parentPrintNav') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ t('login') }}
@@ -181,25 +181,25 @@ const handleLogoClick = () => {
           <!-- Logged in user (student) -->
           <template v-else>
             <RouterLink to="/" @click="handleLogoClick" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              📚 {{ t('examples') }}
+              {{ t('examples') }}
             </RouterLink>
             <RouterLink to="/progress" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               <i class="fa-solid fa-chart-line mr-1"></i>{{ t('progress') }}
             </RouterLink>
             <RouterLink to="/my-classrooms" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🏫 {{ t('myClassrooms') || 'Triedy' }}
+              {{ t('myClassrooms') || 'Triedy' }}
             </RouterLink>
             <RouterLink to="/leaderboard" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🏆 {{ t('leaderboard') }}
+              {{ t('leaderboard') }}
             </RouterLink>
             <RouterLink to="/duel" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🪢 {{ t('duelTitle') }}
+              {{ t('duelTitle') }}
             </RouterLink>
             <RouterLink to="/skusobna-pisomka" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              🖨️ {{ t('parentPrintNav') }}
+              {{ t('parentPrintNav') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
-              👤 {{ t('profile') }}
+              {{ t('profile') }}
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ t('contact') }}
@@ -228,13 +228,13 @@ const handleLogoClick = () => {
               {{ t('contact') }}
             </RouterLink>
             <RouterLink to="/teacher" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🏫 {{ t('teacherLogin') || 'Pre učiteľov' }}
+              {{ t('teacherLogin') || 'Pre učiteľov' }}
             </RouterLink>
             <RouterLink to="/duel" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🪢 {{ t('duelTitle') }}
+              {{ t('duelTitle') }}
             </RouterLink>
             <RouterLink to="/skusobna-pisomka" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🖨️ {{ t('parentPrintNav') }}
+              {{ t('parentPrintNav') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white hover:text-gray-200 border-b-2 border-primary hover:border-white transition">
               {{ t('login') }}
@@ -290,25 +290,25 @@ const handleLogoClick = () => {
           <!-- Logged in user (student) -->
           <template v-else>
             <RouterLink to="/" class="text-white text-xl font-semibold" @click="handleLogoClick; isMenuOpen = false">
-              📚 {{ t('examples') }}
+              {{ t('examples') }}
             </RouterLink>
             <RouterLink to="/progress" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               <i class="fa-solid fa-chart-line mr-2"></i>{{ t('progress') }}
             </RouterLink>
             <RouterLink to="/my-classrooms" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🏫 {{ t('myClassrooms') || 'Triedy' }}
+              {{ t('myClassrooms') || 'Triedy' }}
             </RouterLink>
             <RouterLink to="/leaderboard" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🏆 {{ t('leaderboard') }}
+              {{ t('leaderboard') }}
             </RouterLink>
             <RouterLink to="/duel" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🪢 {{ t('duelTitle') }}
+              {{ t('duelTitle') }}
             </RouterLink>
             <RouterLink to="/skusobna-pisomka" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              🖨️ {{ t('parentPrintNav') }}
+              {{ t('parentPrintNav') }}
             </RouterLink>
             <RouterLink to="/profile" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
-              👤 {{ t('profile') }}
+              {{ t('profile') }}
             </RouterLink>
             <RouterLink to="/kontakt" class="text-white text-xl font-semibold" @click="isMenuOpen = false">
               {{ t('contact') }}
